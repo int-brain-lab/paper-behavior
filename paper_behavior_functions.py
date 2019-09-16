@@ -7,7 +7,6 @@ Functions for behavioral paper analysis
 @author: guido
 """
 
-import datajoint as dj
 from ibl_pipeline import subject, acquisition
 import seaborn as sns
 from ibl_pipeline.analyses import behavior as behavior_analysis

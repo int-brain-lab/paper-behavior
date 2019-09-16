@@ -3,7 +3,21 @@
 """
 Created on Fri Dec 21 10:30:25 2018
 
-Try to predict in which lab an animal was trained based on its behavior
+Decode in which lab a mouse was trained based on its behavioral metrics during a single session in
+which it is determined that the mouse was trained. The session is the middle session of the three
+sessions used to determine if a mouse is trained. As a positive control, the time zone in which
+the mouse was trained is included in the dataset since the timezone provides geographical
+information. Decoding is performed using cross-validated Random Forest classification. Chance level
+is determined by shuffling the lab labels and decoding again.
+
+--------------
+Parameters
+FIG_PATH:           String containing a path where to save the output figure
+NUM_SPLITS:         The N in N-fold cross validation
+ITERATIONS:         Number of times to split the dataset in test and train and decode
+METRICS:            List of strings indicating which behavioral metrics to include
+                    during decoding of lab membership
+METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
 
 @author: Guido Meijer
 """
@@ -11,26 +25,22 @@ Try to predict in which lab an animal was trained based on its behavior
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
 from os.path import join, expanduser
 import seaborn as sns
 from paper_behavior_functions import query_subjects, seaborn_style
-import datajoint as dj
-from ibl_pipeline import subject, acquisition, action, behavior, reference
+from ibl_pipeline import subject, reference
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import KFold
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 
-# Settings
+# Parameters
 FIG_PATH = join(expanduser('~'), 'Figures', 'Behavior')
-ITERATIONS = 2000     # how often to decode
 NUM_SPLITS = 3        # n in n-fold cross validation
-DECODING_METRICS = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time']
-DECODING_METRIS_CONTROL = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time',
-                           'time_zone']
+ITERATIONS = 2000     # how often to decode
+METRICS = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time']
+METRIS_CONTROL = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time',
+                  'time_zone']
 
 
 # Decoding function with n-fold cross validation
@@ -160,8 +170,8 @@ clf_rf = RandomForestClassifier(n_estimators=100)
 # Perform decoding of lab membership
 decoding_result = pd.DataFrame(columns=['original', 'original_shuffled',
                                         'control', 'control_shuffled'])
-decoding_set = decod[DECODING_METRICS].values
-control_set = decod[DECODING_METRIS_CONTROL].values
+decoding_set = decod[METRICS].values
+control_set = decod[METRIS_CONTROL].values
 for i in range(ITERATIONS):
     if np.mod(i+1, 100) == 0:
         print('Iteration %d of %d' % (i+1, ITERATIONS))

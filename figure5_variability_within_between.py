@@ -3,7 +3,10 @@
 """
 Created on Fri Dec 21 10:30:25 2018
 
-Quantify variability within and between labs
+Quantify the variability of behavioral metrics within and between labs of mouse behavior of a
+single session. The session is the middle session of the three day streak in which a mouse is
+deemed to be trained. This script doesn't perform any analysis but plots summary statistics
+over labs.
 
 @author: Guido Meijer
 """
@@ -16,8 +19,7 @@ from scipy import stats
 from os.path import join, expanduser
 import seaborn as sns
 from paper_behavior_functions import query_subjects, seaborn_style
-import datajoint as dj
-from ibl_pipeline import subject, acquisition, action, behavior, reference
+from ibl_pipeline import subject
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # Settings

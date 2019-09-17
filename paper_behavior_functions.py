@@ -27,7 +27,7 @@ def query_subjects(as_dataframe=False):
     subj_query = (subject.Subject * subject.SubjectLab * subject.SubjectProject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
                           (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-                          & 'training_status="trained_1a"',
+                          & 'training_status="trained_1a" OR training_status="trained_1b"',
                           'subject_nickname', 'sex', 'subject_birth_date', 'lab_name',
                           date_trained='min(date(session_start_time))')
 

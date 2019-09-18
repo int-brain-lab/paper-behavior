@@ -7,7 +7,7 @@ Functions for behavioral paper analysis
 @author: guido
 """
 
-from ibl_pipeline import subject, acquisition
+from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
 from os.path import join
 from ibl_pipeline.analyses import behavior as behavior_analysis
@@ -24,7 +24,7 @@ def query_subjects(as_dataframe=False):
 
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they were flagged as trained_1a
-    subj_query = (subject.Subject * subject.SubjectLab * subject.SubjectProject
+    subj_query = (subject.Subject * reference.Lab * subject.SubjectProject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
                           (acquisition.Session * behavior_analysis.SessionTrainingStatus())
                           & 'training_status="trained_1a" OR training_status="trained_1b"',
@@ -59,11 +59,11 @@ def query_sessions(protocol='all', training_status='all', stable=False, as_dataf
 
     use_subjects = query_subjects().proj('subject_uuid')
     if protocol == 'all':
-        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * use_subjects
+        sessions = (acquisition.Session * subject.Subject * reference.Lab * use_subjects
                     & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
                             'session_uuid', 'lab_name', 'subject_nickname', 'task_protocol')
     elif protocol == 'biased' or protocol == 'training':
-        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * use_subjects
+        sessions = (acquisition.Session * subject.Subject * reference.Lab * use_subjects
                     & 'task_protocol LIKE "%' + protocol + '%"').proj(
                             'session_uuid', 'lab_name', 'subject_nickname', 'task_protocol')
     if training_status != 'all':

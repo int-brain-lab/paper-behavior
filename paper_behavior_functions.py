@@ -9,8 +9,12 @@ Functions for behavioral paper analysis
 
 from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
-from os.path import join
+import os
 from ibl_pipeline.analyses import behavior as behavior_analysis
+
+
+def figpath():
+    return os.path.join(os.path.expanduser('~'), 'Data/Figures_IBL')
 
 
 def query_subjects(as_dataframe=False):
@@ -94,4 +98,4 @@ def save_csv_subject_query(path):
     """
 
     subjects = query_subjects(as_dataframe=True)
-    subjects.to_csv(join(path, 'subjects.csv'))
+    subjects.to_csv(os.path.join(path, 'subjects.csv'))

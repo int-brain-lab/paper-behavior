@@ -236,4 +236,7 @@ def dj2pandas(behav):
         {-1: 'post-error', 1: 'post-correct'})
     behav['repeat'] = (behav.choice == behav.previous_choice)
 
+    # to more easily retrieve specific training days
+    behav['days'] = (behav['session_start_time'] - behav['session_start_time'].min()).dt.days
+
     return behav

@@ -1,28 +1,22 @@
 """
-CONTRAST HEATMAP FOR AN EXAMPLE MOUSE
+TRAINING PROGRESSION FOR AN EXAMPLE MOUSE
 Anne Urai, CSHL, 2019
 """
 
 import dj_tools
 from paper_behavior_functions import *
-import pandas as pd
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datajoint as dj
 from IPython import embed as shell  # for debugging
-import re
-import datetime
 import os
-import glob
-from datetime import timedelta
+import datetime
 import matplotlib as mpl
 
 # import wrappers etc
-from ibl_pipeline import reference, subject, action, acquisition, data, behavior
-from ibl_pipeline.utils import psychofit as psy
-from ibl_pipeline.analyses import behavior as behavioral_analyses
+from ibl_pipeline import subject, behavior, acquisition
 endcriteria = dj.create_virtual_module(
     'SessionEndCriteria', 'group_shared_end_criteria')  # from Miles
 
@@ -39,29 +33,8 @@ plt.close('all')
 # pick an example mouse
 # ================================= #
 
-mouse = 'CSHL_015'
+mouse = 'CSHL_014'
 lab = 'churchlandlab'
-
-weight_water, baseline = load_mouse_data_datajoint.get_water_weight(mouse, lab)
-xlims = [weight_water.date.min() - timedelta(days=2),
-         weight_water.date.max() + timedelta(days=2)]
-
-# ================================= #
-# CONTRAST HEATMAP
-# ================================= #
-
-fig, ax = plt.subplots(1, 2, figsize=(7, 2.5))
-behavior_plots.plot_contrast_heatmap(mouse, lab, ax[0], xlims)
-ax[1].axis('off')
-ax[0].set_ylabel('Signed contrast (%)')
-ax[0].set_xlabel('Training days')
-ax[0].set_title('Mouse %s' % mouse)
-plt.tight_layout()
-fig.savefig(os.path.join(figpath, "figure3_example_contrastheatmap.png"))
-
-# ================================================================== #
-# PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
-# ================================================================== #
 
 b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
     * (subject.SubjectLab & 'lab_name="%s"' % lab) \
@@ -72,18 +45,40 @@ behav = b.fetch(order_by='session_start_time, trial_id',
                 format='frame').reset_index()
 print(behav)
 behav = dj_tools.dj2pandas(behav)
+
+xlims = [behav.session_start_time.min().replace(hour=0,microsecond=0,second=0,minute=0) - datetime.timedelta(days=2),
+         behav.session_start_time.max().replace(hour=0,microsecond=0,second=0,minute=0) + datetime.timedelta(days=2)]
+
+# ================================= #
+# CONTRAST HEATMAP
+# ================================= #
+
+fig, ax = plt.subplots(1, 2, figsize=(7, 2.5))
+behavior_plots.plot_contrast_heatmap(mouse, lab, ax[0], xlims)
+ax[1].axis('off')
+ax[0].set_ylabel('Signed contrast (%)')
+ax[0].set_xlabel('Training days')
+ax[0].set_title('Example mouse')
+plt.tight_layout()
+fig.savefig(os.path.join(figpath, "figure3_example_contrastheatmap.png"))
+
+# ================================================================== #
+# PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
+# ================================================================== #
+
+# add some useful metrics
 behav['trial_start_time'] = behav.trial_start_time / 60  # in minutes
 behav['correct_easy'] = behav.correct_easy * 100
-
-days = [4, 11, 21]
-days = behav.days.unique()
+behav['training_day'] = behav.days.map(
+    dict(zip(list(behav.days.unique()), list(range(1, 1+len(behav.days.unique()))))))
+days = behav.training_day.unique()
 
 for didx, day in enumerate(days):
 
     assert(day in behav.days)
 
     # select data from one day
-    behavtmp = behav.loc[behav['days'] == day, :].copy()
+    behavtmp = behav.loc[behav['training_day'] == day, :].copy()
 
     # PSYCHOMETRIC FUNCTIONS
     fig, ax = plt.subplots(1, 1, figsize=(2, 2))
@@ -91,8 +86,7 @@ for didx, day in enumerate(days):
         columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
     ax.set(xlabel="Signed contrast (%)",
            ylabel="Rightward choices (%)", ylim=[0, 1])
-    ax.set(title=pd.to_datetime(
-        behavtmp['session_start_time'].unique()[0]).strftime('%b-%d'))
+    ax.set(title='Day %d' % day)
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
@@ -104,8 +98,7 @@ for didx, day in enumerate(days):
         columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
     ax.grid(False)
     ax.set(xlabel="Signed contrast (%)", ylabel="RT (s)", ylim=[0, 1.5])
-    ax.set(title=pd.to_datetime(
-        behavtmp['session_start_time'].unique()[0]).strftime('%b-%d'))
+    ax.set(title='Day %d' % day)
 
     # rt axis scaling
     ax.set(ylim=[0.1, 1.5], yticks=[0.1, 1.5])
@@ -143,12 +136,13 @@ for didx, day in enumerate(days):
     # from https://stackoverflow.com/questions/36988123/pandas-groupby-and-rolling-apply-ignoring-nans
     g1 = behavtmp[['trial_start_time', 'correct_easy']]
     g2 = g1.fillna(0).copy()
-    s = g2.rolling(50).sum() / g1.rolling(50).count() # the actual computation
+    s = g2.rolling(50).sum() / g1.rolling(50).count()  # the actual computation
 
     ax2 = ax.twinx()
     sns.lineplot(x='trial_start_time', y='correct_easy', color='darkblue', ci=None,
                  data=s, ax=ax2)
-    ax2.set(xlabel='', ylabel="Accuracy (%)", ylim=[0, 101], yticks=[0, 50, 100])
+    ax2.set(xlabel='', ylabel="Accuracy (%)",
+            ylim=[0, 101], yticks=[0, 50, 100])
     ax2.yaxis.label.set_color("darkblue")
     ax2.tick_params(axis='y', colors='darkblue')
 
@@ -159,8 +153,7 @@ for didx, day in enumerate(days):
     ax2.annotate(behavtmp.end_status.unique()[0], xy=(end_x, 100), xytext=(end_x, 105),
                  arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
 
-    ax.set(title=pd.to_datetime(
-        behavtmp['session_start_time'].unique()[0]).strftime('%b-%d'))
+    ax.set(title='Day %d' % day)
     # sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(

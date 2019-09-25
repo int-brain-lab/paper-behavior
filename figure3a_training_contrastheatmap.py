@@ -66,11 +66,12 @@ behav = b.fetch(order_by='session_start_time, trial_id',
                 format='frame').reset_index()
 print(behav)
 behav = dj_tools.dj2pandas(behav)
+
+# add some useful metrics
 behav['trial_start_time'] = behav.trial_start_time / 60  # in minutes
 behav['correct_easy'] = behav.correct_easy * 100
 behav['training_day'] = behav.days.map(
-    dict(zip(list(behav.days.unique()), list(range(len(behav.days.unique()))))))
-
+    dict(zip(list(behav.days.unique()), list(range(1, 1+len(behav.days.unique()))))))
 days = behav.training_day.unique()
 
 for didx, day in enumerate(days):

@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from paper_behavior_functions import *
 import datajoint as dj
-from end_session_criteria import SessionEndCriteria  # TODO load from group_shared
-from ibl_pipeline import behavior, subject, acquisition
 
+endcriteria = dj.create_virtual_module('SessionEndCriteria', 'group_shared_end_criteria')
+# from group_shared_end_criteria import SessionEndCriteria  # TODO load from group_shared
+from ibl_pipeline import behavior, subject, acquisition
 
 # ================================= #
 # QUERY AN EXAMPLE MOUSE
@@ -28,5 +29,6 @@ sessions = behavior.TrialSet & subj & (acquisition.Session() - 'task_protocol LI
 # ================================================================== #
 
 days = [3, 10, 27]
-sessions = sessions.proj(n_days='DATEDIFF(session_start_time, MIN(session_start_time))')
-end_criterion = sessions * SessionEndCriteria
+#sessions = sessions.proj(n_days='DATEDIFF(session_start_time, MIN(session_start_time))')
+end_criterion = sessions * endcriteria.SessionEndCriteria
+print(end_criterion)

@@ -14,7 +14,14 @@ from ibl_pipeline.analyses import behavior as behavior_analysis
 
 
 def figpath():
-    return os.path.join(os.path.expanduser('~'), 'Data/Figures_IBL')
+    # Retrieve absolute path of paper-behavior dir
+    repo_dir = os.path.dirname(os.path.realpath(__file__))
+    # Make figure directory
+    fig_dir = os.path.join(repo_dir, 'exported_figs')
+    # If doesn't already exist, create
+    if not os.path.exists(fig_dir):
+        os.mkdir(fig_dir)
+    return fig_dir
 
 
 def query_subjects(as_dataframe=False):

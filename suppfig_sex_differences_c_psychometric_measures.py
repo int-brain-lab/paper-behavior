@@ -42,12 +42,16 @@ from alexfigs_datajoint_functions import *  # this has all plotting functions
 
 
 #Collect all all data 
-use_subjects = subject.Subject * subject.SubjectLab * subject.SubjectProject & 'subject_project="ibl_neuropixel_brainwide_01"'
-sess = (acquisition.Session & (behavior.TrialSet.Trial() & 'ABS(trial_stim_contrast_left-0)<0.0001' \
-	& 'ABS(trial_stim_contrast_right-0)<0.0001') & 'task_protocol like "%trainingChoiceWorld%"') \
+use_subjects = subject.Subject * subject.SubjectLab * subject.SubjectProject & \
+ 'subject_project="ibl_neuropixel_brainwide_01"'
+sess = (acquisition.Session & (behavior.TrialSet.Trial() & \
+                               'ABS(trial_stim_contrast_left-0)<0.0001' \
+	& 'ABS(trial_stim_contrast_right-0)<0.0001') & \
+    'task_protocol like "%trainingChoiceWorld%"') \
 	* use_subjects
 b 		= (behavior.TrialSet.Trial & sess) * subject.Subject() * subject.SubjectLab()
-bdat 	= pd.DataFrame(b.fetch(order_by='subject_nickname, session_start_time, trial_id'))
+bdat 	= pd.DataFrame(b.fetch(order_by='subject_nickname, \
+                             session_start_time, trial_id'))
 allsubjects 	= dj2pandas(bdat)
 
 
@@ -257,166 +261,136 @@ for labname in users:
         except:
             pass
 
+# Plotting 
 
-# Plotting
-
-#Make average "lab"
-
-allsubjects_mean =  allsubjects.copy()
-allsubjects_mean['lab_name'] = 'Mean'
-allsubjects1 = pd.concat([allsubjects_mean, allsubjects], ignore_index=True)
-
-#Set colours for figure
-my_pal = {'churchlandlab':'grey', 'zadorlab':'grey', 'danlab':'grey', 
-          'angelakilab':'grey', 'hoferlab':'grey', 'wittenlab':'grey',
-       'cortexlab':'grey', 'mrsicflogellab':'grey', 'mainenlab':'grey', 
-       'Mean':'yellow'}            
-
-        
-#Make labels with Ns
-            
-new_labels_trained = ['Mean \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='Mean') &
-             ((allsubjects1['training_status']=='trained_1a') | 
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]), 
-             'CSHL - 1 \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='churchlandlab')& 
-             ((allsubjects1['training_status']=='trained_1a') |
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-            'CSHL - 2 \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='zadorlab')& 
-             ((allsubjects1['training_status']=='trained_1a') |
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'UC Berkeley \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='danlab') & 
-             ((allsubjects1['training_status']=='trained_1a')|
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]), 
-             'NYU \n (n = %d)'  
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='angelakilab') &
-             ((allsubjects1['training_status']=='trained_1a') |
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'SWC - 1 \n (n = %d)'  
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='mrsicflogellab') & 
-             ((allsubjects1['training_status']=='trained_1a') |
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'Princeton \n (n = %d)'
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='wittenlab') & 
-             ((allsubjects1['training_status']=='trained_1a') |
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'UCL \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='cortexlab') & 
-             ((allsubjects1['training_status']=='trained_1a') |
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'SWC - 2 \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='hoferlab') & 
-             ((allsubjects1['training_status']=='trained_1a') | 
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),\
-             'CCU \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='mainenlab') & 
-             ((allsubjects1['training_status']=='trained_1a') | 
-             (allsubjects1['training_status']=='trained_1b') |
-             (allsubjects1['training_status']=='ready4ephysrig'))])]
-
-new_labels_ephys = ['Mean \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='Mean') &
-             ((allsubjects1['training_status']=='ready4recording') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]), 
-             'CSHL - 1 \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='churchlandlab')& 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'CSHL - 2 \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='zadorlab')& 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-              'UC Berkeley \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='danlab') & 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]), 
-             'NYU \n (n = %d)'  
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='angelakilab') & 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'SWC - 1 \n (n = %d)'  
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='mrsicflogellab') & 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'Princeton \n (n = %d)'
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='wittenlab') & 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'UCL \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='cortexlab') & 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'SWC - 2 \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='hoferlab') & 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))]),
-             'CCU \n (n = %d)' 
-             %len(allsubjects1.loc[(allsubjects1['lab_name']=='mainenlab') & 
-             ((allsubjects1['training_status']=='ready4ephysrig') |
-             (allsubjects1['training_status']=='ready4ephysrig'))])]
-
-
-
-
-#Start figure
+#a
 sns.set('paper')
-fig_totrained, ax = plt.subplots(2,2,figsize=[16,13])
-
-##a
+fig_3_psychometrics, ax = plt.subplots(3,2,figsize=[13,15])
 plt.sca(ax[0,0])
-sns.boxplot(y="lab_name", x="days_to_trained", 
-            data=allsubjects1, color = "grey", palette=my_pal)
-sns.swarmplot(y="lab_name", x="days_to_trained", 
-              data=allsubjects1, edgecolor="white", color='k' ,  size=3)
-plt.ylabel('Location')
-plt.xlabel('Length of training (sessions)')
-# replace labels
-ax[0,0].set_yticklabels(new_labels_trained)
+sns.boxplot(y="sex", x="average_threshold", \
+            data=allsubjects, color = "yellow", width=0.5)
+sns.swarmplot(y="sex", x="average_threshold", \
+              data=allsubjects,hue="lab_name", edgecolor="white", )
+plt.ylabel('Sex')
+plt.xlabel('Average Threshold')
+ax[0,0].set_yticklabels(['Male \n (n = %d)' \
+    %allsubjects.loc[allsubjects['sex']=='M','average_threshold'].count(), \
+    'Female \n (n = %d)' \
+    %allsubjects.loc[allsubjects['sex']=='F','average_threshold'].count()])
+ax[0,0].legend(loc='upper right', bbox_to_anchor=(0.75, 1.2), ncol=3)
+#Stats
+_ ,p_threshold  = \
+    scipy.stats.mannwhitneyu(allsubjects.loc[allsubjects['sex']=='M', \
+    'average_threshold'], allsubjects.loc[allsubjects['sex']=='F', \
+    'average_threshold'], use_continuity=True)
+lim = np.nanmax(allsubjects['average_threshold']) +  2
+plt.plot([lim,lim, lim, lim], [0, 0, 1, 1], linewidth=2, color='k')
+if p_threshold<0.05:
+    plt.text(lim*1.01, 0.5, '*'*m.floor(m.log10(p_threshold)*-1), ha='center', \
+         rotation = -90, fontsize=16)
+else:
+    plt.text(lim*1.01, 0.5, 'n.s', ha='center', rotation = -90, fontsize=16)
 
-##b
+#b
 plt.sca(ax[0,1])
-sns.boxplot(y="lab_name", x="trials_to_trained", 
-            data=allsubjects1, color = "grey", palette=my_pal)
-sns.swarmplot(y="lab_name", x="trials_to_trained", 
-              data=allsubjects1, edgecolor="white", color='k' ,  size=3)
-plt.ylabel('Location')
-plt.xlabel('Length of training (trials)')
-# replace labels
-ax[0,1].set_yticklabels(new_labels_trained)
-##c
+sns.boxplot(y="sex", x="average_lapse_high", \
+            data=allsubjects, color = "yellow", width=0.5)
+sns.swarmplot(y="sex", x="average_lapse_high", \
+              data=allsubjects,hue="lab_name", edgecolor="white", )
+plt.ylabel('Sex')
+plt.xlabel('Average Lapse Right')
+ax[0,1].set_yticklabels(['Male \n (n = %d)' \
+    %allsubjects.loc[allsubjects['sex']=='M','average_lapse_high'].count(), \
+    'Female \n (n = %d)' %allsubjects.loc[allsubjects['sex']=='F', \
+    'average_lapse_high'].count()])
+ax[0,1].legend_.remove()
+#Stats
+_ ,p_lapse_high  = \
+    scipy.stats.mannwhitneyu(allsubjects.loc[allsubjects['sex']=='M', \
+    'average_lapse_high'], allsubjects.loc[allsubjects['sex']=='F', \
+    'average_lapse_high'], use_continuity=True)
+lim = np.nanmax(allsubjects['average_lapse_high']) +  0.1
+plt.plot([lim,lim, lim, lim], [0, 0, 1, 1], linewidth=2, color='k')
+if p_lapse_high<0.05:
+    plt.text(lim*1.01, 0.5,'*' * m.floor(m.log10(p_lapse_high)*-1), \
+    ha='center', rotation = -90, fontsize=16)
+else:
+    plt.text(lim*1.01, 0.5, 'n.s', ha='center', \
+             rotation = -90, fontsize=16)
+
+#c
 plt.sca(ax[1,0])
-sns.boxplot(y="lab_name", x="days_to_ephys", 
-            data=allsubjects1, color = "grey", palette=my_pal)
-sns.swarmplot(y="lab_name", x="days_to_ephys", 
-              data=allsubjects1, edgecolor="white", color='k' ,  size=3)
-plt.ylabel('Location')
-plt.xlabel('Length of training Level 2 (sessions)')
-# replace labels
-ax[1,0].set_yticklabels(new_labels_ephys)
-
-##d
+sns.boxplot(y="sex", x="average_lapse_low", \
+            data=allsubjects, color = "yellow", width=0.5)
+sns.swarmplot(y="sex", x="average_lapse_low", \
+              data=allsubjects,hue="lab_name", edgecolor="white", )
+plt.ylabel('Sex')
+plt.xlabel('Average Lapse Left')
+ax[1,0].set_yticklabels(['Male \n (n = %d)' \
+      %allsubjects.loc[allsubjects['sex']=='M','average_lapse_low'].count(), \
+      'Female \n (n = %d)' %allsubjects.loc[allsubjects['sex']=='F', \
+      'average_lapse_low'].count()])
+ax[1,0].legend_.remove()
+#Stats
+_ ,p_lapse_low  = \
+    scipy.stats.mannwhitneyu(allsubjects.loc[allsubjects['sex']=='M', \
+    'average_lapse_low'], allsubjects.loc[allsubjects['sex']=='F', \
+    'average_lapse_low'], use_continuity=True)
+lim = np.nanmax(allsubjects['average_lapse_low']) +  0.1
+plt.plot([lim,lim, lim, lim], [0, 0, 1, 1], linewidth=2, color='k')
+if p_lapse_low<0.05:
+    plt.text(lim*1.01, 0.5, '*'*m.floor(m.log10(p_lapse_low)*-1), ha='center', \
+             rotation = -90, fontsize=16)
+else:
+    plt.text(lim*1.01, 0.5, 'n.s', ha='center', rotation = -90, fontsize=16)
+    
+#d
 plt.sca(ax[1,1])
-sns.boxplot(y="lab_name", x="trials_to_ephys", 
-            data=allsubjects1, color = "grey", palette=my_pal)
-sns.swarmplot(y="lab_name", x="trials_to_ephys", 
-            data=allsubjects1, edgecolor="white", color='k' ,  size=3)
-plt.ylabel('Location')
-plt.xlabel('Length of training Level 2 (trials)')
-# replace labels
-ax[1,1].set_yticklabels(new_labels_ephys)
+sns.boxplot(y="sex", x="average_bias08", data=allsubjects, color = "yellow", \
+            width=0.5)
+sns.swarmplot(y="sex", x="average_bias08", data=allsubjects,hue="lab_name", \
+              edgecolor="white", )
+plt.ylabel('Sex')
+plt.xlabel('Average Right Bias')
+ax[1,1].set_yticklabels(['Male \n (n = %d)' \
+     %allsubjects.loc[allsubjects['sex']=='M','average_bias08'].count(), \
+     'Female \n (n = %d)' %allsubjects.loc[allsubjects['sex']=='F', \
+                'average_bias08'].count()])
+ax[1,1].legend_.remove()
+#Stats
+_ ,p_bias08 = scipy.stats.mannwhitneyu(allsubjects.loc[allsubjects['sex']=='M', \
+    'average_bias08'], allsubjects.loc[allsubjects['sex']=='F', \
+    'average_bias08'], use_continuity=True)
+lim = np.nanmax(allsubjects['average_bias08']) +  2
+plt.plot([lim,lim, lim, lim], [0, 0, 1, 1], linewidth=2, color='k')
+if p_bias08<0.05:
+    plt.text(lim*1.01, 0.5, '*'*m.floor(m.log10(p_bias08)*-1), ha='center', \
+             rotation = -90, fontsize=16)
+else:
+    plt.text(lim*1.01, 0.5, 'n.s', ha='center', rotation = -90, fontsize=16)
+#e    
+plt.sca(ax[2,0])
+sns.boxplot(y="sex", x="average_bias02", data=allsubjects, color = "yellow", \
+            width=0.5)
+sns.swarmplot(y="sex", x="average_bias02", data=allsubjects,hue="lab_name", \
+              edgecolor="white", )
+plt.ylabel('Sex')
+plt.xlabel('Average Left Bias')
+ax[2,0].set_yticklabels(['Male \n (n = %d)' \
+    %allsubjects.loc[allsubjects['sex']=='M','average_bias02'].count(), \
+    'Female \n (n = %d)' %allsubjects.loc[allsubjects['sex']=='F', \
+    'average_bias02'].count()])
+ax[2,0].legend_.remove()
+#Stats
+_ ,p_bias02  = scipy.stats.mannwhitneyu(allsubjects.loc[allsubjects['sex']=='M', \
+    'average_bias02'], allsubjects.loc[allsubjects['sex']=='F', \
+    'average_bias02'], use_continuity=True)
+lim = np.nanmax(allsubjects['average_bias02']) +  2
+plt.plot([lim,lim, lim, lim], [0, 0, 1, 1], linewidth=2, color='k')
+if p_bias02<0.05:
+    plt.text(lim*1.01, 0.5, '*'*m.floor(m.log10(p_bias02)*-1), ha='center', \
+             rotation = -90, fontsize=16)
+else:
+    plt.text(lim*1.01, 0.5, 'n.s', ha='center', rotation = -90, fontsize=16)
 
-fig_totrained.savefig("training_times.pdf", bbox_inches='tight')
-
-
+fig_3_psychometrics.savefig("fig_3_psychometrics.pdf", bbox_inches='tight')

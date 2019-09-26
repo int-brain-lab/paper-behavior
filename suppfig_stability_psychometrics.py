@@ -108,7 +108,7 @@ sns.lineplot(x="level_0", y="bias", data=pars_08_pool,hue="lab_name", ax=ax[1,1]
 sns.lineplot(x="level_0", y="bias", data = pars_08_pool, ax=ax[1,1],  color='black', lw=2)
 ax[1,1].legend_.remove()
 ax[1,1].set_xlim([0, 30])
-ax[1,0].set_ylim([-50, 50])
+ax[1,1].set_ylim([-50, 50])
 ax[1,1].set_xlabel('Session Number')
 ax[1,1].set_ylabel('Bias  80% Right block')
 

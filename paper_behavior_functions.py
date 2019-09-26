@@ -35,7 +35,7 @@ def query_subjects(as_dataframe=False):
 
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they were flagged as trained_1a
-    subj_query = (subject.Subject * reference.Lab * subject.SubjectProject
+    subj_query = (subject.Subject * subject.SubjectLab * subject.SubjectProject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
                           (acquisition.Session * behavior_analysis.SessionTrainingStatus())
                           & 'training_status="trained_1a" OR training_status="trained_1b"',

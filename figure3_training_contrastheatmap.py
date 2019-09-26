@@ -72,6 +72,7 @@ behav['correct_easy'] = behav.correct_easy * 100
 behav['training_day'] = behav.days.map(
     dict(zip(list(behav.days.unique()), list(range(1, 1+len(behav.days.unique()))))))
 days = behav.training_day.unique()
+days = [2,5,9,13]
 
 for didx, day in enumerate(days):
 
@@ -119,7 +120,7 @@ for didx, day in enumerate(days):
 
     # RTS THROUGHOUT SESSION
     sns.scatterplot(x='trial_start_time', y='rt', style='correct', hue='correct',
-                    palette={1: "#009E73", 0: "#D55E00"},
+                    palette={1: "#1b9e77", 0: "#d95f02"},
                     markers={1: 'o', 0: 'X'}, s=10, edgecolors='face',
                     alpha=.5, data=behavtmp, ax=ax, legend=False)
 

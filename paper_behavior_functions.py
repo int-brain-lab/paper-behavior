@@ -51,7 +51,7 @@ def query_subjects(as_dataframe=False):
     return subjects
 
 
-def query_sessions(stable=False, as_dataframe=False):
+def query_sessions(stable=False, days_from_trained=0, as_dataframe=False):
     """
     Query all sessions for analysis of behavioral data
 
@@ -60,6 +60,7 @@ def query_sessions(stable=False, as_dataframe=False):
     stable:          boolean if True only return sessions with stable hardware, which means
                      sessions after July 10, 2019 (default is False)
     as_dataframe:    boolean if True returns a pandas dataframe (default is False)
+    days_from_trained: which days? counting from date_trained
     """
 
     # Query sessions

@@ -59,7 +59,7 @@ def decoding(resp, labels, clf, NUM_SPLITS):
 
 
 # Query list of subjects
-subjects = query_subjects()
+subjects = query_subjects(as_dataframe=True)
 
 # Create dataframe with behavioral metrics of all mice
 learning = pd.DataFrame(columns=['mouse', 'lab', 'time_zone', 'learned', 'date_learned',
@@ -141,7 +141,7 @@ for i, nickname in enumerate(subjects['subject_nickname']):
     learning.loc[i, 'lab'] = lab_name
     lab_time = reference.Lab * reference.LabLocation & 'lab_name="%s"' % lab_name
     time_zone = lab_time.fetch('time_zone')[0]
-    if time_zone == ('Europe/Lisbon' or 'Europe/London'):
+    if (time_zone == 'Europe/Lisbon') or (time_zone == 'Europe/London'):
         time_zone_number = 0
     elif time_zone == 'America/New_York':
         time_zone_number = -5

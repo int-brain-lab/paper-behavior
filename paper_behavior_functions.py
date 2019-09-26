@@ -35,11 +35,11 @@ def query_subjects(as_dataframe=False):
 
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they were flagged as trained_1a
-    subj_query = (subject.Subject * subject.SubjectLab * subject.SubjectProject
+    subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
                           (acquisition.Session * behavior_analysis.SessionTrainingStatus())
                           & 'training_status="trained_1a" OR training_status="trained_1b"',
-                          'subject_nickname', 'sex', 'subject_birth_date', 'lab_name',
+                          'subject_nickname', 'sex', 'subject_birth_date', 'institution',
                           date_trained='min(date(session_start_time))')
 
     # Select subjects that reached trained_1a criterium before September 30th
@@ -51,40 +51,34 @@ def query_subjects(as_dataframe=False):
     return subjects
 
 
-def query_sessions(protocol='all', training_status='all', stable=False, as_dataframe=False):
+def query_sessions(stable=False, as_dataframe=False):
     """
     Query all sessions for analysis of behavioral data
 
     Parameters
     ----------
-    protocol:        string with the following possibilities
-                     'all': all sessions (default)
-                     'biased': biasedChoiceWorld sessions
-                     'training': trainingChoiceWorld sessions
-    training_status: string with the following possibilities
-                     'all' (default), 'trained_1a', 'trained_1b', 'ready for ephys'
-    stable:          boolean if True only return sessions with stable hardware
+    stable:          boolean if True only return sessions with stable hardware, which means
                      sessions after July 10, 2019 (default is False)
     as_dataframe:    boolean if True returns a pandas dataframe (default is False)
     """
 
+    # Query sessions
     use_subjects = query_subjects().proj('subject_uuid')
-    if protocol == 'all':
-        sessions = (acquisition.Session * subject.Subject * reference.Lab * use_subjects
-                    & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
-                            'session_uuid', 'lab_name', 'subject_nickname', 'task_protocol')
-    elif protocol == 'biased' or protocol == 'training':
-        sessions = (acquisition.Session * subject.Subject * reference.Lab * use_subjects
-                    & 'task_protocol LIKE "%' + protocol + '%"').proj(
-                            'session_uuid', 'lab_name', 'subject_nickname', 'task_protocol')
-    if training_status != 'all':
-        sessions = sessions * (behavior_analysis.SessionTrainingStatus()
-                               & 'training_status="%s"' % training_status)
+    sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
+                * use_subjects * behavior_analysis.SessionTrainingStatus
+                & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
+                        'session_uuid', 'subject_uuid', 'subject_nickname', 'institution',
+                        'task_protocol', 'training_status')
+
+    # If required only output sessions with stable hardware
     if stable is True:
         sessions = sessions & 'date(session_start_time) > "2019-06-10"'
+
+    # Transform into pandas Dataframe if requested
     if as_dataframe is True:
         sessions = sessions.fetch(format='frame')
         sessions = sessions.reset_index()
+
     return sessions
 
 

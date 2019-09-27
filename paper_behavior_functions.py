@@ -10,6 +10,8 @@ Functions for behavioral paper analysis
 from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
 import os
+import numpy as np
+import pandas as pd
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 
@@ -53,7 +55,7 @@ def query_subjects(as_dataframe=False):
     return subjects
 
 
-def query_sessions(stable=False, days_from_trained=0, as_dataframe=False):
+def query_sessions(stable=False, as_dataframe=False):
     """
     Query all sessions for analysis of behavioral data
 
@@ -62,7 +64,6 @@ def query_sessions(stable=False, days_from_trained=0, as_dataframe=False):
     stable:          boolean if True only return sessions with stable hardware, which means
                      sessions after July 10, 2019 (default is False)
     as_dataframe:    boolean if True returns a pandas dataframe (default is False)
-    days_from_trained: which days? counting from date_trained
     """
 
     # Query sessions
@@ -81,6 +82,37 @@ def query_sessions(stable=False, days_from_trained=0, as_dataframe=False):
     if as_dataframe is True:
         sessions = sessions.fetch(format='frame')
         sessions = sessions.reset_index()
+
+    return sessions
+
+
+def query_sessions_around_criterium(days_from_trained=[3, 0]):
+    """
+    Query all sessions for analysis of behavioral data
+
+    Parameters
+    ----------
+    days_from_trained: two-element array which indicates which training days around the day the
+                       mouse reached criterium to return, e.g. [3, 2] returns three days before
+                       criterium reached up untill 2 days after.
+    """
+
+    # Query all sessions including training status
+    all_sessions = query_sessions(as_dataframe=True)
+
+    # Loop through mice and find sessions around first trained session
+    sessions = pd.DataFrame()
+    for i, nickname in enumerate(np.unique(all_sessions['subject_nickname'])):
+
+        # Get the three sessions at which an animal is deemed trained
+        subj_ses = all_sessions[all_sessions['subject_nickname'] == nickname]
+        subj_ses.reset_index()
+        trained = ((subj_ses['training_status'] == 'trained_1a')
+                   | (subj_ses['training_status'] == 'trained_1b'))
+        first_trained = next((w for w, j in enumerate(trained) if j), None)
+        ses_select = subj_ses[
+                first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
+        sessions = pd.concat([sessions, ses_select])
 
     return sessions
 

@@ -16,9 +16,10 @@ from ibl_pipeline.analyses import behavior as behavior_analysis
 from ibl_pipeline import reference, subject, behavior
 from alexfigs_datajoint_functions import *  
 import seaborn as sns
+from paper_behavior_functions import figpath
+import os
 
-
-
+save_path = figpath()  # Path to where figures are saved
 key = ((subject.Subject()  & 'sex!="U"') * (behavior.TrialSet() & 'n_trials > 100') * (subject.SubjectLab()) * (behavior_analysis.SessionTrainingStatus() & 'training_status="ready for ephys"  ')).fetch('KEY')
 trials_ibl = pd.DataFrame.from_dict((subject.Subject() * behavior.TrialSet.Trial & key).fetch(as_dict=True))
 
@@ -56,7 +57,7 @@ ax.set_xticklabels( results['Predictors'], rotation=-90)
 ax.set_ylabel('coef')
 ax.axhline(y=0, linestyle='--', color='black', linewidth=2)
 fig.suptitle ('GLM Biased Blocks')
-fig.savefig("glm_sex_diff.pdf")
+fig.savefig(os.path.join(save_path, "glm_sex_diff.pdf"))
 
 #Plotting pooled results
 plot_glm(psy_df, result, r2)

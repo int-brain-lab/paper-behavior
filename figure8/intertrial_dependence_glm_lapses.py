@@ -24,6 +24,9 @@ import os
 import seaborn
 import figure_style
 from matplotlib.lines import Line2D
+from paper_behavior_functions import figpath
+
+save_path = figpath()  # Get shared figure path
 
 #Functions
 
@@ -315,8 +318,8 @@ ax[1,0].text(1.3,0, 'stay',horizontalalignment='center', verticalalignment='cent
 ax[0,0].legend(('Response','Stimulus'))
 ax[0,1].legend(('Response','Stimulus'))
 
-regression.savefig("regressors.pdf")
-regression.savefig("regressors.svg")
+regression.savefig(os.path.join(save_path, "regressors.pdf"))
+regression.savefig(os.path.join(save_path, "regressors.svg"))
 
 
 """

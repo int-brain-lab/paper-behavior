@@ -11,8 +11,11 @@ from ibl_pipeline import reference, subject, behavior
 from alexfigs_datajoint_functions import *  # this has all plotting functions
 import seaborn as sns
 from glm import *
+from paper_behavior_functions import figpath
+import os  # For making paths
 
-
+# Set save path for figures
+save_path = figpath()
 
 key = ((subject.Subject()  & 'sex!="U"') * (behavior.TrialSet() & 'n_trials > 100') * (subject.SubjectLab()) * (behavior_analysis.SessionTrainingStatus() & 'training_status="ready for ephys"  ')).fetch('KEY')
 trials_ibl = pd.DataFrame.from_dict((subject.Subject() * behavior.TrialSet.Trial & key).fetch(as_dict=True))
@@ -67,4 +70,4 @@ ax.set_xticks([1,2,3,4,5])
 ax.set_xlabel('Trials back')
 ax.legend(('Rewarded','Unrewarded'))
 regression.suptitle ('Regressors')
-regression.savefig("regressors.pdf")
+regression.savefig(os.path.join(save_path, "regressors.pdf"))

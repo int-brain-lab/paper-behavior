@@ -18,6 +18,8 @@ def figpath():
     repo_dir = os.path.dirname(os.path.realpath(__file__))
     # Make figure directory
     fig_dir = os.path.join(repo_dir, 'exported_figs')
+    # Announce save location
+    print('Figure save path: ' + fig_dir)
     # If doesn't already exist, create
     if not os.path.exists(fig_dir):
         os.mkdir(fig_dir)

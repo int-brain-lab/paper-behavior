@@ -105,3 +105,6 @@ venv.bak/
 
 # Exported figures
 /exported_figs
+
+# macOS stuff
+.DS_store

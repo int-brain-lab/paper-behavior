@@ -25,34 +25,25 @@ sns.set(style="ticks", context="paper", font_scale=1.2)
 figpath = os.path.join(os.path.expanduser('~'), 'Data', 'Figures_IBL')
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 sns.set_palette("gist_gray")  # palette for water types
+sns.set_palette("husl")
 
 # ================================= #
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-use_subjects = subject.Subject * subject.SubjectLab * subject.SubjectProject & 'subject_project = "ibl_neuropixel_brainwide_01"'
-criterion = behavioral_analyses.SessionTrainingStatus()
-sess = ((acquisition.Session & 'task_protocol LIKE "%trainingChoiceWorld%"') \
-		* (criterion & 'training_status LIKE "trained%"')) * use_subjects
-
-b = (behavior.TrialSet.Trial & sess) * subject.Subject() * subject.SubjectLab()
-bdat = b.fetch(order_by='subject_nickname, session_start_time, trial_id', format='frame').reset_index()
+# TODO: WAIT FOR SHAN TO ADD training_day  AND COMPLETE THE QUERY FOR THE RIGHT SESSIONS
+use_sessions = query_sessions(days_from_trained=3)
+b = (behavior.TrialSet.Trial * use_sessions)
+bdat = b.fetch(order_by='lab_name, subject_nickname, session_start_time, trial_id', format='frame').reset_index()
 behav = dj2pandas(bdat)
 assert(~behav.empty)
-
-behav['lab_name'] = behav['lab_name'].str.replace('zadorlab', 'churchlandlab')
-behav['lab_name'] = behav['lab_name'].str.replace('hoferlab', 'mrsicflogellab')
-
-lab_names = {'danlab':'Berkeley', 'mainenlab':'CCU', 'churchlandlab':'CSHL', 'cortexlab':'UCL',
-			 'angelakilab':'NYU', 'wittenlab':'Princeton', 'mrsicflogellab':'SWC'}
-print('lets go')
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
 # ================================= #
 
 fig = sns.FacetGrid(behav,
-	col="lab_name", col_wrap=4, col_order=list(lab_names.keys()),
+	col="institution", col_wrap=4, 
 	sharex=True, sharey=True, aspect=1)
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
@@ -64,7 +55,7 @@ fig.savefig(os.path.join(figpath, "figure4a_psychfuncs_perlab.png"), dpi=600)
 plt.close('all')
 
 fig = sns.FacetGrid(behav,
-	col="lab_name", col_wrap=4, col_order=list(lab_names.keys()),
+	col="institution", col_wrap=4, 
 	sharex=True, sharey=True, aspect=1, hue="subject_nickname")
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
@@ -75,10 +66,8 @@ fig.savefig(os.path.join(figpath, "figure4a_psychfuncs_perlab_singlemouse.pdf"))
 fig.savefig(os.path.join(figpath, "figure4a_psychfuncs_perlab_singlemouse.png"), dpi=600)
 plt.close('all')
 
-shell()
-
 fig = sns.FacetGrid(behav,
-	col="lab_name", col_wrap=1, col_order=list(lab_names.keys()),
+	col="institution", col_wrap=1, 
 	sharex=True, sharey=True, height=2, aspect=1.9)
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')

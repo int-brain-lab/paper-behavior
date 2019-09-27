@@ -237,6 +237,15 @@ def dj2pandas(behav):
     behav['repeat'] = (behav.choice == behav.previous_choice)
 
     # to more easily retrieve specific training days
-    behav['days'] = (behav['session_start_time'] - behav['session_start_time'].min()).dt.days
+    behav['days'] = (behav['session_start_time'] -
+                     behav['session_start_time'].min()).dt.days
+
+    behav['lab_name'] = behav['lab_name'].str.replace(
+        'zadorlab', 'churchlandlab')
+    behav['lab_name'] = behav['lab_name'].str.replace(
+        'hoferlab', 'mrsicflogellab')
+    institutions = {'danlab': 'Berkeley', 'mainenlab': 'CCU', 'churchlandlab': 'CSHL', 'cortexlab': 'UCL',
+                    'angelakilab': 'NYU', 'wittenlab': 'Princeton', 'mrsicflogellab': 'SWC'}
+    behav['institution'] = behav.lab_name.map(institutions)
 
     return behav

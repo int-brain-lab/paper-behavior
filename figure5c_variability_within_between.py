@@ -18,24 +18,46 @@ import numpy as np
 from scipy import stats
 from os.path import join, expanduser
 import seaborn as sns
-from paper_behavior_functions import query_subjects, seaborn_style
-from ibl_pipeline import subject
+from paper_behavior_functions import query_subjects, query_sessions, seaborn_style
+from ibl_pipeline import subject, acquisition, behavior
 from ibl_pipeline.analyses import behavior as behavior_analysis
+from ibl_pipeline.utils import psychofit as psy
 
 # Settings
 fig_path = join(expanduser('~'), 'Figures', 'Behavior')
 csv_path = join(expanduser('~'), 'Data', 'Behavior')
 
-# Query list of subjects
-subjects = query_subjects(as_dataframe=True)
+# Query sessions
+sessions = query_sessions(as_dataframe=True)
 
 # Create dataframe with behavioral metrics of all mice
 learning = pd.DataFrame(columns=['mouse', 'lab', 'learned', 'date_learned', 'training_time',
                                  'perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time',
                                  'lapse_low', 'lapse_high'])
-for i, nickname in enumerate(subjects['subject_nickname']):
+for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
     if np.mod(i+1, 10) == 0:
-        print('Loading data of subject %d of %d' % (i+1, len(subjects)))
+        print('Loading data of subject %d of %d' % (i+1, len(
+                np.unique(sessions['subject_nickname']))))
+
+    # Get the three sessions at which an animal is deemed trained
+    subj_ses = sessions[sessions['subject_nickname'] == nickname]
+    subj_ses.reset_index()
+    trained = ((subj_ses['training_status'] == 'trained_1a')
+               | (subj_ses['training_status'] == 'trained_1b'))
+    first_trained = next((w for w, j in enumerate(trained) if j), None)
+    three_ses = subj_ses[first_trained-2:first_trained+1]
+    three_ses = three_ses.reset_index()
+
+    # Get the trials of these sessions
+    trials = (acquisition.Session * behavior.TrialSet.Trial
+              & 'session_start_time="%s" OR session_start_time="%s" OR session_start_time="%s"' % (
+                      three_ses.loc[0, 'session_start_time'],
+                      three_ses.loc[1, 'session_start_time'],
+                      three_ses.loc[2, 'session_start_time'])).fetch(format='frame')
+
+
+
+
 
     # Gather behavioral data for subject
     subj = (subject.Subject * subject.SubjectLab & 'subject_nickname="%s"' % nickname)

@@ -17,7 +17,7 @@ sessions = query_sessions()  # Query all sessions
 df = (endcriteria.SessionEndCriteria & sessions).fetch(format='frame')  # Fetch data
 
 # Convert statuses to numerical
-ids = {k[0]: v for v,k in enumerate(endcriteria.EndCriteria.fetch())}
+ids = {k[0]: v for v, k in enumerate(endcriteria.EndCriteria.fetch())}
 df['end_status_id'] = df['end_status'].map(ids)
 
 ax = df['end_status_id'].value_counts().plot.bar()  # Plot the number of each
@@ -34,7 +34,7 @@ ax.set_axisbelow(True)
 ax.yaxis.grid(True, color='#EEEEEE')
 ax.xaxis.grid(False)
 ax.yaxis.set_ticklabels([])
-ax.xaxis.set_ticklabels([id.replace('_',' ') for id in ids.keys()])
+ax.xaxis.set_ticklabels([l.replace('_', ' ') for l in ids.keys()])
 ax.xaxis.set_tick_params(rotation=0)
 
 # Add labels and a title. Note the use of `labelpad` and `pad` to add some

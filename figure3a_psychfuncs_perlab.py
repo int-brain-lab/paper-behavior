@@ -76,6 +76,7 @@ plt.close('all')
 # ================================= #
 # CHRONOMETRIC FUNCTIONS
 # ================================= #
+
 fig = sns.FacetGrid(behav,
 	hue="institution_short", palette=pal,
 	sharex=True, sharey=True, aspect=1)

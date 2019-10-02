@@ -24,43 +24,41 @@ from fit_learning_curves import *
 # INITIALIZE A FEW THINGS
 seaborn_style()
 figpath = os.path.join(os.path.expanduser('~'), 'Data', 'Figures_IBL')
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
+pal = sns.color_palette("colorblind", 7)
 
 # ================================= #
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-use_subjects = query_subjects()
+use_subjects = query_sessions()
 b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
-behav = b.fetch(order_by='lab_name, subject_nickname', format='frame').reset_index()
+behav = b.fetch(order_by='institution_short, subject_nickname, training_day', format='frame').reset_index()
 
 # ================================= #
 # LEARNING CURVES
 # ================================= #
 
-# TODO: WAIT FOR SHAN TO ADD training_day to BehavioralSummaryByDate
-
 fig = sns.FacetGrid(behav,
-                    col="institution", col_wrap=4, hue='subject_nickname',
-                    sharex=True, sharey=True, aspect=1, xlim=[-1, 50.5], ylim=[0.4, 1])
-fig.map(plot_learningcurve, "training_day",
-        "performance_easy", "subject_nickname")
+	hue="institution_short", palette=pal,
+	sharex=True, sharey=True, aspect=1)
+fig.map(sns.lineplot, "training_day", "performance_easy")
 fig.set_axis_labels('Days in training', 'Performance on easy trials (%)')
-# for ax, title in zip(fig.axes.flat, list(lab_names.values())):
-#     ax.set_title(title)
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure4e_learningcurves_perlab.pdf"))
-fig.savefig(os.path.join(
-    figpath, "figure4e_learningcurves_perlab.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves_perlab.pdf"))
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves_perlab.png"), dpi=600)
 plt.close('all')
 
 fig = sns.FacetGrid(behav,
-                    col="subject_nickname", col_wrap=8, hue="institution", palette="colorblind",
-                    sharex=True, sharey=True, aspect=1)
-fig.map(plot_learningcurve, "training_day",
-        "performance_easy", "subject_nickname").add_legend()
+	col="institution_short", col_wrap=4, 
+	sharex=True, sharey=True, aspect=1, hue="subject_nickname", palette='gist_gray')
+fig.map(sns.lineplot, "training_day", "performance_easy", lw=1)
+# add an indication of when each subject is trained
+fig.map(sns.lineplot, "training_day", "performance_easy_trained", lw=2)
 fig.set_axis_labels('Days in training', 'Performance on easy trials (%)')
 fig.set_titles("{col_name}")
+for ax, color in zip(fig.axes.flat, pal):
+    ax.set_title(color=color)
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure4e_learningcurves_permouse.pdf"))
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves_perlab_singlemouse.pdf"))
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves_perlab_singlemouse.png"), dpi=600)
 plt.close('all')

@@ -13,6 +13,7 @@ import os
 import numpy as np
 import pandas as pd
 from ibl_pipeline.analyses import behavior as behavior_analysis
+from IPython import embed as shell  # for debugging
 
 
 def figpath():
@@ -115,6 +116,48 @@ def query_sessions_around_criterium(days_from_trained=[3, 0]):
         sessions = pd.concat([sessions, ses_select])
 
     return sessions
+
+
+
+def query_sessions_around_ephys(days_from_trained=[3, 0]):
+    """
+    Query all sessions for analysis of behavioral data
+
+    Parameters
+    ----------
+    days_from_trained: two-element array which indicates which training days around the day the
+                       mouse reached criterium to return, e.g. [3, 2] returns three days before
+                       criterium reached up untill 2 days after.
+    """
+
+    # Query all sessions including training status
+    subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+                & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+                        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
+                        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
+                        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
+                        date_trained='min(date(session_start_time))')
+    all_sessions = (acquisition.Session & 'task_protocol LIKE "%biased%"') * subj_query \
+        * behavior_analysis.SessionTrainingStatus
+    all_sessions = all_sessions.fetch(order_by='institution_short, subject_nickname, session_start_time', format='frame')
+    all_sessions = all_sessions.reset_index()
+
+    # Loop through mice and find sessions around first trained session
+    sessions = pd.DataFrame()
+    for i, nickname in enumerate(np.unique(all_sessions['subject_nickname'])):
+
+        # Get the three sessions at which an animal is deemed trained
+        subj_ses = all_sessions[all_sessions['subject_nickname'] == nickname]
+        subj_ses.reset_index()
+        trained = ((subj_ses['training_status'] == 'ready4ephysrig')
+                   | (subj_ses['training_status'] == 'ready4recording'))
+        first_trained = next((w for w, j in enumerate(trained) if j), None)
+        ses_select = subj_ses[
+                first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
+        sessions = pd.concat([sessions, ses_select])
+
+    return sessions
+
 
 
 def seaborn_style():

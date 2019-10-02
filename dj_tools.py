@@ -157,8 +157,8 @@ def plot_chronometric(x, y, subj, **kwargs):
     ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5, linewidth=0,
                       marker='o', ci=68, data=df2, **kwargs)
 
-    ax.set_xticks([-35, -25, -12.5, -6, 0, 6, 12.5, 25, 35])
-    ax.set_xticklabels(['-100', '-25', '-12.5', '-6.25', '0', '6.25', '12.5', '25', '100'],
+    ax.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
+    ax.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
                        size='small', rotation=45)
     # # ax.grid(True)
     # ax.set_yscale("log")

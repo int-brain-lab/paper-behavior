@@ -23,7 +23,6 @@ from dj_tools import *
 # INITIALIZE A FEW THINGS
 sns.set(style="ticks", context="paper", font_scale=1.2)
 figpath = os.path.join(os.path.expanduser('~'), 'Data', 'Figures_IBL')
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 pal = sns.color_palette("colorblind", 7)
 
 # ================================= #
@@ -51,24 +50,28 @@ fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname"
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 # fig.set_titles("{col_name}")
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure5a_psychfuncs_perlab.pdf"))
-fig.savefig(os.path.join(figpath, "figure5a_psychfuncs_perlab.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab.pdf"))
+fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab.png"), dpi=600)
 plt.close('all')
 
+# add a fake subject_num to make the colormap restart within each lab
+behav['subject_num'] = behav['subject_uuid'].astype("category").cat.codes
+for index, group in behav.groupby(['institution_short']):
+      behav['subject_num'][behav.index.isin(group.index)] = group['subject_uuid'].astype("category").cat.codes
+
+# plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
 	col="institution_short", col_wrap=4, 
-	sharex=True, sharey=True, aspect=1, hue="subject_nickname", palette='gist_grey')
+	sharex=True, sharey=True, aspect=1, hue="subject_num", palette="gist_gray")
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.set_titles("{col_name}")
-for ax, color in zip(fig.axes.flat, pal):
-    ax.set_title(color=color)
+for axidx, ax in enumerate(fig.axes.flat):
+    ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx])
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure5a_psychfuncs_perlab_singlemouse.pdf"))
-fig.savefig(os.path.join(figpath, "figure5a_psychfuncs_perlab_singlemouse.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab_singlemouse.pdf"))
+fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab_singlemouse.png"), dpi=600)
 plt.close('all')
-
-shell()
 
 # ================================= #
 # CHRONOMETRIC FUNCTIONS
@@ -85,11 +88,12 @@ plt.close('all')
 
 fig = sns.FacetGrid(behav,
 	col="institution_short", col_wrap=4, 
-	sharex=True, sharey=True, aspect=1, hue="subject_nickname", palette='gist_grey')
+	sharex=True, sharey=True, aspect=1, hue="subject_num", palette="gist_gray")
 fig.map(plot_chronometric, "signed_contrast", "rt", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Response time (s)')
-for ax, color in zip(fig.axes.flat, pal):
-    ax.set_title(color=color)
+fig.set_titles("{col_name}")
+for axidx, ax in enumerate(fig.axes.flat):
+    ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx])
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5b_chronfuncs_permouse.pdf"))
 plt.close('all')

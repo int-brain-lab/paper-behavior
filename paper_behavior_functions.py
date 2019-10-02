@@ -43,7 +43,7 @@ def query_subjects(as_dataframe=False):
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
                           (acquisition.Session * behavior_analysis.SessionTrainingStatus())
                           & 'training_status="trained_1a" OR training_status="trained_1b"',
-                          'subject_nickname', 'sex', 'subject_birth_date', 'institution',
+                          'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
                           date_trained='min(date(session_start_time))')
 
     # Select subjects that reached trained_1a criterium before September 30th
@@ -71,7 +71,7 @@ def query_sessions(stable=False, as_dataframe=False):
     sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
                 * use_subjects * behavior_analysis.SessionTrainingStatus
                 & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
-                        'session_uuid', 'subject_uuid', 'subject_nickname', 'institution',
+                        'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
                         'task_protocol', 'training_status')
 
     # If required only output sessions with stable hardware
@@ -80,7 +80,7 @@ def query_sessions(stable=False, as_dataframe=False):
 
     # Transform into pandas Dataframe if requested
     if as_dataframe is True:
-        sessions = sessions.fetch(format='frame')
+        sessions = sessions.fetch(order_by='institution_short, subject_nickname, session_start_time', format='frame')
         sessions = sessions.reset_index()
 
     return sessions

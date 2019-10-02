@@ -24,7 +24,6 @@ from dj_tools import *
 sns.set(style="ticks", context="paper", font_scale=1.2)
 figpath = os.path.join(os.path.expanduser('~'), 'Data', 'Figures_IBL')
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
-sns.set_palette("hustl")
 pal = sns.color_palette("colorblind", 7)
 
 # ================================= #
@@ -39,6 +38,7 @@ b = acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab *
 bdat = b.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id', format='frame').reset_index()
 behav = dj2pandas(bdat)
 assert(~behav.empty)
+print(behav.describe())
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS

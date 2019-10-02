@@ -74,9 +74,9 @@ plt.close('all')
 # FOR EACH ANIMAL + for each lab (in 'lab color')
 # ================================================================== #
 
-df2 = behav.groupby(['institution_short','subject_nickname', 'signed_contrast', 'probabilityLeft']).agg(
+df2 = behav.groupby(['institution_short', 'subject_nickname', 'subject_num', 'signed_contrast', 'probabilityLeft']).agg(
                 {'choice2': 'count', 'choice': 'mean'}).reset_index()
-behav2 = pd.pivot_table(df2, values='choice', index=['institution_short', 'subject_nickname', 'signed_contrast', 
+behav2 = pd.pivot_table(df2, values='choice', index=['institution_short', 'subject_nickname', 'subject_num', 'signed_contrast', 
 ], columns=['probabilityLeft']).reset_index()
 behav2['biasshift'] = behav2[20] - behav2[80]
 
@@ -84,7 +84,7 @@ fig = sns.FacetGrid(behav2,
 	hue="institution_short", palette=pal,
 	sharex=True, sharey=True, aspect=1)
 fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname")
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$ choice (%)')
+fig.set_axis_labels('Signed contrast (%)', '$\Delta$Choice (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.pdf"))
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.png"), dpi=600)
@@ -93,11 +93,12 @@ plt.close('all')
 fig = sns.FacetGrid(behav2,
 	col="institution_short", col_wrap=4, 
 	sharex=True, sharey=True, aspect=1, hue="subject_num", palette="gist_gray")
-fig.map(plot_chronometric, "signed_contrast", "rt", "subject_nickname")
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$ choice (%)')
+fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname")
+fig.set_axis_labels('Signed contrast (%)', '$\Delta$Choice (%)')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx])
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "chronfuncs_permouse.pdf"))
+fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_permouse.pdf"))
+fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_permouse.png"), dpi=600)
 plt.close('all')

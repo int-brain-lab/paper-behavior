@@ -9,7 +9,7 @@ import sys
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
-from paper_behavior_functions import query_subjects, seaborn_style
+from paper_behavior_functions import *
 import datajoint as dj
 from IPython import embed as shell  # for debugging
 
@@ -23,7 +23,7 @@ from fit_learning_curves import *
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
-figpath = os.path.join(os.path.expanduser('~'), 'Data', 'Figures_IBL')
+figpath = figpath()
 pal = sns.color_palette("colorblind", 7)
 
 # ================================= #
@@ -56,8 +56,8 @@ fig.map(sns.lineplot, "training_day", "performance_easy", lw=1)
 fig.map(sns.lineplot, "training_day", "performance_easy_trained", lw=2)
 fig.set_axis_labels('Days in training', 'Performance on easy trials (%)')
 fig.set_titles("{col_name}")
-for ax, color in zip(fig.axes.flat, pal):
-    ax.set_title(color=color)
+for axidx, ax in enumerate(fig.axes.flat):
+    ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx])
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves_perlab_singlemouse.pdf"))
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves_perlab_singlemouse.png"), dpi=600)

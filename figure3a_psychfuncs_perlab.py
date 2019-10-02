@@ -22,7 +22,7 @@ from dj_tools import *
 
 # INITIALIZE A FEW THINGS
 sns.set(style="ticks", context="paper", font_scale=1.2)
-figpath = os.path.join(os.path.expanduser('~'), 'Data', 'Figures_IBL')
+figpath = figpath()
 pal = sns.color_palette("colorblind", 7)
 
 # ================================= #
@@ -82,8 +82,8 @@ fig = sns.FacetGrid(behav,
 fig.map(plot_chronometric, "signed_contrast", "rt", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Response time (s)')
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure5b_chronfuncs_perlab.pdf"))
-fig.savefig(os.path.join(figpath, "figure5b_chronfuncs_perlab.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "chronfuncs_perlab.pdf"))
+fig.savefig(os.path.join(figpath, "chronfuncs_perlab.png"), dpi=600)
 plt.close('all')
 
 fig = sns.FacetGrid(behav,
@@ -95,5 +95,5 @@ fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx])
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure5b_chronfuncs_permouse.pdf"))
+fig.savefig(os.path.join(figpath, "chronfuncs_permouse.pdf"))
 plt.close('all')

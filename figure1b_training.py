@@ -60,7 +60,7 @@ ax[0].set_ylabel('Signed contrast (%)')
 ax[0].set_xlabel('Training days')
 ax[0].set_title('Example mouse')
 plt.tight_layout()
-fig.savefig(os.path.join(figpath, "figure3_example_contrastheatmap.png"))
+fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.png"))
 
 # ================================================================== #
 # PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
@@ -91,7 +91,7 @@ for didx, day in enumerate(days):
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure3_example_psychfunc_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_psychfunc_day%d.png" % day), dpi=600)
 
     # CHRONOMETRIC FUNCTIONS
     fig, ax = plt.subplots(1, 1, figsize=(2, 2))
@@ -109,7 +109,7 @@ for didx, day in enumerate(days):
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure3_example_chronfunc_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_chronfunc_day%d.png" % day), dpi=600)
 
     # ================================================================== #
     # WITHIN-TRIAL DISENGAGEMENT CRITERIA
@@ -158,4 +158,4 @@ for didx, day in enumerate(days):
     # sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure3_example_disengagement_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_disengagement_day%d.png" % day), dpi=600)

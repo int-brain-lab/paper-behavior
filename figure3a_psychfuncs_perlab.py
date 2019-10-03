@@ -69,7 +69,7 @@ fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname"
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx], fontweight='bold')
+    ax.set_title(behav.institution_code.unique()[axidx], color=pal[axidx], fontweight='bold')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab_singlemouse.pdf"))
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab_singlemouse.png"), dpi=600)

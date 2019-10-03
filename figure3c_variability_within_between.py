@@ -18,7 +18,7 @@ import numpy as np
 from scipy import stats
 from os.path import join, expanduser
 import seaborn as sns
-from paper_behavior_functions import query_subjects, query_sessions, seaborn_style
+from paper_behavior_functions import query_sessions_around_criterium, seaborn_style
 from ibl_pipeline import subject, acquisition, behavior
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from ibl_pipeline.utils import psychofit as psy
@@ -28,25 +28,22 @@ fig_path = join(expanduser('~'), 'Figures', 'Behavior')
 csv_path = join(expanduser('~'), 'Data', 'Behavior')
 
 # Query sessions
-sessions = query_sessions(as_dataframe=True)
+sessions = query_sessions_around_criterium(days_from_trained=[3, 0])
 
 # Create dataframe with behavioral metrics of all mice
 learning = pd.DataFrame(columns=['mouse', 'lab', 'learned', 'date_learned', 'training_time',
                                  'perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time',
                                  'lapse_low', 'lapse_high'])
+
 for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
     if np.mod(i+1, 10) == 0:
         print('Loading data of subject %d of %d' % (i+1, len(
                 np.unique(sessions['subject_nickname']))))
 
-    # Get the three sessions at which an animal is deemed trained
-    subj_ses = sessions[sessions['subject_nickname'] == nickname]
-    subj_ses.reset_index()
-    trained = ((subj_ses['training_status'] == 'trained_1a')
-               | (subj_ses['training_status'] == 'trained_1b'))
-    first_trained = next((w for w, j in enumerate(trained) if j), None)
-    three_ses = subj_ses[first_trained-2:first_trained+1]
+    # Select the three sessions for this mouse
+    three_ses = sessions[sessions['subject_nickname'] == nickname]
     three_ses = three_ses.reset_index()
+    assert len(three_ses) == 3,'Not three sessions found around criterium'
 
     # Get the trials of these sessions
     trials = (acquisition.Session * behavior.TrialSet.Trial
@@ -57,6 +54,118 @@ for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
 
 
 
+
+
+
+    learning.loc[i, 'learned'] = 'trained'
+    learning.loc[i, 'date_learned'] = first_trained_session_date
+    learning.loc[i, 'training_time'] = sum(behav.session_date < first_trained_session_date)
+    learning.loc[i, 'perf_easy'] = float(
+            behav.performance_easy[behav.session_date == first_trained_session_date])*100
+    psych['n_trials'] = n_trials = [sum(s) for s in psych.n_trials_stim]
+    learning.loc[i, 'n_trials'] = float(
+            psych.n_trials[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'threshold'] = float(
+            psych.threshold[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'bias'] = float(
+            psych.bias[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'lapse_low'] = float(
+            psych.lapse_low[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'lapse_high'] = float(
+            psych.lapse_high[psych.session_date == first_trained_session_date])
+    if len(rt) == 0:
+        learning.loc[i, 'reaction_time'] = np.nan
+    elif sum(rt.session_date == first_trained_session_date) == 0:
+        learning.loc[i, 'reaction_time'] = float(
+                rt.median_reaction_time[np.argmin(np.array(abs(
+                        rt.session_date - first_trained_session_date)))])*1000
+    else:
+        learning.loc[i, 'reaction_time'] = float(
+                rt.median_reaction_time[rt.session_date == first_trained_session_date])*1000
+
+    # Add mouse and lab info to dataframe
+    learning.loc[i, 'mouse'] = nickname
+    lab_name = subj.fetch1('lab_name')
+    learning.loc[i, 'lab'] = lab_name
+
+# Select mice that learned
+learned = learning.copy()
+learned = learned[learned['learned'] == 'trained']
+
+# Merge some labs
+pd.options.mode.chained_assignment = None  # deactivate warning
+learned.loc[learned['lab'] == 'zadorlab', 'lab'] = 'churchlandlab'
+learned.loc[learned['lab'] == 'hoferlab', 'lab'] = 'mrsicflogellab'
+
+# Rename labs
+learned.loc[learned['lab'] == 'angelakilab', 'lab'] = 'NYU'
+learned.loc[learned['lab'] == 'churchlandlab', 'lab'] = 'CSHL'
+learned.loc[learned['lab'] == 'cortexlab', 'lab'] = 'UCL'
+learned.loc[learned['lab'] == 'danlab', 'lab'] = 'Berkeley'
+learned.loc[learned['lab'] == 'mainenlab', 'lab'] = 'CCU'
+learned.loc[learned['lab'] == 'wittenlab', 'lab'] = 'Princeton'
+learned.loc[learned['lab'] == 'mrsicflogellab', 'lab'] = 'SWC'
+
+# Save to CSV file
+learning.to_csv(join(csv_path, 'all_mice_data.csv'))
+learned.to_csv(join(csv_path, 'learned_mice_data.csv'))
+
+# Add (n = x) to lab names
+for i in learned.index.values:
+    learned.loc[i, 'lab_n'] = (learned.loc[i, 'lab']
+                               + ' (n=' + str(sum(learned['lab'] == learned.loc[i, 'lab'])) + ')')
+
+# Convert to float
+learned['training_time'] = learned['training_time'].astype(float)
+learned['perf_easy'] = learned['perf_easy'].astype(float)
+learned['n_trials'] = learned['n_trials'].astype(float)
+learned['threshold'] = learned['threshold'].astype(float)
+learned['bias'] = learned['bias'].astype(float)
+learned['lapse_low'] = learned['lapse_low'].astype(float)
+learned['lapse_high'] = learned['lapse_high'].astype(float)
+learned['reaction_time'] = learned['reaction_time'].astype(float)
+
+# Add all mice to dataframe seperately for plotting
+learned_2 = learned.copy()
+learned_2 = learned_2.drop('training_time', axis=1)
+learned_2['lab_n'] = 'All (n=%d)' % len(learned)
+learned_2 = learned.append(learned_2)
+learned_2 = learned_2.sort_values('lab_n')
+
+# Z-score data
+learned_zs = pd.DataFrame()
+learned_zs['lab_n'] = learned['lab_n']
+learned_zs['lab'] = learned['lab']
+learned_zs['Performance'] = stats.zscore(learned['perf_easy'])
+learned_zs['Number of trials'] = stats.zscore(learned['n_trials'])
+learned_zs['Threshold'] = stats.zscore(learned['threshold'])
+learned_zs['Bias'] = stats.zscore(learned['bias'])
+learned_zs['Reaction time'] = stats.zscore(learned['reaction_time'])
+
+# Restructure pandas dataframe for plotting
+learned_zs_mean = learned_zs.groupby('lab').mean()
+learned_zs_new = pd.DataFrame({'zscore': learned_zs_mean['Performance'], 'metric': 'Performance',
+                               'lab': learned_zs_mean.index.values})
+learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Number of trials'],
+                                                     'metric': 'Number of trials',
+                                                     'lab': learned_zs_mean.index.values}))
+learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Threshold'],
+                                                     'metric': 'Threshold',
+                                                     'lab': learned_zs_mean.index.values}))
+learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Bias'],
+                                                     'metric': 'Bias',
+                                                     'lab': learned_zs_mean.index.values}))
+learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Reaction time'],
+                                                     'metric': 'Reaction time',
+                                                     'lab': learned_zs_mean.index.values}))
+
+# Set figure style and color palette
+current_palette = sns.color_palette('Set1')
+use_palette = [current_palette[-1]]*len(np.unique(learned['lab']))
+all_color = [current_palette[5]]
+use_palette = all_color + use_palette
+sns.set_palette(use_palette)
+seaborn_style()
 
 
     # Gather behavioral data for subject
@@ -84,6 +193,7 @@ for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
         print('No data found for subject %s' % nickname)
         continue
 
+
     # Find first session in which mouse is trained
     if (sum(training['training_status'] == 'trained') == 0
             & sum(training['training_status'] == 'over40days') == 0):
@@ -102,31 +212,33 @@ for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
             continue
         first_trained_session_datetime = training.loc[first_day_ind, 'session_start_time']
         first_trained_session_date = first_trained_session_datetime.date()
-        learning.loc[i, 'learned'] = 'trained'
-        learning.loc[i, 'date_learned'] = first_trained_session_date
-        learning.loc[i, 'training_time'] = sum(behav.session_date < first_trained_session_date)
-        learning.loc[i, 'perf_easy'] = float(
-                behav.performance_easy[behav.session_date == first_trained_session_date])*100
-        psych['n_trials'] = n_trials = [sum(s) for s in psych.n_trials_stim]
-        learning.loc[i, 'n_trials'] = float(
-                psych.n_trials[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'threshold'] = float(
-                psych.threshold[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'bias'] = float(
-                psych.bias[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'lapse_low'] = float(
-                psych.lapse_low[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'lapse_high'] = float(
-                psych.lapse_high[psych.session_date == first_trained_session_date])
-        if len(rt) == 0:
-            learning.loc[i, 'reaction_time'] = np.nan
-        elif sum(rt.session_date == first_trained_session_date) == 0:
-            learning.loc[i, 'reaction_time'] = float(
-                    rt.median_reaction_time[np.argmin(np.array(abs(
-                            rt.session_date - first_trained_session_date)))])*1000
-        else:
-            learning.loc[i, 'reaction_time'] = float(
-                    rt.median_reaction_time[rt.session_date == first_trained_session_date])*1000
+
+    first_trained_session_date = subjects.loc[i, 'date_trained']
+    learning.loc[i, 'learned'] = 'trained'
+    learning.loc[i, 'date_learned'] = first_trained_session_date
+    learning.loc[i, 'training_time'] = sum(behav.session_date < first_trained_session_date)
+    learning.loc[i, 'perf_easy'] = float(
+            behav.performance_easy[behav.session_date == first_trained_session_date])*100
+    psych['n_trials'] = n_trials = [sum(s) for s in psych.n_trials_stim]
+    learning.loc[i, 'n_trials'] = float(
+            psych.n_trials[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'threshold'] = float(
+            psych.threshold[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'bias'] = float(
+            psych.bias[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'lapse_low'] = float(
+            psych.lapse_low[psych.session_date == first_trained_session_date])
+    learning.loc[i, 'lapse_high'] = float(
+            psych.lapse_high[psych.session_date == first_trained_session_date])
+    if len(rt) == 0:
+        learning.loc[i, 'reaction_time'] = np.nan
+    elif sum(rt.session_date == first_trained_session_date) == 0:
+        learning.loc[i, 'reaction_time'] = float(
+                rt.median_reaction_time[np.argmin(np.array(abs(
+                        rt.session_date - first_trained_session_date)))])*1000
+    else:
+        learning.loc[i, 'reaction_time'] = float(
+                rt.median_reaction_time[rt.session_date == first_trained_session_date])*1000
 
     # Add mouse and lab info to dataframe
     learning.loc[i, 'mouse'] = nickname
@@ -296,4 +408,3 @@ plt.tight_layout(pad=3)
 fig = plt.gcf()
 fig.set_size_inches((5.5, 5), forward=False)
 plt.savefig(join(fig_path, 'figure5_heatmap.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure5_heatmap.png'), dpi=300)

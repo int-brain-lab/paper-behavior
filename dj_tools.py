@@ -62,20 +62,20 @@ def plot_psychometric(x, y, subj, **kwargs):
     pars, L = psy.mle_fit_psycho(df2.transpose().values,  # extract the data from the df
                                  P_model='erf_psycho_2gammas',
                                  parstart=np.array(
-                                     [df2['signed_contrast'].mean(), 20., 0.05, 0.05]),
+                                     [df2['signed_contrast'].mean(), 15., 0.05, 0.05]),
                                  parmin=np.array(
                                      [df2['signed_contrast'].min(), 0., 0., 0.]),
-                                 parmax=np.array([df2['signed_contrast'].max(), 100., 0.5, 0.5]))
+                                 parmax=np.array([df2['signed_contrast'].max(), 50., 0.5, 0.5]))
 
     # plot psychfunc
-    sns.lineplot(np.arange(-29, 29), psy.erf_psycho_2gammas(pars,
-                                                            np.arange(-29, 29)), **kwargs)
+    g = sns.lineplot(np.arange(-29, 29),
+                     psy.erf_psycho_2gammas(pars, np.arange(-29, 29)), **kwargs)
 
     # plot psychfunc: -100
-    sns.lineplot(np.arange(-37, -32), psy.erf_psycho_2gammas(pars,
-                                                             np.arange(-103, -98)), **kwargs)
-    sns.lineplot(np.arange(32, 37), psy.erf_psycho_2gammas(
-        pars, np.arange(98, 103)), **kwargs)
+    sns.lineplot(np.arange(-37, -32),
+                 psy.erf_psycho_2gammas(pars, np.arange(-103, -98)), **kwargs)
+    sns.lineplot(np.arange(32, 37),
+                 psy.erf_psycho_2gammas(pars, np.arange(98, 103)), **kwargs)
 
     # now break the x-axis
     # if 100 in df.signed_contrast.values and not 50 in df.signed_contrast.values:
@@ -85,10 +85,11 @@ def plot_psychometric(x, y, subj, **kwargs):
     df3 = df.groupby(['signed_contrast', 'subject_nickname']).agg(
         {'choice2': 'count', 'choice': 'mean'}).reset_index()
 
-    # plot datapoints with errorbars on top
-    g = sns.lineplot(df3['signed_contrast'], df3['choice'], err_style="bars", linewidth=0, linestyle='None', mew=0.5,
+    # plot datapoints with errorbars on top\
+    if df['subject_nickname'].nunique() > 1:
+        sns.lineplot(df3['signed_contrast'], df3['choice'], err_style="bars", 
+            linewidth=0, linestyle='None', mew=0.5,
                      marker='o', ci=68, **kwargs)
-    g.set_yticks([0, 0.25, 0.5, 0.75, 1])
 
     # # ADD TEXT WITH THE PSYCHOMETRIC FUNCTION PARAMETERS
     # if len(df['subject_nickname'].unique()) == 1:

@@ -27,12 +27,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join, expanduser
 import seaborn as sns
-from paper_behavior_functions import query_subjects, seaborn_style
+from paper_behavior_functions import query_sessions_around_criterium, seaborn_style
 from ibl_pipeline import subject, reference
-from ibl_pipeline.analyses import behavior as behavior_analysis
+from dj_tools import dj2pandas, fit_psychfunc
+from ibl_pipeline import acquisition, behavior
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
 FIG_PATH = join(expanduser('~'), 'Figures', 'Behavior')
@@ -55,107 +56,65 @@ def decoding(resp, labels, clf, NUM_SPLITS):
         y_pred = np.append(y_pred, clf.predict(test_resp))
         y_true = np.append(y_true, [labels[j] for j in test_index])
     f1 = f1_score(y_true, y_pred, labels=np.unique(labels), average='micro')
-    return f1
+    cm = confusion_matrix(y_true, y_pred)
+    return f1, cm
 
 
-# Query list of subjects
-subjects = query_subjects(as_dataframe=True)
+# Query sessions
+sessions = query_sessions_around_criterium(days_from_trained=[3, 0])
 
 # Create dataframe with behavioral metrics of all mice
-learning = pd.DataFrame(columns=['mouse', 'lab', 'time_zone', 'learned', 'date_learned',
-                                 'training_time', 'perf_easy', 'n_trials', 'threshold',
-                                 'bias', 'reaction_time', 'lapse_low', 'lapse_high'])
-for i, nickname in enumerate(subjects['subject_nickname']):
+learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
+                                'threshold', 'bias', 'reaction_time',
+                                'lapse_low', 'lapse_high'])
+
+for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
     if np.mod(i+1, 10) == 0:
-        print('Loading data of subject %d of %d' % (i+1, len(subjects)))
+        print('Loading data of subject %d of %d' % (i+1, len(
+                np.unique(sessions['subject_nickname']))))
 
-    # Gather behavioral data for subject
-    subj = subject.Subject * subject.SubjectLab & 'subject_nickname="%s"' % nickname
-    training = pd.DataFrame(behavior_analysis.SessionTrainingStatus * subject.Subject
-                            & 'subject_nickname="%s"' % nickname)
-    behav = pd.DataFrame((behavior_analysis.BehavioralSummaryByDate
-                          * subject.Subject * subject.SubjectLab
-                          & 'subject_nickname="%s"' % nickname).proj(
-                                  'session_date', 'performance_easy').fetch(
-                                          as_dict=True, order_by='session_date'))
-    rt = pd.DataFrame(((behavior_analysis.BehavioralSummaryByDate.ReactionTimeByDate
-                        * subject.Subject * subject.SubjectLab
-                        & 'subject_nickname="%s"' % nickname)).proj(
-                                'session_date', 'median_reaction_time').fetch(
-                                            as_dict=True, order_by='session_date'))
-    psych = pd.DataFrame(((behavior_analysis.BehavioralSummaryByDate.PsychResults
-                           * subject.Subject * subject.SubjectLab
-                           & 'subject_nickname="%s"' % nickname)).proj(
-                                    'session_date', 'n_trials_stim', 'threshold', 'bias',
-                                    'lapse_low', 'lapse_high').fetch(
-                                            as_dict=True, order_by='session_date'))
+    # Select the three sessions for this mouse
+    three_ses = sessions[sessions['subject_nickname'] == nickname]
+    three_ses = three_ses.reset_index()
+    assert len(three_ses) == 3, 'Not three sessions found around criterium'
 
-    if len(training) == 0:
-        print('No data found for subject %s' % nickname)
-        continue
+    # Get the trials of these sessions
+    trials = (acquisition.Session * behavior.TrialSet.Trial
+              & 'session_start_time="%s" OR session_start_time="%s" OR session_start_time="%s"' % (
+                      three_ses.loc[0, 'session_start_time'],
+                      three_ses.loc[1, 'session_start_time'],
+                      three_ses.loc[2, 'session_start_time'])).fetch(format='frame')
+    trials = trials.reset_index()
 
-    # Find first session in which mouse is trained
-    if (sum(training['training_status'] == 'trained') == 0
-            & sum(training['training_status'] == 'over40days') == 0):
-        learning.loc[i, 'learned'] = 'in training'
-        learning.loc[i, 'training_time'] = len(behav)
-    elif (sum(training['training_status'] == 'trained') == 0
-          & sum(training['training_status'] == 'over40days') > 0):
-        learning.loc[i, 'learned'] = 'over40days'
-        learning.loc[i, 'training_time'] = len(behav)
-    else:
-        first_trained_ind = min(training.loc[training['training_status'] == 'trained',
-                                             'session_start_time'].index.values)
-        first_day_ind = first_trained_ind - 1  # Get middle session of 3 day streak
-        if training.loc[first_day_ind, 'training_status'] == 'wrong session type run':
-            continue
-        first_trained_session_datetime = training.loc[first_day_ind, 'session_start_time']
-        first_trained_session_date = first_trained_session_datetime.date()
-        learning.loc[i, 'learned'] = 'trained'
-        learning.loc[i, 'date_learned'] = first_trained_session_date
-        learning.loc[i, 'training_time'] = sum(behav.session_date < first_trained_session_date)
-        learning.loc[i, 'perf_easy'] = float(
-                behav.performance_easy[behav.session_date == first_trained_session_date])*100
-        psych['n_trials'] = n_trials = [sum(s) for s in psych.n_trials_stim]
-        learning.loc[i, 'n_trials'] = float(
-                psych.n_trials[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'threshold'] = float(
-                psych.threshold[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'bias'] = float(
-                psych.bias[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'lapse_low'] = float(
-                psych.lapse_low[psych.session_date == first_trained_session_date])
-        learning.loc[i, 'lapse_high'] = float(
-                psych.lapse_high[psych.session_date == first_trained_session_date])
-        if sum(rt.session_date == first_trained_session_date) == 0:
-            learning.loc[i, 'reaction_time'] = float(
-                    rt.median_reaction_time[np.argmin(np.array(abs(
-                            rt.session_date - first_trained_session_date)))])*1000
-        else:
-            learning.loc[i, 'reaction_time'] = float(
-                    rt.median_reaction_time[rt.session_date == first_trained_session_date])*1000
+    # Fit a psychometric function to these trials and get fit results
+    fit_df = dj2pandas(trials)
+    fit_result = fit_psychfunc(fit_df)
 
-    # Add mouse and lab info to dataframe
-    learning.loc[i, 'mouse'] = nickname
-    lab_name = subj.fetch1('lab_name')
-    learning.loc[i, 'lab'] = lab_name
-    lab_time = reference.Lab * reference.LabLocation & 'lab_name="%s"' % lab_name
-    time_zone = lab_time.fetch('time_zone')[0]
+    # Add results to dataframe
+    learned_index = sessions[sessions['subject_nickname'] == nickname].index[-1]
+    learned.loc[i, 'mouse'] = nickname
+    learned.loc[i, 'lab'] = sessions.loc[learned_index, 'institution_short']
+    learned.loc[i, 'perf_easy'] = fit_result.loc[0, 'easy_correct']*100
+    learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials_perday'][0].mean()
+    learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
+    learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
+    learned.loc[i, 'reaction_time'] = fit_df.loc[fit_df['rt'].notnull(), 'rt'].median()*1000
+    learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
+    learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
+
+    # Time zone to dataframe
+    time_zone = (subject.SubjectLab * reference.Lab
+                 & 'lab_name="%s"' % sessions.loc[learned_index, 'lab_name']).fetch('time_zone')[0]
     if (time_zone == 'Europe/Lisbon') or (time_zone == 'Europe/London'):
         time_zone_number = 0
     elif time_zone == 'America/New_York':
         time_zone_number = -5
     elif time_zone == 'America/Los_Angeles':
         time_zone_number = -7
-    learning.loc[i, 'time_zone'] = time_zone_number
+    learned.loc[i, 'time_zone'] = time_zone_number
 
-# Select mice that learned
-learned = learning[learning['learned'] == 'trained']
-
-# Merge some labs
-pd.options.mode.chained_assignment = None  # deactivate warning
-learned.loc[learned['lab'] == 'zadorlab', 'lab'] = 'churchlandlab'
-learned.loc[learned['lab'] == 'hoferlab', 'lab'] = 'mrsicflogellab'
+# Drop mice with faulty RT
+learned = learned[learned['reaction_time'].notnull()]
 
 # Add (n = x) to lab names
 for i in learned.index.values:
@@ -168,22 +127,25 @@ decod = learned
 clf_rf = RandomForestClassifier(n_estimators=100)
 
 # Perform decoding of lab membership
-decoding_result = pd.DataFrame(columns=['original', 'original_shuffled',
-                                        'control', 'control_shuffled'])
+decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix'
+                                        'control', 'control_shuffled', 'control_cm'])
+
 decoding_set = decod[METRICS].values
 control_set = decod[METRIS_CONTROL].values
 for i in range(ITERATIONS):
     if np.mod(i+1, 100) == 0:
         print('Iteration %d of %d' % (i+1, ITERATIONS))
     # Original dataset
-    decoding_result.loc[i, 'original'] = decoding(decoding_set,
-                                                  list(decod['lab']), clf_rf, NUM_SPLITS)
+    decoding_result.loc[i, 'original'], conf_matrix = decoding(
+            decoding_set, list(decod['lab']), clf_rf, NUM_SPLITS)
+    decoding_result['confusion_matrix'] = decoding_result['confusion_matrix'].astype(object)
+    decoding_result.at[i, 'confusion_matrix'] = conf_matrix
     decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
                                                            list(decod['lab'].sample(frac=1)),
                                                            clf_rf, NUM_SPLITS)
     # Positive control dataset
-    decoding_result.loc[i, 'control'] = decoding(control_set,
-                                                 list(decod['lab']), clf_rf, NUM_SPLITS)
+    decoding_result.loc[i, 'control'], decoding_result.loc[i, 'control_cm'] = decoding(
+            control_set, list(decod['lab']), clf_rf, NUM_SPLITS)
     decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
                                                           list(decod['lab'].sample(frac=1)),
                                                           clf_rf, NUM_SPLITS)

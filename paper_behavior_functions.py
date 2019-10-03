@@ -213,6 +213,7 @@ def seaborn_style():
     Set seaborn style for plotting figures
     """
     sns.set(style="ticks", context="paper", font_scale=1.2)
+    sns.despine(trim=True)
 
 
 def save_csv_subject_query(path):

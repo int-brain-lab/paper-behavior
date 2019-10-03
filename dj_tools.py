@@ -160,15 +160,7 @@ def plot_chronometric(x, y, subj, **kwargs):
     ax.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
     ax.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
                        size='small', rotation=45)
-    # # ax.grid(True)
-    # ax.set_yscale("log")
-    # ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y,pos:
-    # 	('{{:.{:1d}f}}'.format(int(np.maximum(-np.log10(y),0)))).format(y)))
 
-    ax.set_xlim([-40, 40])
-    ax.set_xticks([-35, -25, -12.5, -6, 0, 6, 12.5, 25, 35])
-    ax.set_xticklabels(['-100', '-25', '-12.5', '-6.25', '0', '6.25', '12.5', '25', '100'],
-                       size='small', rotation=45)
     if df['signed_contrast'].min() >= 0:
         ax.set_xlim([-5, 40])
         ax.set_xticks([0, 6, 12.5, 25, 35])

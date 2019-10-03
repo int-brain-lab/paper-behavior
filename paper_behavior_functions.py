@@ -42,14 +42,15 @@ def query_subjects(as_dataframe=False):
     # they were flagged as trained_1a
     subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-                          (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-                          & 'training_status="trained_1a" OR training_status="trained_1b"',
-                          'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
-                          date_trained='min(date(session_start_time))')
+        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
+        & 'training_status="trained_1a" OR training_status="trained_1b"',
+        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
+        date_trained='min(date(session_start_time))')
 
     # Select subjects that reached trained_1a criterium before September 30th
     if as_dataframe is True:
-        subjects = (subj_query & 'date_trained < "2019-09-30"').fetch(format='frame')
+        subjects = (
+            subj_query & 'date_trained < "2019-09-30"').fetch(format='frame')
         subjects = subjects.sort_values(by=['lab_name']).reset_index()
     else:
         subjects = (subj_query & 'date_trained < "2019-09-30"')
@@ -72,7 +73,7 @@ def query_sessions(stable=False, as_dataframe=False):
     sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
                 * use_subjects * behavior_analysis.SessionTrainingStatus
                 & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
-                        'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
+        'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
                         'task_protocol', 'training_status')
 
     # If required only output sessions with stable hardware
@@ -81,7 +82,8 @@ def query_sessions(stable=False, as_dataframe=False):
 
     # Transform into pandas Dataframe if requested
     if as_dataframe is True:
-        sessions = sessions.fetch(order_by='institution_short, subject_nickname, session_start_time', format='frame')
+        sessions = sessions.fetch(
+            order_by='institution_short, subject_nickname, session_start_time', format='frame')
         sessions = sessions.reset_index()
 
     return sessions
@@ -112,11 +114,10 @@ def query_sessions_around_criterium(days_from_trained=[3, 0]):
                    | (subj_ses['training_status'] == 'trained_1b'))
         first_trained = next((w for w, j in enumerate(trained) if j), None)
         ses_select = subj_ses[
-                first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
+            first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
         sessions = pd.concat([sessions, ses_select])
 
     return sessions
-
 
 
 def query_sessions_around_ephys(days_from_trained=[3, 0]):
@@ -132,14 +133,15 @@ def query_sessions_around_ephys(days_from_trained=[3, 0]):
 
     # Query all sessions including training status
     subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-                        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-                        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
-                        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
-                        date_trained='min(date(session_start_time))')
+                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
+        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
+        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
+        date_trained='min(date(session_start_time))')
     all_sessions = (acquisition.Session & 'task_protocol LIKE "%biased%"') * subj_query \
         * behavior_analysis.SessionTrainingStatus
-    all_sessions = all_sessions.fetch(order_by='institution_short, subject_nickname, session_start_time', format='frame')
+    all_sessions = all_sessions.fetch(
+        order_by='institution_short, subject_nickname, session_start_time', format='frame')
     all_sessions = all_sessions.reset_index()
 
     # Loop through mice and find sessions around first trained session
@@ -153,11 +155,51 @@ def query_sessions_around_ephys(days_from_trained=[3, 0]):
                    | (subj_ses['training_status'] == 'ready4recording'))
         first_trained = next((w for w, j in enumerate(trained) if j), None)
         ses_select = subj_ses[
-                first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
+            first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
         sessions = pd.concat([sessions, ses_select])
 
     return sessions
 
+
+def query_sessions_around_biased(days_from_trained=[3, 0]):
+    """
+    Query all sessions for analysis of behavioral data
+
+    Parameters
+    ----------
+    days_from_trained: two-element array which indicates which training days around the day the
+                       mouse reached criterium to return, e.g. [3, 2] returns three days before
+                       criterium reached up untill 2 days after.
+    """
+
+    # Query all sessions including training status
+    subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
+        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
+        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
+        date_trained='min(date(session_start_time))')
+    all_sessions = (acquisition.Session) * subj_query \
+        * acquisition.Session.proj(session_date='date(session_start_time)') \
+        * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResultsBlock
+    all_sessions = all_sessions.fetch(
+        order_by='institution_short, subject_nickname, session_start_time', format='frame')
+    all_sessions = all_sessions.reset_index()
+
+    # Loop through mice and find sessions around first trained session
+    sessions = pd.DataFrame()
+    for i, nickname in enumerate(np.unique(all_sessions['subject_nickname'])):
+
+        # Get the three sessions at which an animal is deemed trained
+        subj_ses = all_sessions[all_sessions['subject_nickname'] == nickname]
+        subj_ses.reset_index()
+        biasedTask = subj_ses['task_protocol'].str.contains('biased')
+        first_trained = next((w for w, j in enumerate(biasedTask) if j), None)
+        ses_select = subj_ses[
+            first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
+        sessions = pd.concat([sessions, ses_select])
+
+    return sessions
 
 
 def seaborn_style():

@@ -33,34 +33,25 @@ pal = sns.color_palette("colorblind", 7)
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-
 # TODO: WAIT FOR SHAN TO ADD training_day  AND COMPLETE THE QUERY FOR THE RIGHT SESSIONS
-use_sessions = query_sessions_around_ephys(days_from_trained=[3, 0])
-# restrict by list of dicts with uuids for these sessions
-b = acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab * \
-    behavior.TrialSet & use_sessions[['session_uuid']].to_dict(orient='records') * \
-    behavioral_analyses.BehavioralSummaryByDate.PsychResults         
-bdat = b.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id', format='frame').reset_index()
-behav = dj2pandas(bdat)
+behav = query_sessions_around_biased(days_from_trained=[10, 10])
 assert(~behav.empty)
 print(behav.describe())
 
+# give each session a number
+behav['session_day'] = behav.bias
+for index, group in behav.groupby(['subject_nickname']):
+      behav['session_day'][behav.index.isin(group.index)] = (group['session_date'] - group['session_date'].min()).dt.days
 
+behav = behav.loc[behav['session_day'] <= 20]
 
-shell()
-# TODO: WAIT FOR SHAN TO ADD training_day  AND COMPLETE THE QUERY FOR THE RIGHT SESSIONS
-use_sessions = query_sessions()
-sessions = use_sessions & (acquisition.Session & 'task_protocol LIKE %biased%') \
-        * behavioral_analyses.BehavioralSummaryByDate.PsychResults
-
-use_sessions = query_sessions(as_dataframe=True)
-# restrict by list of dicts with uuids for these sessions
-b = (acquisition.Session & 'task_protocol LIKE %biased%')  * subject.Subject * subject.SubjectLab * reference.Lab * \
-    use_sessions[['session_uuid']].to_dict(orient='records')  
-
-behavioral_analyses.BehavioralSummaryByDate.PsychResults 
-
-    * behavioral_analyses.SessionTrainingStatus & 'training_status LIKE %ephys' \
-behav = sessions.fetch(order_by='institution_short, subject_nickname, session_start_time', format='frame')
-
-shell()
+# same in a different panel, for biased blocks
+fig, ax = plt.subplots(1, 1, figsize=(5, 2.5), sharex=True, sharey=True)
+sns.lineplot(data=behav, x="session_day",  y="bias", hue="prob_left", 
+    ax=ax, palette=cmap, legend=False, err_style="bars", marker='o')
+ax.set(xlabel='Days', ylabel='Choice bias')
+sns.despine(trim=True)
+plt.tight_layout()
+fig.savefig(os.path.join(figpath, "figure4c_bias_stability.pdf"))
+fig.savefig(os.path.join(figpath, "figure4c_bias_stability.png"), dpi=600)
+plt.close('all')

@@ -62,12 +62,12 @@ fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsiz
     arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')
 fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(15, 0.2), color=cmap[2], fontsize=12,
     arrowprops=dict(facecolor=cmap[2], shrink=0.05))
-
+fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(15, 0.2), color=cmap[2], fontsize=12,
+    arrowprops=dict(facecolor=cmap[2], shrink=0.05))
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_alllabs.pdf"))
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_alllabs.png"), dpi=600)
 plt.close('all')
-
 
 # ================================================================== #
 # DIFFERENCE BETWEEN TWO PSYCHOMETRIC FUNCTIONS
@@ -75,8 +75,8 @@ plt.close('all')
 # ================================================================== #
 
 df2 = behav.groupby(['institution_short', 'subject_nickname', 'subject_num', 'signed_contrast', 'probabilityLeft']).agg(
-                {'choice2': 'count', 'choice': 'mean'}).reset_index()
-behav2 = pd.pivot_table(df2, values='choice', index=['institution_short', 'subject_nickname', 'subject_num', 'signed_contrast', 
+                {'choice2': 'mean'}).reset_index()
+behav2 = pd.pivot_table(df2, values='choice2', index=['institution_short', 'subject_nickname', 'subject_num', 'signed_contrast', 
 ], columns=['probabilityLeft']).reset_index()
 behav2['biasshift'] = behav2[20] - behav2[80]
 
@@ -84,7 +84,7 @@ fig = sns.FacetGrid(behav2,
 	hue="institution_short", palette=pal,
 	sharex=True, sharey=True, aspect=1)
 fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname")
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$Choice (%)')
+fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.pdf"))
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.png"), dpi=600)
@@ -94,7 +94,7 @@ fig = sns.FacetGrid(behav2,
 	col="institution_short", col_wrap=4, 
 	sharex=True, sharey=True, aspect=1, hue="subject_num", palette="gist_gray")
 fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname")
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$Choice (%)')
+fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx])

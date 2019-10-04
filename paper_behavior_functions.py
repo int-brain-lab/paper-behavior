@@ -21,8 +21,11 @@ def group_colors():
 
 
 def institution_map():
-    return {'Berkeley': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
+    institution_map = {'Berkeley': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
             'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
+    col_names = ['AllLabs', 'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6', 'Lab 7']
+
+    return institution_map, col_names
 
 
 def figpath():

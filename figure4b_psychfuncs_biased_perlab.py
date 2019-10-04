@@ -120,7 +120,6 @@ for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_code.unique()[axidx-1], color=pal[axidx-1], fontweight='bold')
 
 # ADD THE GROUP TO THE FIRST AXIS
-ax_group = fig.axes[0]
 ax_group = fig.axes[0]  # overwrite this empty plot
 for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav[behav['institution_code'].str.contains(inst)]

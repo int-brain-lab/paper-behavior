@@ -28,7 +28,7 @@ sns.set(style="ticks", context="paper", font_scale=1.2)
 figpath = figpath()
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 sns.set_palette(cmap)  # palette for water types
-pal = sns.color_palette("colorblind", 7)
+pal = group_colors()
 institution_map = institution_map()
 
 # ================================= #

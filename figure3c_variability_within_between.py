@@ -56,11 +56,15 @@ for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
     fit_df = dj2pandas(trials)
     fit_result = fit_psychfunc(fit_df)
 
+    # Calculate performance on easy trials
+    perf_easy = (np.sum(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])
+                 / np.size(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])) * 100
+
     # Add results to dataframe
     learned_index = sessions[sessions['subject_nickname'] == nickname].index[-1]
     learned.loc[i, 'mouse'] = nickname
     learned.loc[i, 'lab'] = sessions.loc[learned_index, 'institution_short']
-    learned.loc[i, 'perf_easy'] = fit_result.loc[0, 'easy_correct']*100
+    learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials_perday'][0].mean()
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
@@ -76,6 +80,7 @@ learned.to_csv(join(csv_path, 'learned_mice_data.csv'))
 
 # Change lab name into lab number
 learned['lab_number'] = learned.lab.map(institution_map())
+learned = learned.sort_values('lab_number')
 
 # Add (n = x) to lab names
 for i in learned.index.values:
@@ -98,12 +103,12 @@ learned_2['lab_n'] = 'All (n=%d)' % len(learned)
 learned_2['lab'] = 'All'
 learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)
-learned_2 = learned_2.sort_values('lab_n')
 
 # Z-score data
 learned_zs = pd.DataFrame()
 learned_zs['lab_n'] = learned['lab_n']
 learned_zs['lab'] = learned['lab']
+learned_zs['lab_number'] = learned['lab_number']
 learned_zs['Performance'] = stats.zscore(learned['perf_easy'])
 learned_zs['Number of trials'] = stats.zscore(learned['n_trials'])
 learned_zs['Threshold'] = stats.zscore(learned['threshold'])
@@ -111,7 +116,7 @@ learned_zs['Bias'] = stats.zscore(learned['bias'])
 learned_zs['Reaction time'] = stats.zscore(learned['reaction_time'])
 
 # Restructure pandas dataframe for plotting
-learned_zs_mean = learned_zs.groupby('lab').mean()
+learned_zs_mean = learned_zs.groupby('lab_number').mean()
 learned_zs_new = pd.DataFrame({'zscore': learned_zs_mean['Performance'], 'metric': 'Performance',
                                'lab': learned_zs_mean.index.values})
 learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Number of trials'],
@@ -127,15 +132,13 @@ learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['
                                                      'metric': 'Reaction time',
                                                      'lab': learned_zs_mean.index.values}))
 
-# Set figure style and color palette
-current_palette = sns.color_palette('Set1')
-use_palette = [current_palette[-1]]*len(np.unique(learned['lab']))
-all_color = [current_palette[5]]
-use_palette = all_color + use_palette
+# Set color palette
+use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(learned['lab']))
+use_palette = use_palette + [[1, 1, 0.2]]
 sns.set_palette(use_palette)
 
 # Plot behavioral metrics per lab
-f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(18, 5))
+f, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = plt.subplots(2, 4, figsize=(16, 8))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
@@ -163,14 +166,15 @@ seaborn_style()
 plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.png'), dpi=300)
 
-f, ax1 = plt.subplots(1, 1, figsize=(5, 5))
+f, ax1 = plt.subplots(1, 1, figsize=(4.5, 4.5))
 group_colors()
 sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', size=8, ax=ax1)
 ax1.plot([-1, 6], [0, 0], 'r--')
 ax1.set(ylim=[-1.5, 1.5], ylabel='Deviation from global average (z-score)', xlabel='')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40, ha="right")
 # plt.setp(ax6.yaxis.get_majorticklabels(), rotation=40)
-ax1.legend(loc=[0.34, 0.01], prop={'size': 9}, ncol=2).set_title('')
+# ax1.legend(loc=[0.34, 0.01], prop={'size': 9}, ncol=2).set_title('')
+ax1.legend(loc=[0.01, 0.8], prop={'size': 9}, ncol=3).set_title('')
 ax1.yaxis.set_tick_params(labelbottom=True)
 
 plt.tight_layout(pad=2)

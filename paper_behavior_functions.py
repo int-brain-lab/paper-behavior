@@ -13,14 +13,17 @@ import os
 import numpy as np
 import pandas as pd
 from ibl_pipeline.analyses import behavior as behavior_analysis
-from IPython import embed as shell  # for debugging
+# from IPython import embed as shell  # for debugging
+
 
 def group_colors():
     return sns.color_palette("Set2", 7)
 
+
 def institution_map():
-    return {'Berkeley': 'Lab 1', 'CCU':'Lab 2', 'CSHL':'Lab 3', 'NYU':'Lab 4', 
-            'Princeton':'Lab 5', 'SWC':'Lab 6', 'UCL':'Lab 7'}
+    return {'Berkeley': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
+            'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
+
 
 def figpath():
     # Retrieve absolute path of paper-behavior dir
@@ -47,7 +50,8 @@ def query_subjects(as_dataframe=False):
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they were flagged as trained_1a
     subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+                  & ['subject_project = "ibl_neuropixel_brainwide_01"'
+                     + ' OR subject_project = "ibl_retired"']).aggr(
         (acquisition.Session * behavior_analysis.SessionTrainingStatus())
         & 'training_status="trained_1a" OR training_status="trained_1b"',
         'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',

@@ -148,11 +148,12 @@ def plot_chronometric(x, y, subj, **kwargs):
     df2['signed_contrast'] = df2['signed_contrast'].replace(-100, -35)
     df2['signed_contrast'] = df2['signed_contrast'].replace(100, 35)
 
-    sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5,
+    ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5,
                  marker='o', ci=68, data=df2[np.abs(df2.signed_contrast) < 35], **kwargs)
+
     # all the points
     if df['subject_nickname'].nunique() > 1:
-        ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5, linewidth=0,
+        sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5, linewidth=0,
                       marker='o', ci=68, data=df2, **kwargs)
 
     ax.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])

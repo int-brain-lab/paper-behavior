@@ -13,12 +13,12 @@ over labs.
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib
 import numpy as np
 from scipy import stats
 from os.path import join, expanduser
 import seaborn as sns
-from paper_behavior_functions import query_sessions_around_criterium, seaborn_style
+from paper_behavior_functions import (query_sessions_around_criterium, seaborn_style,
+                                      institution_map, group_colors)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import acquisition, behavior
 
@@ -74,10 +74,15 @@ learned = learned[learned['reaction_time'].notnull()]
 # Save to CSV file
 learned.to_csv(join(csv_path, 'learned_mice_data.csv'))
 
+# Change lab name into lab number
+learned['lab_number'] = learned.lab.map(institution_map())
+
 # Add (n = x) to lab names
 for i in learned.index.values:
-    learned.loc[i, 'lab_n'] = (learned.loc[i, 'lab']
-                               + ' (n=' + str(sum(learned['lab'] == learned.loc[i, 'lab'])) + ')')
+    learned.loc[i, 'lab_n'] = (learned.loc[i, 'lab_number']
+                               + ' (n='
+                               + str(sum(learned['lab_number'] == learned.loc[i, 'lab_number']))
+                               + ')')
 
 # Convert to float
 learned['perf_easy'] = learned['perf_easy'].astype(float)
@@ -90,6 +95,8 @@ learned['lapse_low'] = learned['lapse_low'].astype(float)
 # Add all mice to dataframe seperately for plotting
 learned_2 = learned.copy()
 learned_2['lab_n'] = 'All (n=%d)' % len(learned)
+learned_2['lab'] = 'All'
+learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)
 learned_2 = learned_2.sort_values('lab_n')
 
@@ -126,89 +133,48 @@ use_palette = [current_palette[-1]]*len(np.unique(learned['lab']))
 all_color = [current_palette[5]]
 use_palette = all_color + use_palette
 sns.set_palette(use_palette)
-seaborn_style()
 
 # Plot behavioral metrics per lab
-f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(13, 10), sharey=True)
+f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(18, 5))
 sns.set_palette(use_palette)
 
-sns.boxplot(x='perf_easy', y='lab_n', data=learned_2, ax=ax1)
-ax1.set(title='Performance at easy contrasts (%)', xlim=[80, 101], ylabel='', xlabel='')
-ax1.xaxis.tick_top()
-plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
+sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
+ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
-# sns.boxplot(x='training_time', y='lab_n', data=learned_2, ax=ax2)
-# ax2.set(title='Time to reach trained criterion (sessions)', xlim=[0,60], ylabel='', xlabel='')
-# ax2.xaxis.tick_top()
-# plt.setp(ax2.yaxis.get_majorticklabels(), rotation=40)
+sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax2)
+ax2.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(x='n_trials', y='lab_n', data=learned_2, ax=ax2)
-ax2.set(title='Number of trials', xlim=[0, 2000], ylabel='', xlabel='')
-ax2.xaxis.tick_top()
-plt.setp(ax2.yaxis.get_majorticklabels(), rotation=40)
+sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax3)
+ax3.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 25], xlabel='')
+plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(x='threshold', y='lab_n', data=learned_2, ax=ax3)
-ax3.set(title='Visual threshold (% contrast)', xlim=[0, 30], ylabel='', xlabel='')
-ax3.xaxis.tick_top()
-plt.setp(ax3.yaxis.get_majorticklabels(), rotation=40)
+sns.boxplot(y='bias', x='lab_number', data=learned_2, ax=ax4)
+ax4.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
+plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(x='bias', y='lab_n', data=learned_2, ax=ax4)
-ax4.set(title='Bias (% contrast)', xlim=[-40, 40], ylabel='', xlabel='')
-ax4.xaxis.tick_top()
-plt.setp(ax4.yaxis.get_majorticklabels(), rotation=40)
+sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax5)
+ax5.set(ylabel='Time to trial completion (ms)', ylim=[0, 1000], xlabel='')
+plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(x='reaction_time', y='lab_n', data=learned_2, ax=ax5)
-ax5.set(title='Reaction time (ms)', xlim=[0, 1000], ylabel='', xlabel='')
-ax5.xaxis.tick_top()
-plt.setp(ax5.yaxis.get_majorticklabels(), rotation=40)
-
-ax6.get_shared_y_axes().remove(ax6)
-yticker = matplotlib.axis.Ticker()
-ax6.yaxis.major = yticker
-yloc = matplotlib.ticker.AutoLocator()
-yfmt = matplotlib.ticker.ScalarFormatter()
-ax6.yaxis.set_major_locator(yloc)
-ax6.yaxis.set_major_formatter(yfmt)
-sns.set_palette('Paired')
-sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', size=8, ax=ax6)
-ax6.plot([-1, 6], [0, 0], 'r--')
-ax6.set(ylim=[-2.5, 2.5], ylabel='Deviation from global average (z-score)', xlabel='')
-plt.setp(ax6.xaxis.get_majorticklabels(), rotation=40, ha="right")
-# plt.setp(ax6.yaxis.get_majorticklabels(), rotation=40)
-ax6.legend(loc=[0.2, 0.01], prop={'size': 9}, ncol=2).set_title('')
-ax6.yaxis.set_tick_params(labelbottom=True)
 plt.tight_layout(pad=2)
-fig = plt.gcf()
-fig.set_size_inches((12, 8), forward=False)
+seaborn_style()
+plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.png'), dpi=300)
 
-plt.savefig(join(fig_path, 'figure5_metrics_per_lab.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure5_metrics_per_lab.png'), dpi=300)
-
-# Plot lab deviation from global average
-f, ax1 = plt.subplots(1, 1, figsize=(5.5, 6))
-sns.set_palette('Paired')
+f, ax1 = plt.subplots(1, 1, figsize=(5, 5))
+group_colors()
 sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', size=8, ax=ax1)
 ax1.plot([-1, 6], [0, 0], 'r--')
-ax1.set(ylim=[-2.5, 2.5], ylabel='Deviation from global average (z-score)', xlabel='')
+ax1.set(ylim=[-1.5, 1.5], ylabel='Deviation from global average (z-score)', xlabel='')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40, ha="right")
-ax1.legend(loc=[0.745, 0.01], prop={'size': 9}).set_title('')
+# plt.setp(ax6.yaxis.get_majorticklabels(), rotation=40)
+ax1.legend(loc=[0.34, 0.01], prop={'size': 9}, ncol=2).set_title('')
+ax1.yaxis.set_tick_params(labelbottom=True)
 
-plt.tight_layout(pad=3)
-fig = plt.gcf()
-fig.set_size_inches((5.5, 6), forward=False)
-plt.savefig(join(fig_path, 'figure6_panel_deviation.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure6_panel_deviation.png'), dpi=300)
+plt.tight_layout(pad=2)
+seaborn_style()
 
-# Plot heat map of lab deviation
-f, ax1 = plt.subplots(1, 1, figsize=(5.5, 5), sharey=True)
-sns.heatmap(data=learned_zs.groupby('lab_n').mean(), vmin=-1, vmax=1,
-            cmap=sns.color_palette("coolwarm", 100),
-            cbar_kws={"ticks": [-1, -0.5, 0, 0.5, 1]}, ax=ax1)
-# cbar_kws={'label':'z-scored mean', "ticks":[-1,-0.5,0,0.5,1]}, ax=ax1)
-ax1.set(ylabel='', title='Mean per lab (z-scored over labs)')
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40, ha="right")
-
-plt.tight_layout(pad=3)
-fig = plt.gcf()
-fig.set_size_inches((5.5, 5), forward=False)
-plt.savefig(join(fig_path, 'figure5_heatmap.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure3c_deviation.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure3c_deviation.png'), dpi=300)

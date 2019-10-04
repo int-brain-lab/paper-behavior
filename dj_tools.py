@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from IPython import embed as shell  # for debugging
 
 # import wrappers etc
 from ibl_pipeline.utils import psychofit as psy
@@ -25,18 +26,13 @@ def fit_psychfunc(df):
            'lapselow': pars[2], 'lapsehigh': pars[3]}
     df2 = pd.DataFrame(df2, index=[0])
 
-    # add some stuff
-    df2['easy_correct'] = df.loc[np.abs(
-        df['signed_contrast'] > 50), 'correct'].mean(skipna=True)
-    df2['zero_contrast'] = df.loc[np.abs(
-        df['signed_contrast'] == 0), 'choice2'].mean(skipna=True)
-    df2['median_rt'] = df['rt'].median(skipna=True)
-    df2['mean_rt'] = df['rt'].mean(skipna=True)
-
-    # some stuff per session
-    # df['abs_contrast'] = np.abs(df['signed_contrast'])
-    # df3 = df.groupby(['session_start_time', 'abs_contrast'])['correct'].mean().reset_index()
-    # df2['easy_correct_perday'] = [df3.loc[df3['abs_contrast'] == 100, 'correct'].values]
+    # # add some stuff
+    # df2['easy_correct'] = df.loc[np.abs(
+    #     df['signed_contrast'] > 50), 'correct'].mean(skipna=True)
+    # df2['zero_contrast'] = df.loc[np.abs(
+    #     df['signed_contrast'] == 0), 'choice2'].mean(skipna=True)
+    # df2['median_rt'] = df['rt'].median(skipna=True)
+    # df2['mean_rt'] = df['rt'].mean(skipna=True)
 
     # number of trials per day
     df4 = df.groupby(['session_start_time'])['correct'].count().reset_index()
@@ -65,7 +61,7 @@ def plot_psychometric(x, y, subj, **kwargs):
                                      [df2['signed_contrast'].mean(), 15., 0.05, 0.05]),
                                  parmin=np.array(
                                      [df2['signed_contrast'].min(), 0., 0., 0.]),
-                                 parmax=np.array([df2['signed_contrast'].max(), 50., 0.5, 0.5]))
+                                 parmax=np.array([df2['signed_contrast'].max(), 30., 0.5, 0.5]))
 
     # plot psychfunc
     g = sns.lineplot(np.arange(-29, 29),

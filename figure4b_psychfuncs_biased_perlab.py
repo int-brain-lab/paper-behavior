@@ -19,6 +19,7 @@ from scipy.special import erf  # for psychometric functions
 from ibl_pipeline import reference, subject, action, acquisition, data, behavior
 from ibl_pipeline.utils import psychofit as psy
 from ibl_pipeline.analyses import behavior as behavioral_analyses
+from ibl_pipeline.utils import psychofit as psy
 
 sys.path.insert(0, '../python')
 
@@ -28,6 +29,7 @@ figpath = figpath()
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 sns.set_palette(cmap)  # palette for water types
 pal = sns.color_palette("colorblind", 7)
+institution_map = institution_map()
 
 # ================================= #
 # GET DATA FROM TRAINED ANIMALS
@@ -42,14 +44,16 @@ b = acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab *
 bdat = b.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                format='frame').reset_index()
 behav = dj2pandas(bdat)
+behav['institution_code'] = behav.institution_short.map(institution_map)
+
 assert(~behav.empty)
 print(behav.describe())
 
-# add a fake subject_num to make the colormap restart within each lab
-behav['subject_num'] = behav['subject_uuid'].astype("category").cat.codes
-for index, group in behav.groupby(['institution_short']):
-    behav['subject_num'][behav.index.isin(
-        group.index)] = group['subject_uuid'].astype("category").cat.codes
+# # add a fake subject_num to make the colormap restart within each lab
+# behav['subject_num'] = behav['subject_uuid'].astype("category").cat.codes
+# for index, group in behav.groupby(['institution_short']):
+#     behav['subject_num'][behav.index.isin(
+#         group.index)] = group['subject_uuid'].astype("category").cat.codes
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
@@ -79,36 +83,57 @@ plt.close('all')
 # FOR EACH ANIMAL + for each lab (in 'lab color')
 # ================================================================== #
 
-df2 = behav.groupby(['institution_short', 'subject_nickname', 'subject_num',
-                     'signed_contrast', 'probabilityLeft']).agg(
-    {'choice2': 'mean'}).reset_index()
-behav2 = pd.pivot_table(df2, values='choice2',
-                        index=['institution_short', 'subject_nickname',
-                               'subject_num', 'signed_contrast'],
-                        columns=['probabilityLeft']).reset_index()
-behav2['biasshift'] = behav2[20] - behav2[80]
+print('fitting psychometric functions...')
+pars = behav.groupby(['institution_code', 'subject_nickname',
+                      'probabilityLeft']).apply(fit_psychfunc).reset_index()
+# now read these out at the presented levels of signed contrast
 
-fig = sns.FacetGrid(behav2,
-                    hue="institution_short", palette=pal,
+behav2 = pd.DataFrame([])
+xvec = behav.signed_contrast.unique()
+for index, group in pars.groupby(['institution_code', 'subject_nickname',
+                                  'probabilityLeft']):
+    # expand
+    yvec = psy.erf_psycho_2gammas([group.bias.item(),
+                                group.threshold.item(),
+                                group.lapselow.item(),
+                                group.lapsehigh.item()], xvec)
+    group2 = group.loc[group.index.repeat(len(yvec))].reset_index(drop=True).copy()
+    group2['signed_contrast'] = xvec
+    group2['choice'] = yvec
+
+    # add this
+    behav2 = behav2.append(group2)
+
+# now subtract these to compute a bias shift
+behav3 = pd.pivot_table(behav2, values='choice',
+                        index=['institution_code', 'subject_nickname',
+                               'signed_contrast'],
+                        columns=['probabilityLeft']).reset_index()
+behav3['biasshift'] = behav3[20] - behav3[80]
+
+##### PLOT ##########
+fig = sns.FacetGrid(behav3,
+                    hue="institution_code", palette=pal,
                     sharex=True, sharey=True, aspect=1)
 fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.pdf"))
-fig.savefig(os.path.join(
-    figpath, "figure4b_psychfuncs_biasshift_alllabs.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.png"), dpi=600)
 plt.close('all')
 
-fig = sns.FacetGrid(behav2,
-                    col="institution_short", col_wrap=4,
-                    sharex=True, sharey=True, aspect=1, hue="subject_num", palette="gist_gray")
-fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname")
+shell()
+
+# plot one curve for each animal, one panel per lab
+fig = sns.FacetGrid(behav3,
+	col="institution_code", col_wrap=4, 
+	sharex=True, sharey=True, aspect=1, hue="subject_uuid")
+fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname", color='gray', alpha=0.7)
 fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_short.unique()[axidx], color=pal[axidx])
+    ax.set_title(behav.institution_code.unique()[axidx], color=pal[axidx], fontweight='bold')
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_permouse.pdf"))
-fig.savefig(os.path.join(
-    figpath, "figure4b_psychfuncs_biasshift_permouse.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab_singlemouse.pdf"))
+fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_perlab_singlemouse.png"), dpi=600)
 plt.close('all')

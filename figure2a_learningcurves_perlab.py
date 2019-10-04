@@ -22,7 +22,7 @@ from ibl_pipeline.analyses import behavior as behavioral_analyses
 seaborn_style()
 figpath = figpath()
 pal = group_colors()
-institution_map = institution_map()
+institution_map, col_names = institution_map()
 
 # ================================= #
 # GET DATA FROM TRAINED ANIMALS
@@ -44,31 +44,23 @@ for index, group in behav.groupby(['lab_name', 'subject_nickname']):
 # LEARNING CURVES
 # ================================= #
 
-fig = sns.FacetGrid(behav,
-                    hue="institution_code", palette=pal,
-                    sharex=True, sharey=True, aspect=1, xlim=[0, 40])
-fig.map(sns.lineplot, "training_day", "performance_easy")
-fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
-# fig.set_titles("{col_name}")
-fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure2a_learningcurves_perlab.pdf"))
-fig.savefig(os.path.join(
-    figpath, "figure2a_learningcurves_perlab.png"), dpi=600)
-plt.close('all')
-
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
-                    col="institution_code", col_wrap=4,
-                    sharex=True, sharey=True, aspect=1, hue="subject_uuid", xlim=[0, 40])
+                    col="institution_code", col_wrap=4, col_order=col_names,
+                    sharex=True, sharey=True, aspect=1, hue="subject_uuid", xlim=[-1, 41.5])
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.7)
 fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_code.unique()[
-                 axidx], color=pal[axidx], fontweight='bold')
+                 axidx-1], color=pal[axidx-1], fontweight='bold')
+
+# NOW ADD THE GROUP
+ax_group = fig.axes[0] # overwrite this empty plot
+sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal, 
+    ax=ax_group, legend=False, data=behav)
+ax_group.set_title('All labs', color='k', fontweight='bold')
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure2a_learningcurves_permouse.pdf"))
-fig.savefig(os.path.join(
-    figpath, "figure2a_learningcurves_permouse.png"), dpi=600)
-plt.close('all')
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves.pdf"))
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=600)

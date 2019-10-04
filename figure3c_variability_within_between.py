@@ -56,11 +56,15 @@ for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
     fit_df = dj2pandas(trials)
     fit_result = fit_psychfunc(fit_df)
 
+    # Calculate performance on easy trials
+    perf_easy = (np.sum(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])
+                 / np.size(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])) * 100
+
     # Add results to dataframe
     learned_index = sessions[sessions['subject_nickname'] == nickname].index[-1]
     learned.loc[i, 'mouse'] = nickname
     learned.loc[i, 'lab'] = sessions.loc[learned_index, 'institution_short']
-    learned.loc[i, 'perf_easy'] = fit_result.loc[0, 'easy_correct']*100
+    learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials_perday'][0].mean()
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']

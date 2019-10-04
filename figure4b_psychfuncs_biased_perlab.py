@@ -122,9 +122,10 @@ for axidx, ax in enumerate(fig.axes.flat):
 # ADD THE GROUP TO THE FIRST AXIS
 ax_group = fig.axes[0]  # overwrite this empty plot
 for i, inst in enumerate(behav.institution_code.unique()):
-    tmp_behav = behav[behav['institution_code'].str.contains(inst)]
+    tmp_behav = behav3[behav3['institution_code'].str.contains(inst)]
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift, tmp_behav.subject_nickname, ax=ax_group, legend=False, color=pal[i])
 ax_group.set_title('All labs', color='k', fontweight='bold')
+fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4a_biasshift.pdf"))
 fig.savefig(os.path.join(figpath, "figure4a_biasshift.png"), dpi=600)

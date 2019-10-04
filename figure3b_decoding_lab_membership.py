@@ -56,7 +56,7 @@ def decoding(resp, labels, clf, NUM_SPLITS):
         y_pred = np.append(y_pred, clf.predict(test_resp))
         y_true = np.append(y_true, [labels[j] for j in test_index])
     f1 = f1_score(y_true, y_pred, labels=np.unique(labels), average='micro')
-    cm = confusion_matrix(y_true, y_pred)
+    cm = confusion_matrix(y_true, y_pred, labels=np.unique(labels))
     return f1, cm
 
 
@@ -127,9 +127,8 @@ decod = learned
 clf_rf = RandomForestClassifier(n_estimators=100)
 
 # Perform decoding of lab membership
-decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix'
+decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
                                         'control', 'control_shuffled', 'control_cm'])
-
 decoding_set = decod[METRICS].values
 control_set = decod[METRIS_CONTROL].values
 for i in range(ITERATIONS):
@@ -138,18 +137,17 @@ for i in range(ITERATIONS):
     # Original dataset
     decoding_result.loc[i, 'original'], conf_matrix = decoding(
             decoding_set, list(decod['lab']), clf_rf, NUM_SPLITS)
-    decoding_result['confusion_matrix'] = decoding_result['confusion_matrix'].astype(object)
-    decoding_result.at[i, 'confusion_matrix'] = conf_matrix
+    decoding_result.loc[i, 'confusion_matrix'] = conf_matrix / np.max(conf_matrix)
     decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
                                                            list(decod['lab'].sample(frac=1)),
                                                            clf_rf, NUM_SPLITS)
     # Positive control dataset
-    decoding_result.loc[i, 'control'], decoding_result.loc[i, 'control_cm'] = decoding(
+    decoding_result.loc[i, 'control'], conf_matrix = decoding(
             control_set, list(decod['lab']), clf_rf, NUM_SPLITS)
+    decoding_result.loc[i, 'control_cm'] = conf_matrix / np.max(conf_matrix)
     decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
                                                           list(decod['lab'].sample(frac=1)),
                                                           clf_rf, NUM_SPLITS)
-
 
 # Calculate if decoder performs above chance (positive values indicate above chance-level)
 sig = np.percentile(decoding_result['original']-np.mean(decoding_result['original_shuffled']), 5)
@@ -174,5 +172,15 @@ ax1.text(1, 0.68, '***', fontsize=15, ha='center', va='center')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=60)
 
 plt.tight_layout(pad=2)
-plt.savefig(join(FIG_PATH, 'figure5_decoding.pdf'), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure5_decoding.png'), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3d_decoding.pdf'), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3d_decoding.png'), dpi=300)
+
+f, ax1 = plt.subplots(1, 1, figsize=(6, 5))
+sns.heatmap(data=decoding_result['confusion_matrix'].mean())
+ax1.set(xticklabels=np.unique(list(decod['lab'])), yticklabels=np.unique(list(decod['lab'])))
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
+
+plt.tight_layout(pad=2)
+plt.savefig(join(FIG_PATH, 'figure3e_confusion_matrix.pdf'), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3e_confusion_matrix.png'), dpi=300)

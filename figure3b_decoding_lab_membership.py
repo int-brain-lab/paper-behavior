@@ -56,7 +56,8 @@ def decoding(resp, labels, clf, NUM_SPLITS):
         y_pred = np.append(y_pred, clf.predict(test_resp))
         y_true = np.append(y_true, [labels[j] for j in test_index])
     f1 = f1_score(y_true, y_pred, labels=np.unique(labels), average='micro')
-    cm = confusion_matrix(y_true, y_pred, labels=np.unique(labels))
+    unique_labels, label_counts = np.unique(labels, return_counts=True)
+    cm = confusion_matrix(y_true, y_pred, labels=unique_labels)
     return f1, cm
 
 
@@ -141,50 +142,63 @@ for i in range(ITERATIONS):
     # Original dataset
     decoding_result.loc[i, 'original'], conf_matrix = decoding(
             decoding_set, list(decod['lab']), clf_rf, NUM_SPLITS)
-    decoding_result.loc[i, 'confusion_matrix'] = conf_matrix / np.max(conf_matrix)
+    decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
+                                                  / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
                                                            list(decod['lab'].sample(frac=1)),
-                                                           clf_rf, NUM_SPLITS)
+                                                           clf_rf, NUM_SPLITS)[0]
     # Positive control dataset
     decoding_result.loc[i, 'control'], conf_matrix = decoding(
             control_set, list(decod['lab']), clf_rf, NUM_SPLITS)
-    decoding_result.loc[i, 'control_cm'] = conf_matrix / np.max(conf_matrix)
+    decoding_result.loc[i, 'control_cm'] = (conf_matrix
+                                            / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
                                                           list(decod['lab'].sample(frac=1)),
-                                                          clf_rf, NUM_SPLITS)
+                                                          clf_rf, NUM_SPLITS)[0]
 
 # Calculate if decoder performs above chance (positive values indicate above chance-level)
 sig = np.percentile(decoding_result['original']-np.mean(decoding_result['original_shuffled']), 5)
 sig_control = np.percentile(decoding_result['control']
-                            - np.mean(decoding_result['control_shuffled']), 5)
+                            - np.mean(decoding_result['control_shuffled']), 0.01)
 
 # Plot decoding results
-seaborn_style()
-plt.figure(figsize=(4, 5))
-fig = plt.gcf()
-ax1 = plt.gca()
+f, ax1 = plt.subplots(1, 1, figsize=(4, 5))
 sns.violinplot(data=pd.concat([decoding_result['original']-decoding_result['original_shuffled'],
                               decoding_result['control']-decoding_result['control_shuffled']],
                               axis=1), color=[0.6, 0.6, 0.6], ax=ax1)
-ax1.plot([-1, 5], [0, 0], 'r--')
-ax1.set(ylabel='Decoding performance over chance level\n(F1 score)',
-        title='Random forest classifier',
-        ylim=[-0.4, 0.8], xlim=[-0.8, 1.8],
-        xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol'])
-ax1.text(0, 0.68, 'n.s.', fontsize=12, ha='center')
-ax1.text(1, 0.68, '***', fontsize=15, ha='center', va='center')
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=60)
-
+ax1.plot([-1, 2], [0, 0], 'r--')
+ax1.set(ylabel='Decoding performance\nover chance level (F1 score)',
+        ylim=[-0.4, 0.8], xlim=[-0.8, 1.4],
+        xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(incl. timezone)'])
+ax1.text(0, 0.5, 'n.s.', fontsize=12, ha='center')
+ax1.text(1, 0.5, '***', fontsize=15, ha='center', va='center')
+# plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
-plt.savefig(join(FIG_PATH, 'figure3d_decoding.pdf'), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure3d_decoding.png'), dpi=300)
+seaborn_style()
 
-f, ax1 = plt.subplots(1, 1, figsize=(6, 5))
+plt.savefig(join(FIG_PATH, 'figure3i_decoding.pdf'), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3i_decoding.png'), dpi=300)
+
+f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
-ax1.set(xticklabels=np.unique(list(decod['lab'])), yticklabels=np.unique(list(decod['lab'])))
+ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        title='Normalized Confusion Matrix', ylabel='Predicted lab', xlabel='Actual lab')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
-
 plt.tight_layout(pad=2)
-plt.savefig(join(FIG_PATH, 'figure3e_confusion_matrix.pdf'), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure3e_confusion_matrix.png'), dpi=300)
+
+plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix.pdf'), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix.png'), dpi=300)
+
+f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
+sns.heatmap(data=decoding_result['control_cm'].mean())
+ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        title='Normalized Confusion Matrix', ylabel='Predicted lab', xlabel='Actual lab')
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
+plt.tight_layout(pad=2)
+
+plt.savefig(join(FIG_PATH, 'control_confusion_matrix.pdf'), dpi=300)
+plt.savefig(join(FIG_PATH, 'control_confusion_matrix.png'), dpi=300)

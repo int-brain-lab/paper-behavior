@@ -13,14 +13,17 @@ import os
 import numpy as np
 import pandas as pd
 from ibl_pipeline.analyses import behavior as behavior_analysis
-from IPython import embed as shell  # for debugging
+# from IPython import embed as shell  # for debugging
+
 
 def group_colors():
     return sns.color_palette("Set2", 7)
 
+
 def institution_map():
-    return {'Berkeley': 'Lab 1', 'CCU':'Lab 2', 'CSHL':'Lab 3', 'NYU':'Lab 4', 
-            'Princeton':'Lab 5', 'SWC':'Lab 6', 'UCL':'Lab 7'}
+    return {'Berkeley': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
+            'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
+
 
 def figpath():
     # Retrieve absolute path of paper-behavior dir

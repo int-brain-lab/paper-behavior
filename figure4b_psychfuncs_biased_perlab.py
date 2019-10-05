@@ -81,7 +81,6 @@ print('fitting psychometric functions...')
 pars = behav.groupby(['institution_code', 'subject_nickname',
                       'probabilityLeft']).apply(fit_psychfunc).reset_index()
 # now read these out at the presented levels of signed contrast
-
 behav2 = pd.DataFrame([])
 xvec = behav.signed_contrast.unique()
 for index, group in pars.groupby(['institution_code', 'subject_nickname',
@@ -107,8 +106,6 @@ behav3['biasshift'] = behav3[20] - behav3[80]
 
 ##### PLOT ##########
 
-
-
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav3,
 	col="institution_code", col_wrap=4, col_order=col_names,
@@ -130,16 +127,3 @@ fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4a_biasshift.pdf"))
 fig.savefig(os.path.join(figpath, "figure4a_biasshift.png"), dpi=600)
 plt.close('all')
-
-
-
-
-# fig = sns.FacetGrid(behav3,
-#                     hue="institution_code", palette=pal,
-#                     sharex=True, sharey=True, aspect=1)
-# fig.map(plot_chronometric, "signed_contrast", "biasshift", "subject_nickname")
-# fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
-# fig.despine(trim=True)
-# fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.pdf"))
-# fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biasshift_alllabs.png"), dpi=600)
-# plt.close('all')

@@ -17,156 +17,61 @@ from math import ceil
 # import wrappers etc
 from ibl_pipeline import reference, subject, action, acquisition, data, behavior
 from ibl_pipeline.utils import psychofit as psy
-
-sys.path.insert(0, '../python')
 from dj_tools import *
+from paper_behavior_functions import *
+from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # INITIALIZE A FEW THINGS
-sns.set(style="ticks", context="paper", font_scale=1.2)
-figpath  = os.path.join(os.path.expanduser('~'), 'Data/Figures_IBL')
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
-sns.set_palette("gist_gray")
+seaborn_style()
+figpath = figpath()
+pal = group_colors()
+institution_map, col_names = institution_map()
 
 # ================================= #
 # GRAB ALL DATA FROM DATAJOINT
-# only data when the animal is trained,
-# but hasn't seen biased blocks yet
+# 3 days before and 3 days after starting biasedChoiceWorld
 # ================================= #
 
-use_subjects = query_subjects()
-# criterion = behavioral_analyses.SessionTrainingStatus()
-# sess = ((acquisition.Session & 'task_protocol LIKE "%trainingChoiceWorld%"') \
-# 		* (criterion & 'training_status="trained"')) * use_subjects
-
-# take all trials that include 0% contrast, instead of those where the animal is trained
-sess = (acquisition.Session & (behavior.TrialSet.Trial() & 'ABS(trial_stim_contrast_left-0)<0.0001' \
-	& 'ABS(trial_stim_contrast_right-0)<0.0001') & 'task_protocol like "%trainingChoiceWorld%"') \
-	* use_subjects
-
-b 		= (behavior.TrialSet.Trial & sess) * subject.Subject() * subject.SubjectLab()
-bdat 	= pd.DataFrame(b.fetch(order_by='subject_nickname, session_start_time, trial_id'))
-behav 	= dj2pandas(bdat)
+use_sessions = query_sessions_around_biased(days_from_trained=[2, 1])
+b = subject.Subject * subject.SubjectLab * reference.Lab * \
+    acquisition.Session * behavior_analysis.PsychResults & use_sessions[[
+        'session_uuid']].to_dict(orient='records')
+behav = b.fetch(order_by='institution_short, subject_nickname, session_start_time',
+               format='frame').reset_index()
+# split the two types of task protocols (remove the pybpod version number
+behav['task_protocol'] = behav['task_protocol'].str[14:20]
 print(behav.tail(n=10))
-print(behav.groupby(['previous_outcome_name'])['repeat'].mean())
 
+# ================================= #
 # PREVIOUS CHOICE - SUMMARY PLOT
-fig = sns.FacetGrid(behav, col="previous_outcome_name", hue="previous_choice_name", aspect=1, sharex=True, sharey=True)
-fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname").add_legend()
+# ================================= #
+
+fig = sns.FacetGrid(behav, col="task_protocol", 
+        hue="previous_choice_name", style="previous_outcome_name", aspect=1, sharex=True, sharey=True)
+fig.map(plot_psychometric_summary, "signed_contrast", "choice_right", "subject_nickname").add_legend()
 fig.despine(trim=True)
 fig.set_titles("{col_name}")
 fig._legend.set_title('Previous choice')
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
-fig.savefig(os.path.join(figpath, "history_trainingChoiceWorld.pdf"))
-fig.savefig(os.path.join(figpath, "history_trainingChoiceWorld.png"), dpi=600)
-print('done')
-
-# ================================= #
-# REPEAT FOR BIASEDCHOICEWORLD DATA
-# this should shift their history preferences
-# ================================= #
-
-sess = (acquisition.Session & (behavior.TrialSet.Trial() & 'ABS(trial_stim_contrast_left-0)<0.0001' \
-	& 'ABS(trial_stim_contrast_right-0)<0.0001') & 'task_protocol like "%biasedChoiceWorld%"') * use_subjects
-b 				= (behavior.TrialSet.Trial & sess) * subject.Subject() * subject.SubjectLab()
-bdat 			= pd.DataFrame(b.fetch(order_by='subject_nickname, session_start_time, trial_id'))
-behav_biased 	= dj2pandas(bdat)
-print(behav_biased.tail(n=10))
-print(behav_biased.groupby(['previous_outcome_name'])['repeat'].mean())
-
-# PREVIOUS CHOICE - SUMMARY PLOT
-fig = sns.FacetGrid(behav_biased, col="previous_outcome_name", hue="previous_choice_name",
-					aspect=1, sharex=True, sharey=True)
-fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname").add_legend()
-fig.despine(trim=True)
-fig.set_titles("{col_name}")
-fig._legend.set_title('Previous choice')
-fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
-fig.savefig(os.path.join(figpath, "history_biasedChoiceWorld.pdf"))
-fig.savefig(os.path.join(figpath, "history_biasedChoiceWorld.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure4d_history_psychfuncs.pdf"))
+fig.savefig(os.path.join(figpath, "figure4d_history_psychfuncs.png"), dpi=600)
 print('done')
 
 # ================================= #
 # DEFINE HISTORY SHIFT FOR LAG 1
 # ================================= #
 
-def compute_biasshift_posterror(x):
+print('fitting psychometric functions...')
+pars = behav.groupby(['institution_code', 'subject_nickname', 'task_protocol',
+                      'previous_choice_name', 'previous_outcome_name', ]).apply(fit_psychfunc).reset_index()
 
-	xax = np.arange(-100, 100)
-	x_right = x.loc[np.isclose(x['previous_choice'], 1) & np.isclose(x['previous_outcome'], -1)]
-	x_left = x.loc[np.isclose(x['previous_choice'], -1) & np.isclose(x['previous_outcome'], -1)]
-
-	y_right = psy.erf_psycho_2gammas([x_right['bias'].item(),
-		x_right['threshold'].item(), x_right['lapselow'].item(), x_right['lapsehigh'].item()], xax)
-	y_left = psy.erf_psycho_2gammas([x_left['bias'].item(),
-		x_left['threshold'].item(), x_left['lapselow'].item(), x_left['lapsehigh'].item()], xax)
-
-	shift_posterror = (y_right[xax == 0] - y_left[xax == 0]).item()
-	return shift_posterror
-
-def compute_biasshift_postcorrect(x):
-
-	xax = np.arange(-100, 100)
-	x_right = x.loc[np.isclose(x['previous_choice'], 1) & np.isclose(x['previous_outcome'], 1)]
-	x_left = x.loc[np.isclose(x['previous_choice'], -1) & np.isclose(x['previous_outcome'], 1)]
-
-	y_right = psy.erf_psycho_2gammas([x_right['bias'].item(),
-		x_right['threshold'].item(), x_right['lapselow'].item(), x_right['lapsehigh'].item()], xax)
-	y_left = psy.erf_psycho_2gammas([x_left['bias'].item(),
-		x_left['threshold'].item(), x_left['lapselow'].item(), x_left['lapsehigh'].item()], xax)
-
-	shift_postcorrect = (y_right[xax == 0] - y_left[xax == 0])
-	return shift_postcorrect[0]
-
-# ================================= #
-# COMPUTE HISTORY SHIFT - TRAININGCHOICEWORLD
-# ================================= #
-
-print('fitting psychometrics...')
-pars = behav.groupby(['lab_name', 'subject_nickname', 'previous_choice', 'previous_outcome']).apply(fit_psychfunc).reset_index()
-
-# check if these fits worked as expected
-# parameters should be within reasonable bounds...
-assert pars['lapselow'].mean() < 0.4
-assert pars['lapsehigh'].mean() < 0.4
-
-# compute a 'bias shift' per animal
-biasshift = pars.groupby(['lab_name', 'subject_nickname']).apply(compute_biasshift_postcorrect).reset_index()
-biasshift = biasshift.rename(columns={0: 'history_postcorrect'})
-
-biasshift2 = pars.groupby(['lab_name', 'subject_nickname']).apply(compute_biasshift_posterror).reset_index()
-biasshift2 = biasshift2.rename(columns={0: 'history_posterror'})
-biasshift['history_posterror'] = biasshift2.history_posterror.copy()
-
-# ================================= #
-# COMPUTE HISTORY SHIFT - TRAININGCHOICEWORLD
-# ================================= #
-
-print('fitting psychometrics...')
-pars = behav_biased.groupby(['lab_name', 'subject_nickname', 'previous_choice', 'previous_outcome']).apply(fit_psychfunc).reset_index()
-
-# check if these fits worked as expected
-# parameters should be within reasonable bounds...
-assert pars['lapselow'].mean() < 0.4
-assert pars['lapsehigh'].mean() < 0.4
-
-# compute a 'bias shift' per animal
-biasshift_biased = pars.groupby(['lab_name', 'subject_nickname']).apply(compute_biasshift_postcorrect).reset_index()
-biasshift_biased = biasshift_biased.rename(columns={0: 'history_postcorrect'})
-
-biasshift_biased2 = pars.groupby(['lab_name', 'subject_nickname']).apply(compute_biasshift_posterror).reset_index()
-biasshift_biased2 = biasshift_biased2.rename(columns={0: 'history_posterror'})
-biasshift_biased['history_posterror'] = biasshift_biased2.history_posterror.copy()
+shell()
 
 # ================================= #
 # STRATEGY SPACE
 # ================================= #
 
 fig, ax = plt.subplots(1,1,figsize=[5,5])
-lab_names = {'danlab': 'Berkeley', 'mainenlab': 'CCU', 'churchlandlab': 'CSHL',
-             'cortexlab': 'UCL', 'angelakilab': 'NYU', 'wittenlab': 'Princeton',
-             'mrsicflogellab': 'SWC'}
-biasshift['lab_name'] = biasshift['lab_name'].map(lab_names)
-biasshift_biased['lab_name'] = biasshift_biased['lab_name'].map(lab_names)
 
 # show the shift line for each mouse, per lab
 for mouse in biasshift.subject_nickname.unique():
@@ -201,7 +106,7 @@ plt.text(-axlim/2, axlim/2, 'win switch'+'\n'+'lose stay', horizontalalignment='
 ax.set_xlabel("History shift, after correct")
 ax.set_ylabel("History shift, after error")
 
-fig.savefig(os.path.join(figpath, "history_strategy.pdf"))
-fig.savefig(os.path.join(figpath, "history_strategy.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure4e_historystrategy.pdf"))
+fig.savefig(os.path.join(figpath, "figure4e_historystrategy.png"), dpi=600)
 plt.close("all")
 

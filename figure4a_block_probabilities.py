@@ -19,6 +19,7 @@ seaborn_style()
 figpath = figpath()
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 cmap_dic = {20: cmap[0], 50: cmap[1], 80: cmap[2]}
+
 # ================================= #
 # SCHEMATIC OF THE BLOCKS
 # ================================= #

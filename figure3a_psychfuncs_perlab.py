@@ -21,7 +21,7 @@ from ibl_pipeline.analyses import behavior as behavioral_analyses
 from dj_tools import *
 
 # INITIALIZE A FEW THINGS
-sns.set(style="ticks", context="paper", font_scale=1.2)
+seaborn_style()
 figpath = figpath()
 pal = group_colors()
 institution_map, col_names = institution_map()

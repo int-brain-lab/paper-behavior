@@ -81,7 +81,7 @@ def plot_psychometric(x, y, subj, **kwargs):
     df3 = df.groupby(['signed_contrast', 'subject_nickname']).agg(
         {'choice2': 'count', 'choice': 'mean'}).reset_index()
 
-    # plot datapoints with errorbars on top\
+    # plot datapoints with errorbars on top
     if df['subject_nickname'].nunique() > 1:
         sns.lineplot(df3['signed_contrast'], df3['choice'], err_style="bars", 
             linewidth=0, linestyle='None', mew=0.5,
@@ -207,13 +207,13 @@ def dj2pandas(behav):
     behav['probabilityLeft'] = behav.probabilityLeft.astype(int)
 
     # compute rt
-    behav['rt'] = behav['trial_response_time'] - behav['trial_stim_on_time']
-
-    # ignore a bunch of things for missed trials
-    # don't count RT if there was no response
-    behav.loc[behav.choice == 0, 'rt'] = np.nan
-    # don't count RT if there was no response
-    behav.loc[behav.choice == 0, 'trial_feedback_type'] = np.nan
+    if 'trial_response_time' in behav.columns:
+        behav['rt'] = behav['trial_response_time'] - behav['trial_stim_on_time']
+            # ignore a bunch of things for missed trials
+        # don't count RT if there was no response
+        behav.loc[behav.choice == 0, 'rt'] = np.nan
+        # don't count RT if there was no response
+        behav.loc[behav.choice == 0, 'trial_feedback_type'] = np.nan
 
     # CODE FOR HISTORY
     behav['previous_choice'] = behav.choice.shift(1)

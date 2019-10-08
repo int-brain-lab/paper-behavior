@@ -19,7 +19,6 @@ from ibl_pipeline import reference, subject, action, acquisition, data, behavior
 from ibl_pipeline.utils import psychofit as psy
 from dj_tools import *
 from paper_behavior_functions import *
-from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -32,37 +31,51 @@ institution_map, col_names = institution_map()
 # 3 days before and 3 days after starting biasedChoiceWorld
 # ================================= #
 
-use_sessions = query_sessions_around_biased(days_from_trained=[2, 1])
-b = subject.Subject * subject.SubjectLab * reference.Lab * \
-    acquisition.Session * behavior_analysis.PsychResults & use_sessions[[
+use_sessions = query_sessions_around_biased(days_from_trained=[2, 2])
+b = acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab * \
+    behavior.TrialSet.Trial & use_sessions[[
         'session_uuid']].to_dict(orient='records')
-behav = b.fetch(order_by='institution_short, subject_nickname, session_start_time',
+# reduce size of what we're fetching
+b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 
+            'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice', 
+            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
+bdat = b.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                format='frame').reset_index()
+behav = dj2pandas(bdat)
+behav['institution_code'] = behav.institution_short.map(institution_map)
 # split the two types of task protocols (remove the pybpod version number
-behav['task_protocol'] = behav['task_protocol'].str[14:20]
-print(behav.tail(n=10))
+behav['task'] = behav['task_protocol'].str[14:20]
 
 # ================================= #
 # PREVIOUS CHOICE - SUMMARY PLOT
 # ================================= #
 
-fig = sns.FacetGrid(behav, col="task_protocol", 
-        hue="previous_choice_name", style="previous_outcome_name", aspect=1, sharex=True, sharey=True)
-fig.map(plot_psychometric_summary, "signed_contrast", "choice_right", "subject_nickname").add_legend()
-fig.despine(trim=True)
-fig.set_titles("{col_name}")
+behav['previous_name'] = behav.previous_outcome_name + behav.previous_choice_name
+
+# plot one curve for each animal, one panel per lab
+fig = sns.FacetGrid(behav,
+                    col='task', hue='previous_name',
+                    sharex=True, sharey=True, aspect=1, palette='Paired', 
+                    hue_order=['post-errorright', 'post-correctright', 
+                                'post-errorleft', 'post-correctleft'])
+fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname").add_legend()
+tasks = ['Psychometric', 'Biased blocks']
+for axidx, ax in enumerate(fig.axes.flat):
+    ax.set_title(tasks[axidx], color='k', fontweight='bold')
 fig._legend.set_title('Previous choice')
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
+fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4d_history_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure4d_history_psychfuncs.png"), dpi=600)
-print('done')
+
+shell()
 
 # ================================= #
 # DEFINE HISTORY SHIFT FOR LAG 1
 # ================================= #
 
 print('fitting psychometric functions...')
-pars = behav.groupby(['institution_code', 'subject_nickname', 'task_protocol',
+pars = behav.groupby(['institution_code', 'subject_nickname', 'task',
                       'previous_choice_name', 'previous_outcome_name', ]).apply(fit_psychfunc).reset_index()
 
 shell()
@@ -106,7 +119,7 @@ plt.text(-axlim/2, axlim/2, 'win switch'+'\n'+'lose stay', horizontalalignment='
 ax.set_xlabel("History shift, after correct")
 ax.set_ylabel("History shift, after error")
 
-fig.savefig(os.path.join(figpath, "figure4e_historystrategy.pdf"))
-fig.savefig(os.path.join(figpath, "figure4e_historystrategy.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "history_strategy.pdf"))
+fig.savefig(os.path.join(figpath, "history_strategy.png"), dpi=600)
 plt.close("all")
 

@@ -41,7 +41,11 @@ use_sessions = query_sessions_around_ephys(days_from_trained=[3, 0])
 b = acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab * \
     behavior.TrialSet.Trial & use_sessions[[
         'session_uuid']].to_dict(orient='records')
-bdat = b.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+# reduce the size of the fetch
+b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 
+            'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice', 
+            'task_protocol', 'trial_stim_prob_left')
+bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                format='frame').reset_index()
 behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)

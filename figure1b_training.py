@@ -21,8 +21,8 @@ endcriteria = dj.create_virtual_module(
     'SessionEndCriteria', 'group_shared_end_criteria')  # from Miles
 
 # grab some plotting functions from datajoint
-sys.path.append("../IBL_pipeline/prelim_analyses/behavioral_snapshots")
-from IBL_pipeline.prelim_analyses.behavioral_snapshots import load_mouse_data_datajoint, behavior_plots
+sys.path.append(os.path.join(os.path.dirname(__file__), '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
+import load_mouse_data_datajoint, behavior_plots
 
 # INITIALIZE A FEW THINGS
 seaborn_style()

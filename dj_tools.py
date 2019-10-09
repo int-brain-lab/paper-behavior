@@ -67,7 +67,7 @@ def plot_psychometric(x, y, subj, **kwargs):
     g = sns.lineplot(np.arange(-29, 29),
                      psy.erf_psycho_2gammas(pars, np.arange(-29, 29)), **kwargs)
 
-    # plot psychfunc: -100
+    # plot psychfunc: -100, +100
     sns.lineplot(np.arange(-37, -32),
                  psy.erf_psycho_2gammas(pars, np.arange(-103, -98)), **kwargs)
     sns.lineplot(np.arange(32, 37),
@@ -149,9 +149,7 @@ def plot_chronometric(x, y, subj, **kwargs):
     df2['signed_contrast'] = df2['signed_contrast'].replace(100, 35)
 
     ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5,
-                 ci=68, data=df2[np.abs(df2.signed_contrast) < 35], **kwargs)
-    # sns.scatterplot(x='signed_contrast', y='rt', marker='o',
-    #              data=df2[np.abs(df2.signed_contrast) < 35], **kwargs)
+                 ci=68, data=df2, **kwargs)
 
     # all the points
     if df['subject_nickname'].nunique() > 1:
@@ -226,7 +224,7 @@ def dj2pandas(behav):
     behav['previous_choice_name'] = behav['previous_choice'].map(
         {-1: 'left', 1: 'right'})
     behav['previous_outcome_name'] = behav['previous_outcome'].map(
-        {-1: 'post-error', 1: 'post-correct'})
+        {-1: 'post_error', 1: 'post_correct'})
     behav['repeat'] = (behav.choice == behav.previous_choice)
 
     # to more easily retrieve specific training days

@@ -4,13 +4,13 @@ Anne Urai, CSHL, 2019
 """
 
 import dj_tools
-from paper_behavior_functions import *
+from paper_behavior_functions import *   # noqa
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datajoint as dj
-from IPython import embed as shell  # for debugging
+from IPython import embed as shell     # noqa # for debugging
 import os
 import datetime
 import matplotlib as mpl
@@ -21,20 +21,21 @@ endcriteria = dj.create_virtual_module(
     'SessionEndCriteria', 'group_shared_end_criteria')  # from Miles
 
 # grab some plotting functions from datajoint
-sys.path.append(os.path.join(os.path.dirname(__file__), '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
-import load_mouse_data_datajoint, behavior_plots
+sys.path.append(os.path.join(os.path.dirname(__file__),
+                             '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
+import load_mouse_data_datajoint, behavior_plots  # noqa
 
 # INITIALIZE A FEW THINGS
-seaborn_style()
-figpath = figpath()
+seaborn_style()   # noqa
+figpath = figpath()   # noqa
 plt.close('all')
 
 # ================================= #
 # pick an example mouse
 # ================================= #
 
-mouse = 'CSHL_014'
-lab = 'churchlandlab'
+mouse = 'KS014'
+lab = 'cortexlab'
 
 b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
     * (subject.SubjectLab & 'lab_name="%s"' % lab) \
@@ -46,8 +47,10 @@ behav = b.fetch(order_by='session_start_time, trial_id',
 print(behav)
 behav = dj_tools.dj2pandas(behav)
 
-xlims = [behav.session_start_time.min().replace(hour=0,microsecond=0,second=0,minute=0) - datetime.timedelta(days=2),
-         behav.session_start_time.max().replace(hour=0,microsecond=0,second=0,minute=0) + datetime.timedelta(days=2)]
+xlims = [behav.session_start_time.min().replace(hour=0, microsecond=0, second=0, minute=0) -
+         datetime.timedelta(days=2),
+         behav.session_start_time.max().replace(hour=0, microsecond=0, second=0, minute=0) +
+         datetime.timedelta(days=2)]
 
 # ================================= #
 # CONTRAST HEATMAP
@@ -60,7 +63,7 @@ ax[0].set_ylabel('Signed contrast (%)')
 ax[0].set_xlabel('Training days')
 ax[0].set_title('Example mouse')
 plt.tight_layout()
-fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.png"))
+fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.pdf"))
 
 # ================================================================== #
 # PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
@@ -70,9 +73,9 @@ fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.png"))
 behav['trial_start_time'] = behav.trial_start_time / 60  # in minutes
 behav['correct_easy'] = behav.correct_easy * 100
 behav['training_day'] = behav.days.map(
-    dict(zip(list(behav.days.unique()), list(range(1, 1+len(behav.days.unique()))))))
+    dict(zip(list(behav.days.unique()), list(range(1, 1 + len(behav.days.unique()))))))
 days = behav.training_day.unique()
-days = [2,5,9,13]
+days = np.arange(10) + 1  # [2, 6, 10]
 
 for didx, day in enumerate(days):
 
@@ -91,7 +94,7 @@ for didx, day in enumerate(days):
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure1_example_psychfunc_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_psychfunc_day%d.pdf" % day), dpi=600)
 
     # CHRONOMETRIC FUNCTIONS
     fig, ax = plt.subplots(1, 1, figsize=(2, 2))
@@ -105,11 +108,12 @@ for didx, day in enumerate(days):
     ax.set(ylim=[0.1, 1.5], yticks=[0.1, 1.5])
     ax.set_yscale("log")
     ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
-                                                          ('{{:.{:1d}f}}'.format(int(np.maximum(-np.log10(y), 0)))).format(y)))
+                                                          ('{{:.{:1d}f}}'.format(int(np.maximum(
+                                                              -np.log10(y), 0)))).format(y)))
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure1_example_chronfunc_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_chronfunc_day%d.pdf" % day), dpi=600)
 
     # ================================================================== #
     # WITHIN-TRIAL DISENGAGEMENT CRITERIA
@@ -130,11 +134,14 @@ for didx, day in enumerate(days):
     ax.set(xlabel="Trial number", ylabel="RT (s)", ylim=[0.02, 60])
     ax.set_yscale("log")
     ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
-                                                          ('{{:.{:1d}f}}'.format(int(np.maximum(-np.log10(y), 0)))).format(y)))
+                                                          ('{{:.{:1d}f}}'.format(int(np.maximum(
+                                                              -np.log10(y), 0)))).format(y)))
     ax.set(xlabel="Time in session (min)", ylabel="RT (s)")
 
     # right y-axis with sliding performance
-    # from https://stackoverflow.com/questions/36988123/pandas-groupby-and-rolling-apply-ignoring-nans
+    # from :
+    # https://stackoverflow.com/questions/36988123/pandas-groupby-and-rolling-apply-ignoring-nans
+
     g1 = behavtmp[['trial_start_time', 'correct_easy']]
     g2 = g1.fillna(0).copy()
     s = g2.rolling(50).sum() / g1.rolling(50).count()  # the actual computation
@@ -158,4 +165,4 @@ for didx, day in enumerate(days):
     # sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure1_example_disengagement_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_disengagement_day%d.pdf" % day), dpi=600)

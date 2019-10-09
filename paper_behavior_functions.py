@@ -60,8 +60,7 @@ def query_subjects(as_dataframe=False):
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they were flagged as trained_1a
     subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                  & ['subject_project = "ibl_neuropixel_brainwide_01"'
-                     + ' OR subject_project = "ibl_retired"']).aggr(
+                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
         (acquisition.Session * behavior_analysis.SessionTrainingStatus())
         & 'training_status="trained_1a" OR training_status="trained_1b"',
         'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
@@ -119,7 +118,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     criterion:              string indicating which criterion to use: trained, biased or ephys
     days_from_criterion:    two-element array which indicates which training days around the day
                             the mouse reached criterium to return, e.g. [3, 2] returns three days
-                            before criterium reached up until 2 days after.
+                            before criterium reached up until 2 days after (default: [2, 0])
     as_dataframe:           return sessions as a pandas dataframe
 
     Returns

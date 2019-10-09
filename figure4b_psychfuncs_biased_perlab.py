@@ -55,6 +55,11 @@ behav['institution_code'] = behav.institution_short.map(institution_map)
 assert(~behav.empty)
 print(behav.describe())
 
+# how many mice are there for each lab?
+N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
+behav['n_mice'] = behav.institution_code.map(N)
+behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
+
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
 # one for all labs combined

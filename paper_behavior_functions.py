@@ -10,7 +10,7 @@ Functions for behavioral paper analysis
 from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
 import os
-import pandas as pd
+import datajoint as dj
 from ibl_pipeline.analyses import behavior as behavior_analysis
 # from IPython import embed as shell  # for debugging
 
@@ -21,7 +21,7 @@ def group_colors():
 
 def institution_map():
     institution_map = {'Berkeley': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
-            'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
+                       'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
     col_names = ['AllLabs', 'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6', 'Lab 7']
 
     return institution_map, col_names
@@ -109,7 +109,7 @@ def query_sessions(stable=False, as_dataframe=False):
     return sessions
 
 
-def query_sessions_around_criterion(criterion='trained', days_from_criterion=[3, 0],
+def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0],
                                     as_dataframe=False):
     """
     Query all sessions for analysis of behavioral data
@@ -122,58 +122,60 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[3,
                             before criterium reached up until 2 days after.
     as_dataframe:           return sessions as a pandas dataframe
 
-
+    Returns
+    ---------
+    sessions:               The sessions around the criterion day, works in conjunction with
+                            any table that has session_start_time as primary key (such as
+                            behavior.TrialSet.Trial)
+    days:                   The training days around the criterion day. Can be used in conjunction
+                            with tables that have session_date as primary key (such as
+                            behavior_analysis.BehavioralSummaryByDate)
     """
 
     # Query all included subjects
     use_subjects = query_subjects().proj('subject_uuid')
 
-    # Get per subject the date at which the criterion is reached
+    # Query per subject the date at which the criterion is reached
     if criterion == 'trained':
         subj_crit = (subject.Subject * use_subjects).aggr(
                         (acquisition.Session * behavior_analysis.SessionTrainingStatus)
                         & 'training_status="trained_1a" OR training_status="trained_1b"',
-                        'subject_nickname', date_criterion='min(date(session_start_time))').fetch(
-                                format='frame')
+                        'subject_nickname', date_criterion='min(date(session_start_time))')
     elif criterion == 'biased':
         subj_crit = (subject.Subject * use_subjects).aggr(
                 (acquisition.Session * behavior_analysis.SessionTrainingStatus)
                 & 'task_protocol LIKE "%biased%"',
-                'subject_nickname', date_criterion='min(date(session_start_time))').fetch(
-                        format='frame')
+                'subject_nickname', date_criterion='min(date(session_start_time))')
     elif criterion == 'ephys':
         subj_crit = (subject.Subject * use_subjects).aggr(
                         (acquisition.Session * behavior_analysis.SessionTrainingStatus)
                         & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
-                        'subject_nickname', date_criterion='min(date(session_start_time))').fetch(
-                                format='frame')
+                        'subject_nickname', date_criterion='min(date(session_start_time))')
     else:
         raise Exception('criterion must be trained, biased or ephys')
-    subj_crit = subj_crit.reset_index()
 
-    # Loop over subjects and get x days before and x days after reaching criterion
-    # This part is currently very inefficient and should be improved!
-    sessions = (subject.Subject * acquisition.Session
-                & 'subject_nickname = "empty"').proj('subject_uuid')
-    for i, nickname in enumerate(subj_crit['subject_nickname']):
-        session_dates = (subject.Subject * behavior_analysis.BehavioralSummaryByDate
-                         & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
-        session_dates = session_dates.reset_index()
-        crit_ind = session_dates[
-            session_dates['session_date'] == pd.Timestamp(
-                    subj_crit.loc[subj_crit['subject_nickname'] == nickname,
-                                  'date_criterion'].values[0])].index.values[0]
-        from_date = session_dates.loc[crit_ind-(days_from_criterion[0]-1), 'session_date']
-        to_date = session_dates.loc[crit_ind+(days_from_criterion[1]), 'session_date']
-        crit_sessions = (subject.Subject * acquisition.Session
-                         & 'subject_nickname = "%s"' % nickname
-                         & 'date(session_start_time) >= "%s"' % from_date.date()
-                         & 'date(session_start_time) <= "%s"' % to_date.date()).proj(
-                                 'subject_uuid')
-        sessions = sessions + crit_sessions
+    # Query the training day at which criterion is reached
+    subj_crit_day = (dj.U('subject_uuid', 'day_of_crit')
+                     & (behavior_analysis.BehavioralSummaryByDate * subj_crit
+                        & 'session_date=date_criterion').proj(day_of_crit='training_day'))
 
+    # Query days around the day at which criterion is reached
+    days = (behavior_analysis.BehavioralSummaryByDate * subject.Subject * subj_crit_day
+            & ('training_day - day_of_crit between %d and %d'
+               % (-days_from_criterion[0], days_from_criterion[1]))).proj(
+                   'subject_uuid', 'subject_nickname', 'session_date')
+
+    # Use dates to query sessions
+    ses_query = (acquisition.Session).aggr(
+            days, from_date='min(session_date)', to_date='max(session_date)')
+    sessions = (acquisition.Session * ses_query & 'date(session_start_time) >= from_date'
+                & 'date(session_start_time) <= to_date')
+
+    # Transform to pandas dataframe if necessary
     if as_dataframe is True:
         sessions = sessions.fetch(format='frame')
         sessions = sessions.reset_index()
+        days = days.fetch(format='frame')
+        days = days.reset_index()
 
-    return sessions
+    return sessions, days

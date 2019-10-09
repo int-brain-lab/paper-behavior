@@ -34,6 +34,11 @@ behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
                 format='frame').reset_index()
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
+# how many mice are there for each lab?
+N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
+behav['n_mice'] = behav.institution_code.map(N)
+behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
+
 # make sure each mouse starts at 0
 # baseline correct with the first two days
 for index, group in behav.groupby(['lab_name', 'subject_nickname']):
@@ -50,10 +55,9 @@ fig = sns.FacetGrid(behav,
                     sharex=True, sharey=True, aspect=1, hue="subject_uuid", xlim=[-1, 41.5])
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.7)
-fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_code.unique()[
+    ax.set_title(behav.institution_name.unique()[
                  axidx-1], color=pal[axidx-1], fontweight='bold')
 
 # NOW ADD THE GROUP
@@ -61,6 +65,8 @@ ax_group = fig.axes[0] # overwrite this empty plot
 sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal, 
     ax=ax_group, legend=False, data=behav)
 ax_group.set_title('All labs', color='k', fontweight='bold')
+fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
+
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.pdf"))
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=600)

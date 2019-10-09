@@ -63,8 +63,7 @@ print(behav.describe())
 fig = sns.FacetGrid(behav,
                     hue="probabilityLeft", palette=cmap,
                     sharex=True, sharey=True, aspect=1)
-fig.map(plot_psychometric, "signed_contrast",
-        "choice_right", "subject_nickname")
+fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsize=12,
                 arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')

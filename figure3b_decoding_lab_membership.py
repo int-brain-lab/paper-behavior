@@ -27,10 +27,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join, expanduser
 import seaborn as sns
-from paper_behavior_functions import query_sessions_around_criterium, seaborn_style
+from paper_behavior_functions import query_sessions_around_criterion, seaborn_style
 from ibl_pipeline import subject, reference
 from dj_tools import dj2pandas, fit_psychfunc
-from ibl_pipeline import acquisition, behavior
+from ibl_pipeline import behavior
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
@@ -62,29 +62,22 @@ def decoding(resp, labels, clf, NUM_SPLITS):
 
 
 # Query sessions
-sessions = query_sessions_around_criterium(days_from_trained=[3, 0])
+sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]
+sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
                                 'threshold', 'bias', 'reaction_time',
                                 'lapse_low', 'lapse_high'])
 
-for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
+for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     if np.mod(i+1, 10) == 0:
         print('Loading data of subject %d of %d' % (i+1, len(
-                np.unique(sessions['subject_nickname']))))
+                np.unique(sessions.fetch('subject_nickname')))))
 
-    # Select the three sessions for this mouse
-    three_ses = sessions[sessions['subject_nickname'] == nickname]
-    three_ses = three_ses.reset_index()
-    assert len(three_ses) == 3, 'Not three sessions found around criterium'
-
-    # Get the trials of these sessions
-    trials = (acquisition.Session * behavior.TrialSet.Trial
-              & 'session_start_time="%s" OR session_start_time="%s" OR session_start_time="%s"' % (
-                      three_ses.loc[0, 'session_start_time'],
-                      three_ses.loc[1, 'session_start_time'],
-                      three_ses.loc[2, 'session_start_time'])).fetch(format='frame')
+    # Get the trials of the sessions around criterion
+    trials = (sessions * behavior.TrialSet.Trial
+              & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
     trials = trials.reset_index()
 
     # Fit a psychometric function to these trials and get fit results
@@ -96,9 +89,9 @@ for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
                  / np.size(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])) * 100
 
     # Add results to dataframe
-    learned_index = sessions[sessions['subject_nickname'] == nickname].index[-1]
     learned.loc[i, 'mouse'] = nickname
-    learned.loc[i, 'lab'] = sessions.loc[learned_index, 'institution_short']
+    learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
+                                                                    'institution_short')[0]
     learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials_perday'][0].mean()
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
@@ -108,8 +101,7 @@ for i, nickname in enumerate(np.unique(sessions['subject_nickname'])):
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
 
     # Time zone to dataframe
-    time_zone = (subject.SubjectLab * reference.Lab
-                 & 'lab_name="%s"' % sessions.loc[learned_index, 'lab_name']).fetch('time_zone')[0]
+    time_zone = (sessions & 'subject_nickname = "%s"' % nickname).fetch('time_zone')[0]
     if (time_zone == 'Europe/Lisbon') or (time_zone == 'Europe/London'):
         time_zone_number = 0
     elif time_zone == 'America/New_York':

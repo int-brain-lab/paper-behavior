@@ -40,25 +40,36 @@ bias = pd.DataFrame(columns=['mouse', 'lab', 'bias_20', 'bias_80', 'bias_shift']
 # Get bias shift per session
 for i, nickname in enumerate(np.unique(biased_blocks['subject_nickname'])):
 
-    # Calculte bias shift for this subject
-    shift = (biased_blocks.loc[((biased_blocks['prob_left_block'] == 80)
-                                & (biased_blocks['subject_nickname'] == nickname)),
-                               'bias'].values
-             - biased_blocks.loc[((biased_blocks['prob_left_block'] == 20)
-                                  & (biased_blocks['subject_nickname'] == nickname)),
-                                 'bias'].values)
+    # Get probability of choosing right per contrast
+    contrasts = biased_blocks['signed_contrasts'].values[0]
+    choose_right_80 = biased_blocks.loc[((biased_blocks['prob_left_block'] == 80)
+                                         & (biased_blocks['subject_nickname'] == nickname)),
+                                        'prob_choose_right'].values
+    choose_right_20 = biased_blocks.loc[((biased_blocks['prob_left_block'] == 20)
+                                         & (biased_blocks['subject_nickname'] == nickname)),
+                                        'prob_choose_right'].values
+
+    # Loop over the sessions for this animal and calculate delta probability of choosing right
+    # for the 0% contrast trials between left and right blocks
+    shift = np.empty(0)
+    bias_20 = np.empty(0)
+    bias_80 = np.empty(0)
+    for j in range(len(choose_right_20)):
+        if ((len(contrasts) != len(choose_right_20[j]))
+                or (len(contrasts) != len(choose_right_20[j]))):
+            continue
+        shift = np.append(shift, (choose_right_20[j][contrasts == 0][0]
+                                  - choose_right_80[j][contrasts == 0][0]))
+        bias_20 = np.append(shift, choose_right_20[j][contrasts == 0][0])
+        bias_80 = np.append(shift, choose_right_80[j][contrasts == 0][0])
 
     # Add to dataframe
     bias.loc[i, 'mouse'] = nickname
     bias.loc[i, 'lab'] = biased_blocks.loc[biased_blocks['subject_nickname'] == nickname,
                                            'institution_short'].values[0]
     bias.loc[i, 'bias_shift'] = np.mean(shift)
-    bias.loc[i, 'bias_20'] = np.mean(biased_blocks.loc[
-            ((biased_blocks['prob_left_block'] == 20)
-             & (biased_blocks['subject_nickname'] == nickname)), 'bias'])
-    bias.loc[i, 'bias_80'] = np.mean(biased_blocks.loc[
-            ((biased_blocks['prob_left_block'] == 80)
-             & (biased_blocks['subject_nickname'] == nickname)), 'bias'])
+    bias.loc[i, 'bias_20'] = np.mean(bias_20)
+    bias.loc[i, 'bias_80'] = np.mean(bias_80)
 
 # Change lab name into lab number
 bias['lab_number'] = bias.lab.map(institution_map()[0])
@@ -85,17 +96,17 @@ f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='bias_20', x='lab_number', data=bias_all, ax=ax1)
-ax1.set(ylabel='Bias', ylim=[-25, 25], xlabel='', title='Probability left: 20%')
+ax1.set(ylabel='Bias', ylim=[0, 0.51], xlabel='', title='Probability left: 20%')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='bias_80', x='lab_number', data=bias_all, ax=ax2)
-ax2.set(ylabel='Bias', ylim=[-25, 25], xlabel='', title='Probability left: 80%')
+ax2.set(ylabel='Bias', ylim=[0, 0.51], xlabel='', title='Probability left: 80%')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='bias_shift', x='lab_number', data=bias_all, ax=ax3)
-ax3.set(ylabel='Bias shift', ylim=[0, 25], xlabel='')
+ax3.set(ylabel='Bias shift ($\Delta$ choice %)', ylim=[0, 0.51], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 

@@ -5,12 +5,14 @@ and separately for 20/80 and 80/20 blocks
 
 import pandas as pd
 import numpy as np
-import sys, os, time
+import sys
+import os
+import time
 import matplotlib.pyplot as plt
 import seaborn as sns
 from paper_behavior_functions import query_subjects
 import datajoint as dj
-from IPython import embed as shell # for debugging
+from IPython import embed as shell  # for debugging
 from math import ceil
 # from figure_style import seaborn_style
 
@@ -32,7 +34,8 @@ institution_map, col_names = institution_map()
 # ================================= #
 
 use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[2, 3],
+                                                         days_from_criterion=[
+                                                             2, 3],
                                                          as_dataframe=False)
 # restrict by list of dicts with uuids for these sessions
 b = use_sessions * subject.Subject * subject.SubjectLab * reference.Lab * \
@@ -52,15 +55,17 @@ behav['task'] = behav['task_protocol'].str[14:20]
 # PREVIOUS CHOICE - SUMMARY PLOT
 # ================================= #
 
-behav['previous_name'] = behav.previous_outcome_name + ', ' + behav.previous_choice_name
+behav['previous_name'] = behav.previous_outcome_name + \
+    ', ' + behav.previous_choice_name
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col='task', hue='previous_name',
-                    sharex=True, sharey=True, aspect=1, palette='Paired', 
-                    hue_order=['post-errorright', 'post-correctright', 
-                                'post-errorleft', 'post-correctleft'])
-fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname").add_legend()
+                    sharex=True, sharey=True, aspect=1, palette='Paired',
+                    hue_order=['post-error, right', 'post-correct, right',
+                               'post-error, left', 'post-correct, left'])
+fig.map(plot_psychometric, "signed_contrast",
+        "choice_right", "subject_nickname").add_legend()
 tasks = ['Psychometric', 'Biased blocks']
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(tasks[axidx], color='k', fontweight='bold')
@@ -69,8 +74,7 @@ fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4d_history_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure4d_history_psychfuncs.png"), dpi=600)
-
-shell()
+plt.close('all')
 
 # ================================= #
 # DEFINE HISTORY SHIFT FOR LAG 1
@@ -78,50 +82,85 @@ shell()
 
 print('fitting psychometric functions...')
 pars = behav.groupby(['institution_code', 'subject_nickname', 'task',
-                      'previous_choice_name', 'previous_outcome_name', ]).apply(fit_psychfunc).reset_index()
+                      'previous_choice_name', 'previous_outcome_name']).apply(fit_psychfunc).reset_index()
 
-shell()
+# instead of the bias in % contrast, take the choice shift at x = 0
+# now read these out at the presented levels of signed contrast
+pars2 = pd.DataFrame([])
+xvec = behav.signed_contrast.unique()
+for index, group in pars.groupby(['institution_code', 'subject_nickname', 'task',
+                                  'previous_choice_name', 'previous_outcome_name']):
+    # expand
+    yvec = psy.erf_psycho_2gammas([group.bias.item(),
+                                   group.threshold.item(),
+                                   group.lapselow.item(),
+                                   group.lapsehigh.item()], xvec)
+    group2 = group.loc[group.index.repeat(
+        len(yvec))].reset_index(drop=True).copy()
+    group2['signed_contrast'] = xvec
+    group2['choice'] = yvec
+    # add this
+    pars2 = pars2.append(group2)
+
+# only pick psychometric functions that were fit on a reasonable number of trials...
+pars2 = pars2[(pars2.ntrials > 100) & (pars2.signed_contrast == 0)]
+
+# compute history-dependent bias shift
+pars3 = pd.pivot_table(pars2, values='choice',
+                       index=['institution_code', 'subject_nickname',
+                              'task', 'previous_outcome_name'],
+                       columns=['previous_choice_name']).reset_index()
+pars3['history_shift'] = pars3.right - pars3.left
+pars4 = pd.pivot_table(pars3, values='history_shift',
+                       index=['institution_code', 'subject_nickname', 'task'],
+                       columns=['previous_outcome_name']).reset_index()
+print(pars4.describe())
 
 # ================================= #
 # STRATEGY SPACE
 # ================================= #
 
-fig, ax = plt.subplots(1,1,figsize=[5,5])
+plt.close('all')
+fig, ax = plt.subplots(1, 1, figsize=[3.5, 3.5])
+sns.lineplot(x='post_correct', y='post_error',
+             units='subject_nickname', estimator=None, color='grey', alpha=0.3,
+             data=pars4, ax=ax)
+sns.lineplot(x='post_correct', y='post_error',
+             units='subject_nickname', estimator=None, color='grey', alpha=0.5, legend=False,
+             data=pars4, ax=ax, style='task', markers={'traini':'o', 'biased':'s'}, markersize=3)
 
-# show the shift line for each mouse, per lab
-for mouse in biasshift.subject_nickname.unique():
-	bs1 = biasshift[biasshift.subject_nickname.str.contains(mouse)]
-	bs2 = biasshift_biased[biasshift_biased.subject_nickname.str.contains(mouse)]
+pars5 = pars4.groupby(['institution_code', 'task']).mean().reset_index()
+# add one line, average per lab
+sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
+    linewidth=2, legend=False, data=pars5, ax=ax)
+sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
+    linewidth=2, legend=False, data=pars5, ax=ax, 
+    style='task', markers={'traini':'o', 'biased':'s'})
 
-	if not bs1.empty and not bs2.empty: # if there is data for this animal in both types of tasks
-		ax.plot([bs1.history_postcorrect.item(), bs2.history_postcorrect.item()],
-				[bs1.history_posterror.item(), bs2.history_posterror.item()], color='darkgray', ls='-', lw=0.5,
-				zorder=-100)
-
-# overlay datapoints for the two task types
-sns.scatterplot(x="history_postcorrect", y="history_posterror", style="lab_name",
-				color='dimgrey', data=biasshift, ax=ax, legend=False)
-sns.scatterplot(x="history_postcorrect", y="history_posterror", style="lab_name",
-				color='dodgerblue', data=biasshift_biased, ax=ax, legend=False)
-
-axlim = ceil(np.max([biasshift_biased.history_postcorrect.max(), biasshift_biased.history_posterror.max()]) * 10) / 10
-
-# ax.set_xlim([-axlim,axlim])
-# ax.set_ylim([-axlim,axlim])
-ax.set_xticks([-axlim,0,axlim])
-ax.set_yticks([-axlim,0,axlim])
+# # LAYOUT
+# axlim = ceil(
+#     np.max([pars4.post_correct.max(), pars4.post_error.max()]) * 10) / 10
+axlim = 0.5
+# ax.set_xticks([ 0, axlim])
+# ax.set_yticks([0, axlim])
 ax.axhline(linewidth=0.75, color='k', zorder=-500)
 ax.axvline(linewidth=0.75, color='k', zorder=-500)
 
-plt.text(axlim/2, axlim/2, 'stay', horizontalalignment='center',verticalalignment='center', style='italic')
-plt.text(axlim/2, -axlim/2, 'win stay'+'\n'+'lose switch', horizontalalignment='center',verticalalignment='center', style='italic')
-plt.text(-axlim/2, -axlim/2, 'switch', horizontalalignment='center',verticalalignment='center', style='italic')
-plt.text(-axlim/2, axlim/2, 'win switch'+'\n'+'lose stay', horizontalalignment='center',verticalalignment='center', style='italic')
+# plt.text(axlim/2, axlim/2, 'stay', horizontalalignment='center',
+#          verticalalignment='center', style='italic')
+# plt.text(axlim/2, -axlim/2, 'win stay'+'\n'+'lose switch',
+#          horizontalalignment='center', verticalalignment='center', style='italic')
+# plt.text(-axlim/2, -axlim/2, 'switch', horizontalalignment='center',
+#          verticalalignment='center', style='italic')
+# plt.text(-axlim/2, axlim/2, 'win switch'+'\n'+'lose stay',
+#          horizontalalignment='center', verticalalignment='center', style='italic')
 
-ax.set_xlabel("History shift, after correct")
-ax.set_ylabel("History shift, after error")
+ax.set_xlabel("History-dependent bias shift\nafter correct")
+ax.set_ylabel("History-dependent bias shift\nafter error")
 
-fig.savefig(os.path.join(figpath, "history_strategy.pdf"))
-fig.savefig(os.path.join(figpath, "history_strategy.png"), dpi=600)
+sns.despine(trim=True)
+fig.tight_layout()
+fig.savefig(os.path.join(figpath, "figure4e_history_strategy.pdf"))
+fig.savefig(os.path.join(figpath, "figure4e_history_strategy.png"), dpi=600)
 plt.close("all")
 

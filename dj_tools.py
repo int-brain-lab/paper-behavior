@@ -150,10 +150,6 @@ def plot_chronometric(x, y, subj, **kwargs):
 
     ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5,
                  ci=68, data=df2, **kwargs)
-    # MANUALLY ADD THE -100 AND 100 LINES
-    # shell()
-    # ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5,
-    #              ci=68, data=df2, **kwargs)
 
     # all the points
     if df['subject_nickname'].nunique() > 1:
@@ -228,7 +224,7 @@ def dj2pandas(behav):
     behav['previous_choice_name'] = behav['previous_choice'].map(
         {-1: 'left', 1: 'right'})
     behav['previous_outcome_name'] = behav['previous_outcome'].map(
-        {-1: 'post-error', 1: 'post-correct'})
+        {-1: 'post_error', 1: 'post_correct'})
     behav['repeat'] = (behav.choice == behav.previous_choice)
 
     # to more easily retrieve specific training days

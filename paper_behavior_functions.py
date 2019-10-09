@@ -10,8 +10,7 @@ Functions for behavioral paper analysis
 from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
 import os
-import numpy as np
-import pandas as pd
+import datajoint as dj
 from ibl_pipeline.analyses import behavior as behavior_analysis
 # from IPython import embed as shell  # for debugging
 
@@ -22,10 +21,18 @@ def group_colors():
 
 def institution_map():
     institution_map = {'Berkeley': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
-            'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
+                       'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
     col_names = ['AllLabs', 'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6', 'Lab 7']
 
     return institution_map, col_names
+
+
+def seaborn_style():
+    """
+    Set seaborn style for plotting figures
+    """
+    sns.set(style="ticks", context="paper", font_scale=1.2)
+    sns.despine(trim=True)
 
 
 def figpath():
@@ -102,135 +109,73 @@ def query_sessions(stable=False, as_dataframe=False):
     return sessions
 
 
-def query_sessions_around_criterium(days_from_trained=[3, 0]):
+def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0],
+                                    as_dataframe=False):
     """
     Query all sessions for analysis of behavioral data
 
     Parameters
     ----------
-    days_from_trained: two-element array which indicates which training days around the day the
-                       mouse reached criterium to return, e.g. [3, 2] returns three days before
-                       criterium reached up untill 2 days after.
+    criterion:              string indicating which criterion to use: trained, biased or ephys
+    days_from_criterion:    two-element array which indicates which training days around the day
+                            the mouse reached criterium to return, e.g. [3, 2] returns three days
+                            before criterium reached up until 2 days after.
+    as_dataframe:           return sessions as a pandas dataframe
+
+    Returns
+    ---------
+    sessions:               The sessions around the criterion day, works in conjunction with
+                            any table that has session_start_time as primary key (such as
+                            behavior.TrialSet.Trial)
+    days:                   The training days around the criterion day. Can be used in conjunction
+                            with tables that have session_date as primary key (such as
+                            behavior_analysis.BehavioralSummaryByDate)
     """
 
-    # Query all sessions including training status
-    all_sessions = query_sessions(as_dataframe=True)
+    # Query all included subjects
+    use_subjects = query_subjects().proj('subject_uuid')
 
-    # Loop through mice and find sessions around first trained session
-    sessions = pd.DataFrame()
-    for i, nickname in enumerate(np.unique(all_sessions['subject_nickname'])):
+    # Query per subject the date at which the criterion is reached
+    if criterion == 'trained':
+        subj_crit = (subject.Subject * use_subjects).aggr(
+                        (acquisition.Session * behavior_analysis.SessionTrainingStatus)
+                        & 'training_status="trained_1a" OR training_status="trained_1b"',
+                        'subject_nickname', date_criterion='min(date(session_start_time))')
+    elif criterion == 'biased':
+        subj_crit = (subject.Subject * use_subjects).aggr(
+                (acquisition.Session * behavior_analysis.SessionTrainingStatus)
+                & 'task_protocol LIKE "%biased%"',
+                'subject_nickname', date_criterion='min(date(session_start_time))')
+    elif criterion == 'ephys':
+        subj_crit = (subject.Subject * use_subjects).aggr(
+                        (acquisition.Session * behavior_analysis.SessionTrainingStatus)
+                        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
+                        'subject_nickname', date_criterion='min(date(session_start_time))')
+    else:
+        raise Exception('criterion must be trained, biased or ephys')
 
-        # Get the three sessions at which an animal is deemed trained
-        subj_ses = all_sessions[all_sessions['subject_nickname'] == nickname]
-        subj_ses.reset_index()
-        trained = ((subj_ses['training_status'] == 'trained_1a')
-                   | (subj_ses['training_status'] == 'trained_1b'))
-        first_trained = next((w for w, j in enumerate(trained) if j), None)
-        ses_select = subj_ses[
-            first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
-        sessions = pd.concat([sessions, ses_select])
+    # Query the training day at which criterion is reached
+    subj_crit_day = (dj.U('subject_uuid', 'day_of_crit')
+                     & (behavior_analysis.BehavioralSummaryByDate * subj_crit
+                        & 'session_date=date_criterion').proj(day_of_crit='training_day'))
 
-    return sessions
+    # Query days around the day at which criterion is reached
+    days = (behavior_analysis.BehavioralSummaryByDate * subject.Subject * subj_crit_day
+            & ('training_day - day_of_crit between %d and %d'
+               % (-days_from_criterion[0], days_from_criterion[1]))).proj(
+                   'subject_uuid', 'subject_nickname', 'session_date')
 
+    # Use dates to query sessions
+    ses_query = (acquisition.Session).aggr(
+            days, from_date='min(session_date)', to_date='max(session_date)')
+    sessions = (acquisition.Session * ses_query & 'date(session_start_time) >= from_date'
+                & 'date(session_start_time) <= to_date')
 
-def query_sessions_around_ephys(days_from_trained=[3, 0]):
-    """
-    Query all sessions for analysis of behavioral data
+    # Transform to pandas dataframe if necessary
+    if as_dataframe is True:
+        sessions = sessions.fetch(format='frame')
+        sessions = sessions.reset_index()
+        days = days.fetch(format='frame')
+        days = days.reset_index()
 
-    Parameters
-    ----------
-    days_from_trained: two-element array which indicates which training days around the day the
-                       mouse reached criterium to return, e.g. [3, 2] returns three days before
-                       criterium reached up untill 2 days after.
-    """
-
-    # Query all sessions including training status
-    subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
-        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
-        date_trained='min(date(session_start_time))')
-    all_sessions = (acquisition.Session & 'task_protocol LIKE "%biased%"') * subj_query \
-        * behavior_analysis.SessionTrainingStatus
-    all_sessions = all_sessions.fetch(
-        order_by='institution_short, subject_nickname, session_start_time', format='frame')
-    all_sessions = all_sessions.reset_index()
-
-    # Loop through mice and find sessions around first trained session
-    sessions = pd.DataFrame()
-    for i, nickname in enumerate(np.unique(all_sessions['subject_nickname'])):
-
-        # Get the three sessions at which an animal is deemed trained
-        subj_ses = all_sessions[all_sessions['subject_nickname'] == nickname]
-        subj_ses.reset_index()
-        trained = ((subj_ses['training_status'] == 'ready4ephysrig')
-                   | (subj_ses['training_status'] == 'ready4recording'))
-        first_trained = next((w for w, j in enumerate(trained) if j), None)
-        ses_select = subj_ses[
-            first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
-        sessions = pd.concat([sessions, ses_select])
-
-    return sessions
-
-
-def query_sessions_around_biased(days_from_trained=[3, 0]):
-    """
-    Query all sessions for analysis of behavioral data
-
-    Parameters
-    ----------
-    days_from_trained: two-element array which indicates which training days around the day the
-                       mouse reached criterium to return, e.g. [3, 2] returns three days before
-                       criterium reached up untill 2 days after.
-    """
-
-    # Query all sessions including training status
-    subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
-        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
-        date_trained='min(date(session_start_time))')
-    all_sessions = (acquisition.Session) * subj_query \
-        * acquisition.Session.proj(session_date='date(session_start_time)') \
-        * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResultsBlock
-    all_sessions = all_sessions.fetch(
-        order_by='institution_short, subject_nickname, session_start_time', format='frame')
-    all_sessions = all_sessions.reset_index()
-
-    # Loop through mice and find sessions around first trained session
-    sessions = pd.DataFrame()
-    for i, nickname in enumerate(np.unique(all_sessions['subject_nickname'])):
-
-        # Get the three sessions at which an animal is deemed trained
-        subj_ses = all_sessions[all_sessions['subject_nickname'] == nickname]
-        subj_ses.reset_index()
-        biasedTask = subj_ses['task_protocol'].str.contains('biased')
-        first_trained = next((w for w, j in enumerate(biasedTask) if j), None)
-        ses_select = subj_ses[
-            first_trained-days_from_trained[0]+1:first_trained+days_from_trained[1]+1]
-        sessions = pd.concat([sessions, ses_select])
-
-    return sessions
-
-
-def seaborn_style():
-    """
-    Set seaborn style for plotting figures
-    """
-    sns.set(style="ticks", context="paper", font_scale=1.2)
-    sns.despine(trim=True)
-
-
-def save_csv_subject_query(path):
-    """
-    Save a csv file with all subjects of the query
-
-    Parameters
-    ----------
-    path: string with path to where to save file
-    """
-
-    subjects = query_subjects(as_dataframe=True)
-    subjects.to_csv(os.path.join(path, 'subjects.csv'))
+    return sessions, days

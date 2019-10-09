@@ -3,10 +3,8 @@
 """
 Created on Fri Dec 21 10:30:25 2018
 
-Quantify the variability of behavioral metrics within and between labs of mouse behavior of a
-single session. The session is the middle session of the three day streak in which a mouse is
-deemed to be trained. This script doesn't perform any analysis but plots summary statistics
-over labs.
+Quantify the variability of behavioral metrics within and between labs of mouse behavior.
+This script doesn't perform any analysis but plots summary statistics over labs.
 
 @author: Guido Meijer
 """
@@ -67,19 +65,9 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
 # Drop mice with faulty RT
 learned = learned[learned['reaction_time'].notnull()]
 
-# Save to CSV file
-learned.to_csv(join(csv_path, 'learned_mice_data.csv'))
-
 # Change lab name into lab number
-learned['lab_number'] = learned.lab.map(institution_map())
+learned['lab_number'] = learned.lab.map(institution_map()[0])
 learned = learned.sort_values('lab_number')
-
-# Add (n = x) to lab names
-for i in learned.index.values:
-    learned.loc[i, 'lab_n'] = (learned.loc[i, 'lab_number']
-                               + ' (n='
-                               + str(sum(learned['lab_number'] == learned.loc[i, 'lab_number']))
-                               + ')')
 
 # Convert to float
 learned['perf_easy'] = learned['perf_easy'].astype(float)
@@ -91,14 +79,12 @@ learned['lapse_low'] = learned['lapse_low'].astype(float)
 
 # Add all mice to dataframe seperately for plotting
 learned_2 = learned.copy()
-learned_2['lab_n'] = 'All (n=%d)' % len(learned)
 learned_2['lab'] = 'All'
 learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)
 
 # Z-score data
 learned_zs = pd.DataFrame()
-learned_zs['lab_n'] = learned['lab_n']
 learned_zs['lab'] = learned['lab']
 learned_zs['lab_number'] = learned['lab_number']
 learned_zs['Performance'] = stats.zscore(learned['perf_easy'])
@@ -128,6 +114,7 @@ learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['
 use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(learned['lab']))
 use_palette = use_palette + [[1, 1, 0.2]]
 sns.set_palette(use_palette)
+lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
 f, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = plt.subplots(2, 4, figsize=(16, 8))
@@ -135,22 +122,27 @@ sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
 ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax2)
 ax2.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax3)
 ax3.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 25], xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='bias', x='lab_number', data=learned_2, ax=ax4)
 ax4.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax5)
 ax5.set(ylabel='Time to trial completion (ms)', ylim=[0, 1000], xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
 plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 
 plt.tight_layout(pad=2)
@@ -159,14 +151,15 @@ plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.png'), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.5, 4.5))
-group_colors()
-sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', size=8, ax=ax1)
+sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', palette=group_colors(),
+              size=8, ax=ax1)
 ax1.plot([-1, 6], [0, 0], 'r--')
 ax1.set(ylim=[-1.5, 1.5], ylabel='Deviation from global average (z-score)', xlabel='')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40, ha="right")
 # plt.setp(ax6.yaxis.get_majorticklabels(), rotation=40)
 # ax1.legend(loc=[0.34, 0.01], prop={'size': 9}, ncol=2).set_title('')
-ax1.legend(loc=[0.01, 0.8], prop={'size': 9}, ncol=3).set_title('')
+# ax1.legend(loc=[0.01, 0.8], prop={'size': 9}, ncol=3).set_title('')
+ax1.get_legend().remove()
 ax1.yaxis.set_tick_params(labelbottom=True)
 
 plt.tight_layout(pad=2)

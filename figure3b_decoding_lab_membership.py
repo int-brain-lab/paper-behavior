@@ -151,7 +151,7 @@ for i in range(ITERATIONS):
 # Calculate if decoder performs above chance (positive values indicate above chance-level)
 sig = np.percentile(decoding_result['original']-np.mean(decoding_result['original_shuffled']), 5)
 sig_control = np.percentile(decoding_result['control']
-                            - np.mean(decoding_result['control_shuffled']), 0.01)
+                            - np.mean(decoding_result['control_shuffled']), 0.001)
 
 # Plot decoding results
 f, ax1 = plt.subplots(1, 1, figsize=(4, 5))
@@ -173,9 +173,10 @@ plt.savefig(join(FIG_PATH, 'figure3i_decoding.png'), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
+ax1.plot([0, 7], [0, 7], '--w')
 ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
         yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        title='Normalized Confusion Matrix', ylabel='Predicted lab', xlabel='Actual lab')
+        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
@@ -187,10 +188,30 @@ f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['control_cm'].mean())
 ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
         yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        title='Normalized Confusion Matrix', ylabel='Predicted lab', xlabel='Actual lab')
+        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 
 plt.savefig(join(FIG_PATH, 'control_confusion_matrix.pdf'), dpi=300)
 plt.savefig(join(FIG_PATH, 'control_confusion_matrix.png'), dpi=300)
+
+# Plot decoding results
+f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
+sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control']], axis=1),
+               color=[0.6, 0.6, 0.6], ax=ax1)
+ax1.plot([-1, 2], [np.mean(decoding_result['original_shuffled']),
+                   np.mean(decoding_result['original_shuffled'])], 'r--')
+ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
+        xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(incl. timezone)'])
+ax1.text(0, 0.58, 'n.s.', fontsize=12, ha='center')
+ax1.text(1, 0.58, '***', fontsize=15, ha='center', va='center')
+plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.035, 'Chance level', color='r')
+# plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+
+plt.tight_layout(pad=2)
+seaborn_style()
+
+plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute.pdf'), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute.png'), dpi=300)
+

@@ -76,12 +76,14 @@ def query_subjects(as_dataframe=False):
     return subjects
 
 
-def query_sessions(stable=False, as_dataframe=False):
+def query_sessions(task='all', stable=False, as_dataframe=False):
     """
     Query all sessions for analysis of behavioral data
 
     Parameters
     ----------
+    task:            string indicating sessions of which task to return, can be trianing or biased
+                     default is all
     stable:          boolean if True only return sessions with stable hardware, which means
                      sessions after July 10, 2019 (default is False)
     as_dataframe:    boolean if True returns a pandas dataframe (default is False)
@@ -89,11 +91,28 @@ def query_sessions(stable=False, as_dataframe=False):
 
     # Query sessions
     use_subjects = query_subjects().proj('subject_uuid')
-    sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
-                * use_subjects * behavior_analysis.SessionTrainingStatus
-                & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
-        'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
-                        'task_protocol', 'training_status')
+
+    # Query all sessions or only training or biased if required
+    if task == 'all':
+        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
+                    * use_subjects * behavior_analysis.SessionTrainingStatus
+                    & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
+            'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
+                            'task_protocol', 'training_status')
+    elif task == 'training':
+        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
+                    * use_subjects * behavior_analysis.SessionTrainingStatus
+                    & 'task_protocol LIKE "%training%"').proj(
+            'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
+                            'task_protocol', 'training_status')
+    elif task == 'biased':
+        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
+                    * use_subjects * behavior_analysis.SessionTrainingStatus
+                    & 'task_protocol LIKE "%biased%"').proj(
+            'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
+                            'task_protocol', 'training_status')
+    else:
+        raise Exception('task must be all, training or biased')
 
     # If required only output sessions with stable hardware
     if stable is True:

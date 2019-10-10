@@ -28,7 +28,7 @@ institution_map, col_names = institution_map()
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-use_subjects = query_sessions()
+use_subjects = query_subjects()
 b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
 behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
                 format='frame').reset_index()
@@ -44,6 +44,16 @@ for index, group in behav.groupby(['lab_name', 'subject_nickname']):
     behav['training_day'][behav.index.isin(
         group.index)] = group['training_day'] - group['training_day'].min()
 
+# create another column only after the mouse is trained
+behav2 = pd.DataFrame([])
+for index, group in behav.groupby(['institution_code', 'subject_nickname']):
+    group['performance_easy_trained'] = group.performance_easy
+    group.loc[group['session_date'] < group['date_trained'], 'performance_easy_trained'] = np.nan
+    # add this
+    behav2 = behav2.append(group)
+
+behav = behav2
+
 # ================================= #
 # LEARNING CURVES
 # ================================= #
@@ -54,6 +64,8 @@ fig = sns.FacetGrid(behav,
                     sharex=True, sharey=True, aspect=1, hue="subject_uuid", xlim=[-1, 41.5])
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.3)
+fig.map(sns.lineplot, "training_day",
+        "performance_easy_trained", color='darkblue', alpha=0.3)
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat[0:-1]):
     ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
@@ -65,7 +77,7 @@ sns.lineplot(ax=fig.axes[-2], x='training_day', y='performance_easy', color='bla
 # NOW ADD THE GROUP
 ax_group = fig.axes[-1] # overwrite this empty plot
 sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal, 
-    ax=ax_group, legend=False, data=behav)
+    ax=ax_group, legend=False, data=behav, ci=None)
 ax_group.set_title('All labs', color='k', fontweight='bold')
 fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
 

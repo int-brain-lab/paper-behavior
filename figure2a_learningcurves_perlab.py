@@ -40,7 +40,6 @@ behav['n_mice'] = behav.institution_code.map(N)
 behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
 
 # make sure each mouse starts at 0
-# baseline correct with the first two days
 for index, group in behav.groupby(['lab_name', 'subject_nickname']):
     behav['training_day'][behav.index.isin(
         group.index)] = group['training_day'] - group['training_day'].min()
@@ -54,14 +53,17 @@ fig = sns.FacetGrid(behav,
                     col="institution_code", col_wrap=4, col_order=col_names,
                     sharex=True, sharey=True, aspect=1, hue="subject_uuid", xlim=[-1, 41.5])
 fig.map(sns.lineplot, "training_day",
-        "performance_easy", color='gray', alpha=0.7)
+        "performance_easy", color='gray', alpha=0.3)
 fig.set_titles("{col_name}")
-for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_name.unique()[
-                 axidx-1], color=pal[axidx-1], fontweight='bold')
+for axidx, ax in enumerate(fig.axes.flat[0:-1]):
+    ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
+
+# overlay the example mouse
+sns.lineplot(ax=fig.axes[-2], x='training_day', y='performance_easy', color='black', 
+             data=behav[behav['subject_nickname'].str.contains('KS014')], legend=False)
 
 # NOW ADD THE GROUP
-ax_group = fig.axes[0] # overwrite this empty plot
+ax_group = fig.axes[-1] # overwrite this empty plot
 sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal, 
     ax=ax_group, legend=False, data=behav)
 ax_group.set_title('All labs', color='k', fontweight='bold')

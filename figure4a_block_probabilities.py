@@ -69,31 +69,35 @@ behav['blocks'] = (behav["probabilityLeft"].ne(
 for idx, blocknum in behav.groupby('blocks'):
     left = blocknum.trial_id.min()
     width = blocknum.trial_id.max() - blocknum.trial_id.min()
-    axes.add_patch(patches.Rectangle((left, -36), width, 72,
+    axes.add_patch(patches.Rectangle((left, 0), width, 100,
                                      fc=cmap_dic[blocknum.probabilityLeft.unique()[
                                          0]],
                                      ec='none', alpha=0.3))
 
-# 2. stimuli as grey dots
-sns.scatterplot(x='trial_id', y='signed_contrast', data=behav, color='grey',
-                marker='o', ax=axes, legend=False, alpha=0.5,
-                ec='none', linewidth=0, zorder=2)
+# 2. actual block probabilities as grey line
+behav['stim_sign'] = 100 * ((np.sign(behav.signed_contrast) / 2) + 0.5)
+# sns.scatterplot(x='trial_id', y='stim_sign', data=behav, color='grey',
+#                 marker='o', ax=axes, legend=False, alpha=0.5,
+#                 ec='none', linewidth=0, zorder=2)
+sns.lineplot(x='trial_id', y='stim_sign', color='grey', ci=None,
+             data=behav[['trial_id', 'stim_sign']].rolling(10).mean(), ax=axes)
+axes.set(xlim=[-5, 1005], xlabel='Trial number', ylabel='Stimuli on right (%)', ylim=[-1, 101])
+axes.yaxis.label.set_color("grey")
+axes.tick_params(axis='y', colors='grey')
 
 # 3. ANIMAL CHOICES, rolling window
 rightax = axes.twinx()
 behav['choice_right'] = behav.choice_right * 100
 sns.lineplot(x='trial_id', y='choice_right', color='black', ci=None,
              data=behav[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax)
-axes.set(xlim=[-5, 1005], xlabel='Trial number', ylabel='Signed contrast (%)', ylim=[-37, 37])
-axes.yaxis.label.set_color("grey")
-axes.tick_params(axis='y', colors='grey')
 rightax.set(xlim=[-5, 1005], xlabel='Trial number',
             ylabel='Rightwards choices (%)', ylim=[-1, 101])
 
 # SAVE
-axes.set_yticks([-35, -25, -12.5, 0, 12.5, 25, 35])
-axes.set_yticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
-                     size='small')
+# axes.set_yticks([-35, -25, -12.5, 0, 12.5, 25, 35])
+# axes.set_yticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
+#                      size='small')
+axes.set_yticks([0, 50, 100])
 rightax.set_yticks([0, 50, 100])
 axes.set_title('Example session')
 

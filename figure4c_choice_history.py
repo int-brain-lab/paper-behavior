@@ -51,6 +51,11 @@ behav['institution_code'] = behav.institution_short.map(institution_map)
 # split the two types of task protocols (remove the pybpod version number
 behav['task'] = behav['task_protocol'].str[14:20]
 
+# remove weird contrast levels
+tmpdat = behav.groupby(['signed_contrast'])['choice'].count().reset_index()
+removecontrasts = tmpdat.loc[tmpdat['choice'] < 100, 'signed_contrast']
+behav = behav[~behav.signed_contrast.isin(removecontrasts)]
+
 # ================================= #
 # PREVIOUS CHOICE - SUMMARY PLOT
 # ================================= #
@@ -62,11 +67,11 @@ behav['previous_name'] = behav.previous_outcome_name + \
 fig = sns.FacetGrid(behav,
                     col='task', hue='previous_name',
                     sharex=True, sharey=True, aspect=1, palette='Paired',
-                    hue_order=['post-error, right', 'post-correct, right',
-                               'post-error, left', 'post-correct, left'])
+                    hue_order=['post_error, right', 'post_correct, right',
+                               'post_error, left', 'post_correct, left'])
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname").add_legend()
-tasks = ['Psychometric', 'Biased blocks']
+tasks = ['Unbiased task\n(level 1)', 'Biased task\n(level 2)']
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(tasks[axidx], color='k', fontweight='bold')
 fig._legend.set_title('Previous choice')
@@ -125,42 +130,46 @@ fig, ax = plt.subplots(1, 1, figsize=[3.5, 3.5])
 sns.lineplot(x='post_correct', y='post_error',
              units='subject_nickname', estimator=None, color='grey', alpha=0.3,
              data=pars4, ax=ax)
+# markers; only for those subjects with all 4 conditions
+shell()
 sns.lineplot(x='post_correct', y='post_error',
              units='subject_nickname', estimator=None, color='grey', alpha=0.5, legend=False,
-             data=pars4, ax=ax, style='task', markers={'traini':'o', 'biased':'s'}, markersize=3)
+             data=pars4, ax=ax, style='task', markers={'traini':'o', 'biased':'^'}, markersize=3)
 
+axlim = 0.5
+# ax.axhline(linewidth=0.75, color='k', zorder=-500)
+# ax.axvline(linewidth=0.75, color='k', zorder=-500)
+
+ax.set_xlabel("History-dependent bias shift\n($\Delta$ choice %) after correct")
+ax.set_ylabel("History-dependent bias shift\n($\Delta$ choice %) after error")
+ax.set(xticks=[-20, 0,20,40,60], yticks=[-20, 0,20,40,60])
+sns.despine(trim=True)
+fig.tight_layout()
+fig.savefig(os.path.join(figpath, "figure4e_history_strategy.pdf"))
+fig.savefig(os.path.join(figpath, "figure4e_history_strategy.png"), dpi=600)
+plt.close("all")
+
+
+plt.close('all')
+fig, ax = plt.subplots(1, 1, figsize=[3.5, 3.5])
 pars5 = pars4.groupby(['institution_code', 'task']).mean().reset_index()
 # add one line, average per lab
 sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
     linewidth=2, legend=False, data=pars5, ax=ax)
 sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
     linewidth=2, legend=False, data=pars5, ax=ax, 
-    style='task', markers={'traini':'o', 'biased':'s'})
+    style='task', markers={'traini':'o', 'biased':'^'}, markersize=5)
 
-# # LAYOUT
-# axlim = ceil(
-#     np.max([pars4.post_correct.max(), pars4.post_error.max()]) * 10) / 10
 axlim = 0.5
-# ax.set_xticks([ 0, axlim])
-# ax.set_yticks([0, axlim])
-ax.axhline(linewidth=0.75, color='k', zorder=-500)
-ax.axvline(linewidth=0.75, color='k', zorder=-500)
-
-# plt.text(axlim/2, axlim/2, 'stay', horizontalalignment='center',
-#          verticalalignment='center', style='italic')
-# plt.text(axlim/2, -axlim/2, 'win stay'+'\n'+'lose switch',
-#          horizontalalignment='center', verticalalignment='center', style='italic')
-# plt.text(-axlim/2, -axlim/2, 'switch', horizontalalignment='center',
-#          verticalalignment='center', style='italic')
-# plt.text(-axlim/2, axlim/2, 'win switch'+'\n'+'lose stay',
-#          horizontalalignment='center', verticalalignment='center', style='italic')
+# ax.axhline(linewidth=0.75, color='k', zorder=-500)
+# ax.axvline(linewidth=0.75, color='k', zorder=-500)
 
 ax.set_xlabel("History-dependent bias shift\n($\Delta$ choice %) after correct")
 ax.set_ylabel("History-dependent bias shift\n($\Delta$ choice %) after error")
-ax.set(xticks=[0,20,40,60], yticks=[0,20,40,60])
+ax.set(xticks=[0,10,20,30], yticks=[0,10, 20,30])
 sns.despine(trim=True)
 fig.tight_layout()
-fig.savefig(os.path.join(figpath, "figure4e_history_strategy.pdf"))
-fig.savefig(os.path.join(figpath, "figure4e_history_strategy.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure4e_history_strategy_labs.pdf"))
+fig.savefig(os.path.join(figpath, "figure4e_history_strategy_labs.png"), dpi=600)
 plt.close("all")
 

@@ -17,10 +17,12 @@ import matplotlib as mpl
 
 # import wrappers etc
 from ibl_pipeline import subject, behavior, acquisition
+from ibl_pipeline.analyses import behavior as behavioral_analyses
 endcriteria = dj.create_virtual_module(
     'SessionEndCriteria', 'group_shared_end_criteria')  # from Miles
 
 # grab some plotting functions from datajoint
+sys.path.append(os.path.join(os.path.dirname(__file__), '../IBL_pipeline/prelim_analyses/behavioral_snapshots/'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
 import load_mouse_data_datajoint, behavior_plots
 
@@ -33,25 +35,15 @@ plt.close('all')
 # pick an example mouse
 # ================================= #
 
-mouse = 'CSHL_014'
-lab = 'churchlandlab'
-
-b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
-    * (subject.SubjectLab & 'lab_name="%s"' % lab) \
-    * behavior.TrialSet.Trial \
-    * acquisition.Session \
-    * endcriteria.SessionEndCriteria
-behav = b.fetch(order_by='session_start_time, trial_id',
-                format='frame').reset_index()
-print(behav)
-behav = dj_tools.dj2pandas(behav)
-
-xlims = [behav.session_start_time.min().replace(hour=0,microsecond=0,second=0,minute=0) - datetime.timedelta(days=2),
-         behav.session_start_time.max().replace(hour=0,microsecond=0,second=0,minute=0) + datetime.timedelta(days=2)]
+mouse = 'KS016'
+lab = 'cortexlab'
 
 # ================================= #
 # CONTRAST HEATMAP
 # ================================= #
+
+weight_water, baseline = behavior_plots.get_water_weight(mouse, lab)
+xlims = [weight_water.date.min()-datetime.timedelta(days=2), weight_water.date.max()+datetime.timedelta(days=2)]
 
 fig, ax = plt.subplots(1, 2, figsize=(7, 2.5))
 behavior_plots.plot_contrast_heatmap(mouse, lab, ax[0], xlims)
@@ -61,25 +53,33 @@ ax[0].set_xlabel('Training days')
 ax[0].set_title('Example mouse')
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.png"))
+print('done')
 
 # ================================================================== #
 # PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
 # ================================================================== #
 
-# add some useful metrics
-behav['trial_start_time'] = behav.trial_start_time / 60  # in minutes
-behav['correct_easy'] = behav.correct_easy * 100
-behav['training_day'] = behav.days.map(
-    dict(zip(list(behav.days.unique()), list(range(1, 1+len(behav.days.unique()))))))
+b = ((subject.Subject & 'subject_nickname = "%s"' % mouse) \
+    * (subject.SubjectLab & 'lab_name="%s"' % lab) \
+    * behavioral_analyses.BehavioralSummaryByDate)
+behav = b.fetch(format='frame').reset_index()
 days = behav.training_day.unique()
-days = [2,5,9,13]
 
 for didx, day in enumerate(days):
 
-    assert(day in behav.days)
-
-    # select data from one day
-    behavtmp = behav.loc[behav['training_day'] == day, :].copy()
+    # get data for today
+    print(day)
+    thisdate = behav[behav.training_day == day]['session_date'].dt.strftime('%Y-%m-%d').item()
+    b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
+        * (subject.SubjectLab & 'lab_name="%s"' % lab) \
+        * (acquisition.Session.proj(session_date='date(session_start_time)') & 'session_date = "%s"' % thisdate) \
+        * behavior.TrialSet.Trial() \
+        * endcriteria.SessionEndCriteria()
+    behavtmp = dj_tools.dj2pandas(b.fetch(format='frame').reset_index())
+    
+    # unclear how this can be empty - but if it happens, skip
+    if behavtmp.empty:
+        continue
 
     # PSYCHOMETRIC FUNCTIONS
     fig, ax = plt.subplots(1, 1, figsize=(2, 2))
@@ -87,11 +87,11 @@ for didx, day in enumerate(days):
         columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
     ax.set(xlabel="Signed contrast (%)",
            ylabel="Rightward choices (%)", ylim=[0, 1])
-    ax.set(title='Day %d' % day)
+    ax.set(title='Day %d' % didx)
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure1_example_psychfunc_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_psychfunc_day%d.png" % didx), dpi=600)
 
     # CHRONOMETRIC FUNCTIONS
     fig, ax = plt.subplots(1, 1, figsize=(2, 2))
@@ -99,7 +99,7 @@ for didx, day in enumerate(days):
         columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
     ax.grid(False)
     ax.set(xlabel="Signed contrast (%)", ylabel="RT (s)", ylim=[0, 1.5])
-    ax.set(title='Day %d' % day)
+    ax.set(title='Day %d' % didx)
 
     # rt axis scaling
     ax.set(ylim=[0.1, 1.5], yticks=[0.1, 1.5])
@@ -109,7 +109,7 @@ for didx, day in enumerate(days):
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure1_example_chronfunc_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_chronfunc_day%d.png" % didx), dpi=600)
 
     # ================================================================== #
     # WITHIN-TRIAL DISENGAGEMENT CRITERIA
@@ -136,6 +136,7 @@ for didx, day in enumerate(days):
     # right y-axis with sliding performance
     # from https://stackoverflow.com/questions/36988123/pandas-groupby-and-rolling-apply-ignoring-nans
     g1 = behavtmp[['trial_start_time', 'correct_easy']]
+    g1['correct_easy'] = g1.correct_easy * 100
     g2 = g1.fillna(0).copy()
     s = g2.rolling(50).sum() / g1.rolling(50).count()  # the actual computation
 
@@ -149,13 +150,16 @@ for didx, day in enumerate(days):
 
     # INDICATE THE REASON AND TRIAL AT WHICH SESSION SHOULD HAVE ENDED
     end_x = behavtmp.loc[behavtmp.trial_id == behavtmp.end_status_index.unique()[
-        0], 'trial_start_time'].values[0]
+        0], 'trial_start_time'].values.item()
     ax2.axvline(x=end_x, color='darkgrey')
     ax2.annotate(behavtmp.end_status.unique()[0], xy=(end_x, 100), xytext=(end_x, 105),
                  arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
 
-    ax.set(title='Day %d' % day)
+    ax.set(title='Day %d' % didx)
     # sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure1_example_disengagement_day%d.png" % day), dpi=600)
+        figpath, "figure1_example_disengagement_day%d.png" % didx), dpi=600)
+
+    print(didx)
+    print(thisdate)

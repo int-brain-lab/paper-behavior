@@ -98,7 +98,7 @@ for index, group in pars.groupby(['institution_code', 'subject_nickname', 'task'
     group2 = group.loc[group.index.repeat(
         len(yvec))].reset_index(drop=True).copy()
     group2['signed_contrast'] = xvec
-    group2['choice'] = yvec
+    group2['choice'] = 100 * yvec
     # add this
     pars2 = pars2.append(group2)
 
@@ -155,9 +155,9 @@ ax.axvline(linewidth=0.75, color='k', zorder=-500)
 # plt.text(-axlim/2, axlim/2, 'win switch'+'\n'+'lose stay',
 #          horizontalalignment='center', verticalalignment='center', style='italic')
 
-ax.set_xlabel("History-dependent bias shift\nafter correct")
-ax.set_ylabel("History-dependent bias shift\nafter error")
-
+ax.set_xlabel("History-dependent bias shift\n($\Delta$ choice %) after correct")
+ax.set_ylabel("History-dependent bias shift\n($\Delta$ choice %) after error")
+ax.set(xticks=[0,20,40,60], yticks=[0,20,40,60])
 sns.despine(trim=True)
 fig.tight_layout()
 fig.savefig(os.path.join(figpath, "figure4e_history_strategy.pdf"))

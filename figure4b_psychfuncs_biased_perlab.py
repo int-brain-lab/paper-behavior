@@ -103,7 +103,7 @@ for index, group in pars.groupby(['institution_code', 'subject_nickname',
     group2 = group.loc[group.index.repeat(
         len(yvec))].reset_index(drop=True).copy()
     group2['signed_contrast'] = xvec
-    group2['choice'] = yvec
+    group2['choice'] = 100 * yvec
 
     # add this
     behav2 = behav2.append(group2)

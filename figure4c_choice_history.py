@@ -131,15 +131,14 @@ sns.lineplot(x='post_correct', y='post_error',
              units='subject_nickname', estimator=None, color='grey', alpha=0.3,
              data=pars4, ax=ax)
 # markers; only for those subjects with all 4 conditions
-shell()
+num_dp = pars4.groupby(['subject_nickname'])['post_error'].count().reset_index()
+sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
 sns.lineplot(x='post_correct', y='post_error',
              units='subject_nickname', estimator=None, color='grey', alpha=0.5, legend=False,
-             data=pars4, ax=ax, style='task', markers={'traini':'o', 'biased':'^'}, markersize=3)
+             data=pars4[pars4['subject_nickname'].isin(sjs)],
+             ax=ax, style='task', markers={'traini':'o', 'biased':'^'}, markersize=3)
 
 axlim = 0.5
-# ax.axhline(linewidth=0.75, color='k', zorder=-500)
-# ax.axvline(linewidth=0.75, color='k', zorder=-500)
-
 ax.set_xlabel("History-dependent bias shift\n($\Delta$ choice %) after correct")
 ax.set_ylabel("History-dependent bias shift\n($\Delta$ choice %) after error")
 ax.set(xticks=[-20, 0,20,40,60], yticks=[-20, 0,20,40,60])

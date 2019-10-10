@@ -16,7 +16,7 @@ from ibl_pipeline.analyses import behavior as behavior_analysis
 
 
 def group_colors():
-    return sns.color_palette("Set2", 7)
+    return sns.color_palette("Dark2", 7)
 
 
 def institution_map():

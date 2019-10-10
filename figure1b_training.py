@@ -59,7 +59,8 @@ xlims = [behav.session_start_time.min().replace(hour=0, microsecond=0, second=0,
 # ================================= #
 
 weight_water, baseline = behavior_plots.get_water_weight(mouse, lab)
-xlims = [weight_water.date.min()-datetime.timedelta(days=2), weight_water.date.max()+datetime.timedelta(days=2)]
+xlims = [weight_water.date.min() - datetime.timedelta(days=2), weight_water.date.max() + 
+         datetime.timedelta(days=2)]
 
 fig, ax = plt.subplots(1, 2, figsize=(7, 2.5))
 behavior_plots.plot_contrast_heatmap(mouse, lab, ax[0], xlims)
@@ -89,7 +90,8 @@ for didx, day in enumerate(days):
     thisdate = behav[behav.training_day == day]['session_date'].dt.strftime('%Y-%m-%d').item()
     b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
         * (subject.SubjectLab & 'lab_name="%s"' % lab) \
-        * (acquisition.Session.proj(session_date='date(session_start_time)') & 'session_date = "%s"' % thisdate) \
+        * (acquisition.Session.proj(session_date='date(session_start_time)') &
+           'session_date = "%s"' % thisdate) \
         * behavior.TrialSet.Trial() \
         * endcriteria.SessionEndCriteria()
     behavtmp = dj_tools.dj2pandas(b.fetch(format='frame').reset_index())

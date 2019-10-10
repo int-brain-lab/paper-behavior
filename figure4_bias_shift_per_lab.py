@@ -59,9 +59,9 @@ for i, nickname in enumerate(np.unique(biased_blocks['subject_nickname'])):
                 or (len(contrasts) != len(choose_right_20[j]))):
             continue
         shift = np.append(shift, (choose_right_20[j][contrasts == 0][0]
-                                  - choose_right_80[j][contrasts == 0][0]))
-        bias_20 = np.append(shift, choose_right_20[j][contrasts == 0][0])
-        bias_80 = np.append(shift, choose_right_80[j][contrasts == 0][0])
+                                  - choose_right_80[j][contrasts == 0][0])*100)
+        bias_20 = np.append(shift, choose_right_20[j][contrasts == 0][0]*100)
+        bias_80 = np.append(shift, choose_right_80[j][contrasts == 0][0]*100)
 
     # Add to dataframe
     bias.loc[i, 'mouse'] = nickname
@@ -96,17 +96,17 @@ f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='bias_20', x='lab_number', data=bias_all, ax=ax1)
-ax1.set(ylabel='Bias', ylim=[0, 0.51], xlabel='', title='Probability left: 20%')
+ax1.set(ylabel='Bias', ylim=[0, 51], xlabel='', title='Probability left: 20%')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='bias_80', x='lab_number', data=bias_all, ax=ax2)
-ax2.set(ylabel='Bias', ylim=[0, 0.51], xlabel='', title='Probability left: 80%')
+ax2.set(ylabel='Bias', ylim=[0, 51], xlabel='', title='Probability left: 80%')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='bias_shift', x='lab_number', data=bias_all, ax=ax3)
-ax3.set(ylabel='Bias shift ($\Delta$ choice %)', ylim=[0, 0.51], xlabel='')
+ax3.set(ylabel='Bias shift ($\Delta$ choice %)', ylim=[0, 51], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 

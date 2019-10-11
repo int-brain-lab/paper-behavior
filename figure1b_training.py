@@ -64,7 +64,8 @@ b = ((subject.Subject & 'subject_nickname = "%s"' % mouse) \
     * (subject.SubjectLab & 'lab_name="%s"' % lab) \
     * behavioral_analyses.BehavioralSummaryByDate)
 behav = b.fetch(format='frame').reset_index()
-days = behav.training_day.unique()
+behav['training_day'] = behav.training_day - behav.training_day.min() + 1  # start at session 1
+days = [2, 7, 10, 14]
 
 for didx, day in enumerate(days):
 
@@ -85,18 +86,23 @@ for didx, day in enumerate(days):
         continue
 
     # PSYCHOMETRIC FUNCTIONS
-    fig, ax = plt.subplots(1, 1, figsize=(2, 2))
+    fig, ax = plt.subplots(1, 1, figsize=(2.5, 2.5))
     behavior_plots.plot_psychometric(behavtmp.rename(
         columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
-    ax.set(xlabel="Signed contrast (%)",
-           ylabel="Rightward choices (%)", ylim=[0, 1])
-    ax.set(title='Day %d' % (didx + 1))
+    ax.set(xlabel="Signed contrast (%)", ylim=[0, 1])
+
+    if didx == 0:
+        ax.set(ylabel="Rightward choices (%)")
+    else:
+        ax.set(ylabel=" ")
+
+    ax.set(title='Day %d' % (day))
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join( 
-        figpath, "figure1_example_psychfunc_day%d.pdf" % (didx + 1)))
+        figpath, "figure1_example_psychfunc_day%d.pdf" % (day)))
     fig.savefig(os.path.join( 
-        figpath, "figure1_example_psychfunc_day%d.png" % (didx + 1)), dpi=600)
+        figpath, "figure1_example_psychfunc_day%d.png" % (day)), dpi=600)
 
     # # CHRONOMETRIC FUNCTIONS
     # fig, ax = plt.subplots(1, 1, figsize=(2, 2))
@@ -122,7 +128,7 @@ for didx, day in enumerate(days):
     # ================================================================== #
 
     plt.close('all')
-    fig, ax = plt.subplots(1, 1, figsize=(, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(2.5, 2.5))
 
     # # RTS THROUGHOUT SESSION
     # sns.scatterplot(x='trial_start_time', y='rt', style='correct', hue='correct',
@@ -138,8 +144,13 @@ for didx, day in enumerate(days):
     ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
                                                           ('{{:.{:1d}f}}'.format(int(np.maximum(
                                                               -np.log10(y), 0)))).format(y)))
-    ax.set(xlabel="Time in session (min)", ylabel="RT (s)")
+    ax.set(xlabel="Time in session (min)")
 
+    if didx == 0:
+        ax.set(ylabel="Rightward choices (%)")
+    else:
+        ax.set(ylabel=" ")
+        
     # right y-axis with sliding performance
     # from :
     # https://stackoverflow.com/questions/36988123/pandas-groupby-and-rolling-apply-ignoring-nans
@@ -152,8 +163,14 @@ for didx, day in enumerate(days):
     ax2 = ax.twinx()
     sns.lineplot(x='trial_start_time', y='correct_easy', color='deepskyblue', ci=None,
                  data=s, ax=ax2)
-    ax2.set(xlabel='', ylabel="Accuracy (%)",
+    ax2.set(xlabel='', 
             ylim=[0, 101], yticks=[0, 50, 100])
+
+    if day == max(days):
+        ax2.set(ylabel="Accuracy (%)")
+    else:
+        ax2.set(ylabel=" ")
+        
     ax2.yaxis.label.set_color("deepskyblue")
     ax2.tick_params(axis='y', colors='deepskyblue')
 
@@ -164,13 +181,13 @@ for didx, day in enumerate(days):
     # ax2.annotate(behavtmp.end_status.unique()[0], xy=(end_x, 100), xytext=(end_x, 105),
     #              arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
 
-    ax.set(title='Day %d' % (didx + 1))
+    ax.set(title='Day %d' % (day))
     # sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure1_example_disengagement_day%d.pdf" % (didx + 1)))
+        figpath, "figure1_example_disengagement_day%d.pdf" % (day)))
     fig.savefig(os.path.join(
-        figpath, "figure1_example_disengagement_day%d.png" % (didx + 1)), dpi=600)
+        figpath, "figure1_example_disengagement_day%d.png" % (day)), dpi=600)
 
     print(didx)
     print(thisdate)

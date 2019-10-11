@@ -118,7 +118,7 @@ behav3['biasshift'] = behav3[20] - behav3[80]
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav3,
-                    col="institution_code", col_wrap=7, col_order=col_names,
+                    col="institution_code", col_wrap=4, col_order=col_names,
                     sharex=True, sharey=True, aspect=1, hue="subject_nickname")
 fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)

@@ -58,7 +58,7 @@ behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(s
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
-                    col="institution_code", col_wrap=7, col_order=col_names,
+                    col="institution_code", col_wrap=4, col_order=col_names,
                     sharex=True, sharey=True, aspect=1, hue="subject_uuid")
 fig.map(plot_psychometric, "signed_contrast", "choice_right",
         "subject_nickname", color='gray', alpha=0.7)

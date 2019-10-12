@@ -147,7 +147,7 @@ for didx, day in enumerate(days):
     ax.set(xlabel="Time in session (min)")
 
     if didx == 0:
-        ax.set(ylabel="Rightward choices (%)")
+        ax.set(ylabel="Time to trial completion (s)")
     else:
         ax.set(ylabel=" ")
         

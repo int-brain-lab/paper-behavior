@@ -51,9 +51,9 @@ fig, ax = plt.subplots(1, 1, figsize=(2.5, 2.5), sharex=True, sharey=True)
 sns.lineplot(data=behav2, x=behav2.signed_contrasts, y=100 *
              behav2.choice, ax=ax, linewidth=2, hue=behav2.prob, palette=cmap, legend=False)
 
-ax.annotate('80/20', xy=(-20, 50), xytext=(-40, 80), color=cmap[0], fontsize=12,
+ax.annotate('20/80', xy=(-20, 50), xytext=(-40, 80), color=cmap[0], fontsize=12,
     arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')
-ax.annotate('20/80', xy=(20, 50), xytext=(40, 20), color=cmap[2], fontsize=12,
+ax.annotate('80/20', xy=(20, 50), xytext=(40, 20), color=cmap[2], fontsize=12,
     arrowprops=dict(facecolor=cmap[2], shrink=0.05))
 
 plt.tight_layout()

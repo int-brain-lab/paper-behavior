@@ -63,12 +63,16 @@ fig = sns.FacetGrid(behav,
 fig.map(plot_psychometric, "signed_contrast", "choice_right",
         "subject_nickname", color='gray', alpha=0.7)
 fig.set_titles("{col_name}")
-for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_name.unique()[
-                 axidx-1], color=pal[axidx-1], fontweight='bold')
+for axidx, ax in enumerate(fig.axes.flat[0:-1]):
+    ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
+
+# overlay the example mouse
+tmpdat = behav[behav['subject_nickname'].str.contains('KS014')]
+plot_psychometric(tmpdat.signed_contrast, tmpdat.choice_right, tmpdat.subject_nickname, 
+                  color='black', ax=fig.axes[-2], legend=False)
 
 # NOW ADD THE GROUP
-ax_group = fig.axes[0]  # overwrite this empty plot
+ax_group = fig.axes[-1]  # overwrite this empty plot
 for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav[behav['institution_code'].str.contains(inst)]
     plot_psychometric(tmp_behav.signed_contrast, tmp_behav.choice_right,
@@ -78,5 +82,5 @@ fig.despine(trim=True)
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.pdf"))
-fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.png"), dpi=300)
 plt.close('all')

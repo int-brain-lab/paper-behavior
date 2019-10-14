@@ -16,12 +16,13 @@ from scipy import stats
 from os.path import join, expanduser
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors)
+                                      institution_map, group_colors, figpath)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
 
 # Settings
 fig_path = join(expanduser('~'), 'Figures', 'Behavior')
+fig_path = figpath()
 
 # Query sessions
 sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]

@@ -65,6 +65,7 @@ behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(s
 # one for all labs combined
 # ================================= #
 
+
 fig = sns.FacetGrid(behav,
                     hue="probabilityLeft", palette=cmap,
                     sharex=True, sharey=True, aspect=1)
@@ -72,11 +73,10 @@ fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname"
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsize=12,
                 arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')
-fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(15, 0.2), color=cmap[2], fontsize=12,
-                arrowprops=dict(facecolor=cmap[2], shrink=0.05))
-fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(15, 0.2), color=cmap[2], fontsize=12,
+fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12,
                 arrowprops=dict(facecolor=cmap[2], shrink=0.05))
 fig.despine(trim=True)
+fig.axes[0][0].set_title('All mice', fontweight='bold', color='k')
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased.png"), dpi=600)
@@ -125,12 +125,16 @@ fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)
 fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
 fig.set_titles("{col_name}")
-for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_code.unique()[
-                 axidx-1], color=pal[axidx-1], fontweight='bold')
+for axidx, ax in enumerate(fig.axes.flat[0:-1]):
+    ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
+
+# overlay the example mouse
+tmpdat = behav3[behav3['subject_nickname'].str.contains('KS014')]
+plot_chronometric(tmpdat.signed_contrast, tmpdat.biasshift, tmpdat.subject_nickname,
+                  color='black', ax=fig.axes[-2], legend=False)
 
 # ADD THE GROUP TO THE FIRST AXIS
-ax_group = fig.axes[0]  # overwrite this empty plot
+ax_group = fig.axes[-1]  # overwrite this empty plot
 for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav3[behav3['institution_code'].str.contains(inst)]
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
@@ -139,5 +143,5 @@ ax_group.set_title('All labs', color='k', fontweight='bold')
 fig.set_axis_labels('Signed contrast (%)', 'Bias shift ($\Delta$ choice %)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4a_biasshift.pdf"))
-fig.savefig(os.path.join(figpath, "figure4a_biasshift.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure4a_biasshift.png"), dpi=300)
 plt.close('all')

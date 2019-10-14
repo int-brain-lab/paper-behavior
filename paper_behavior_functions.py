@@ -14,15 +14,14 @@ import datajoint as dj
 from ibl_pipeline.analyses import behavior as behavior_analysis
 # from IPython import embed as shell  # for debugging
 
-
 def group_colors():
-    return sns.color_palette("Set2", 7)
+    return sns.color_palette("Dark2", 7)
 
 
 def institution_map():
     institution_map = {'Berkeley': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
                        'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'UCL': 'Lab 7'}
-    col_names = ['AllLabs', 'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6', 'Lab 7']
+    col_names = ['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6', 'Lab 7', 'All labs']
 
     return institution_map, col_names
 

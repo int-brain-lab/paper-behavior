@@ -32,11 +32,14 @@ from ibl_pipeline import subject, reference
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
 FIG_PATH = join(expanduser('~'), 'Figures', 'Behavior')
+DECODER = 'lda'     # forest, bayes, regression or lda
 NUM_SPLITS = 3        # n in n-fold cross validation
 ITERATIONS = 2000     # how often to decode
 METRICS = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time']
@@ -120,12 +123,20 @@ for i in learned.index.values:
 
 # Initialize decoders
 print('\nDecoding of lab membership..')
-decod = learned
-clf_rf = RandomForestClassifier(n_estimators=100)
+
+if DECODER == 'forest':
+    clf = RandomForestClassifier(n_estimators=100)
+elif DECODER == 'bayes':
+    clf = GaussianNB()
+elif DECODER == 'regression':
+    clf = LogisticRegression(solver='liblinear', multi_class='auto')
+else:
+    raise Exception('DECODER must be forest or bayes')
 
 # Perform decoding of lab membership
 decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
                                         'control', 'control_shuffled', 'control_cm'])
+decod = learned
 decoding_set = decod[METRICS].values
 control_set = decod[METRIS_CONTROL].values
 for i in range(ITERATIONS):
@@ -133,20 +144,20 @@ for i in range(ITERATIONS):
         print('Iteration %d of %d' % (i+1, ITERATIONS))
     # Original dataset
     decoding_result.loc[i, 'original'], conf_matrix = decoding(
-            decoding_set, list(decod['lab']), clf_rf, NUM_SPLITS)
+            decoding_set, list(decod['lab']), clf, NUM_SPLITS)
     decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
                                                   / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
                                                            list(decod['lab'].sample(frac=1)),
-                                                           clf_rf, NUM_SPLITS)[0]
+                                                           clf, NUM_SPLITS)[0]
     # Positive control dataset
     decoding_result.loc[i, 'control'], conf_matrix = decoding(
-            control_set, list(decod['lab']), clf_rf, NUM_SPLITS)
+            control_set, list(decod['lab']), clf, NUM_SPLITS)
     decoding_result.loc[i, 'control_cm'] = (conf_matrix
                                             / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
                                                           list(decod['lab'].sample(frac=1)),
-                                                          clf_rf, NUM_SPLITS)[0]
+                                                          clf, NUM_SPLITS)[0]
 
 # Calculate if decoder performs above chance (positive values indicate above chance-level)
 sig = np.percentile(decoding_result['original']-np.mean(decoding_result['original_shuffled']), 5)
@@ -168,8 +179,8 @@ ax1.text(1, 0.5, '***', fontsize=15, ha='center', va='center')
 plt.tight_layout(pad=2)
 seaborn_style()
 
-plt.savefig(join(FIG_PATH, 'figure3i_decoding.pdf'), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure3i_decoding.png'), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.pdf' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
@@ -193,8 +204,8 @@ plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 
-plt.savefig(join(FIG_PATH, 'control_confusion_matrix.pdf'), dpi=300)
-plt.savefig(join(FIG_PATH, 'control_confusion_matrix.png'), dpi=300)
+plt.savefig(join(FIG_PATH, 'control_confusion_matrix_%s.pdf' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'control_confusion_matrix_%s.png' % DECODER), dpi=300)
 
 # Plot decoding results
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
@@ -212,6 +223,5 @@ plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.035, 'Chance level
 plt.tight_layout(pad=2)
 seaborn_style()
 
-plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute.pdf'), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute.png'), dpi=300)
-
+plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute_%s.pdf' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute_%s.png' % DECODER), dpi=300)

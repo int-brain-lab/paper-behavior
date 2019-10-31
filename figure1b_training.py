@@ -96,7 +96,7 @@ for didx, day in enumerate(days):
     else:
         ax.set(ylabel=" ")
 
-    ax.set(title='Day %d' % (day))
+    ax.set(title='Training day %d' % (day))
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join( 
@@ -181,7 +181,7 @@ for didx, day in enumerate(days):
     # ax2.annotate(behavtmp.end_status.unique()[0], xy=(end_x, 100), xytext=(end_x, 105),
     #              arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
 
-    ax.set(title='Day %d' % (day))
+    ax.set(title='Training day %d' % (day))
     # sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(

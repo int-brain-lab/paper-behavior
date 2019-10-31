@@ -49,7 +49,7 @@ plt.close('all')
 
 b = (subject.Subject & 'subject_nickname="KS014"') * \
     behavior.TrialSet.Trial * \
-    (acquisition.Session & 'task_protocol LIKE "%biased%"')
+    (acquisition.Session & 'task_protocol LIKE "%biased%"' & 'session_start_time BETWEEN "2019-08-30" and "2019-08-31"')
 bdat = b.fetch(order_by='session_start_time, trial_id',
                format='frame').reset_index()
 behav = dj2pandas(bdat)
@@ -83,20 +83,22 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
     # sns.scatterplot(x='trial_id', y='stim_sign', data=behav, color='grey',
     #                 marker='o', ax=axes, legend=False, alpha=0.5,
     #                 ec='none', linewidth=0, zorder=2)
-    sns.lineplot(x='trial_id', y='stim_sign', color='grey', ci=None,
+    sns.lineplot(x='trial_id', y='stim_sign', color='black', ci=None,
                  data=behavtmp[['trial_id', 'stim_sign']].rolling(10).mean(), ax=axes)
     axes.set(xlim=[-5, xmax], xlabel='Trial number', ylabel='Stimuli on right (%)', ylim=[-1, 101])
-    axes.yaxis.label.set_color("grey")
-    axes.tick_params(axis='y', colors='grey')
+    axes.yaxis.label.set_color("black")
+    axes.tick_params(axis='y', colors='black')
     #%%
 
     # 3. ANIMAL CHOICES, rolling window
     rightax = axes.twinx()
     behavtmp['choice_right'] = behavtmp.choice_right * 100
-    sns.lineplot(x='trial_id', y='choice_right', color='black', ci=None,
+    sns.lineplot(x='trial_id', y='choice_right', color='grey', ci=None,
                  data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax)
     rightax.set(xlim=[-5, xmax], xlabel='Trial number',
                 ylabel='Rightwards choices (%)', ylim=[-1, 101])
+    rightax.yaxis.label.set_color("grey")
+    rightax.tick_params(axis='y', colors='grey')
 
     axes.set_yticks([0, 50, 100])
     rightax.set_yticks([0, 50, 100])

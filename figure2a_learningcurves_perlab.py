@@ -58,7 +58,7 @@ behav = behav2
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col="institution_code", col_wrap=7, col_order=col_names,
-                    sharex=True, sharey=True, aspect=1, hue="subject_uuid", xlim=[-1, 41.5])
+                    sharex=True, sharey=True, aspect=0.7, hue="subject_uuid", xlim=[-1, 41.5])
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.3)
 fig.map(sns.lineplot, "training_day",
@@ -74,7 +74,7 @@ sns.lineplot(ax=fig.axes[-1], x='training_day', y='performance_easy', color='bla
 fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.pdf"))
-fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=300)
 
 # Plot all labs
 fig, ax1 = plt.subplots(1, 1, figsize=(4, 4))
@@ -86,6 +86,6 @@ ax1.set(xlabel='Training day', ylabel='Performance (%) on easy trials', xlim=[-1
 seaborn_style()
 plt.tight_layout(pad=2)
 fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.pdf"))
-fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.png"), dpi=600)
+fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.png"), dpi=300)
 
 

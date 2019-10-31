@@ -65,7 +65,7 @@ fig.map(plot_psychometric, "signed_contrast", "choice_right",
         "subject_nickname", color='gray', alpha=0.7)
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
+    ax.set_title(sorted(behav.institution_name.unique())[axidx], color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
 tmpdat = behav[behav['subject_nickname'].str.contains('KS014')]

@@ -56,6 +56,9 @@ tmpdat = behav.groupby(['signed_contrast'])['choice'].count().reset_index()
 removecontrasts = tmpdat.loc[tmpdat['choice'] < 100, 'signed_contrast']
 behav = behav[~behav.signed_contrast.isin(removecontrasts)]
 
+# choose: take only those trials where the objective probability is 0.5???
+# behav = behav.loc[behav.probabilityLeft == 50, :]
+
 # ================================= #
 # PREVIOUS CHOICE - SUMMARY PLOT
 # ================================= #
@@ -70,11 +73,11 @@ fig = sns.FacetGrid(behav,
                     hue_order=['post_error, right', 'post_correct, right',
                                'post_error, left', 'post_correct, left'])
 fig.map(plot_psychometric, "signed_contrast",
-        "choice_right", "subject_nickname").add_legend()
+        "choice_right", "subject_nickname")
 tasks = ['Unbiased task\n(level 1)', 'Biased task\n(level 2)']
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(tasks[axidx], color='k', fontweight='bold')
-fig._legend.set_title('Previous choice')
+#fig._legend.set_title('Previous choice')
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4d_history_psychfuncs.pdf"))
@@ -108,7 +111,7 @@ for index, group in pars.groupby(['institution_code', 'subject_nickname', 'task'
     pars2 = pars2.append(group2)
 
 # only pick psychometric functions that were fit on a reasonable number of trials...
-pars2 = pars2[(pars2.ntrials > 100) & (pars2.signed_contrast == 0)]
+pars2 = pars2[(pars2.ntrials > 50) & (pars2.signed_contrast == 0)]
 
 # compute history-dependent bias shift
 pars3 = pd.pivot_table(pars2, values='choice',
@@ -128,47 +131,57 @@ print(pars4.describe())
 plt.close('all')
 fig, ax = plt.subplots(1, 1, figsize=[3.5, 3.5])
 sns.lineplot(x='post_correct', y='post_error',
-             units='subject_nickname', estimator=None, color='grey', alpha=0.3,
-             data=pars4, ax=ax)
+             units='subject_nickname', estimator=None, hue='institution_code', alpha=0.3,
+             palette=pal, data=pars4, ax=ax, legend=False)
 # markers; only for those subjects with all 4 conditions
 num_dp = pars4.groupby(['subject_nickname'])['post_error'].count().reset_index()
 sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
 sns.lineplot(x='post_correct', y='post_error',
-             units='subject_nickname', estimator=None, color='grey', alpha=0.5, legend=False,
+             units='subject_nickname', estimator=None, hue='institution_code', palette=pal, alpha=0.5, legend=False,
              data=pars4[pars4['subject_nickname'].isin(sjs)],
-             ax=ax, style='task', markers={'traini':'o', 'biased':'^'}, markersize=3)
+             ax=ax, style='task', markers={'traini':'o', 'biased':'^'}, markersize=4)
 
-axlim = 0.5
-ax.set_xlabel("History-dependent bias shift\n($\Delta$ choice %) after correct")
-ax.set_ylabel("History-dependent bias shift\n($\Delta$ choice %) after error")
-ax.set(xticks=[-20, 0,20,40,60], yticks=[-20, 0,20,40,60])
+# add black line for the group
+sns.lineplot(x='post_correct', y='post_error', legend=False, color='k', ci=None,
+             data=pars4[pars4['subject_nickname'].isin(sjs)].groupby(['task']).mean().reset_index(),
+             ax=ax)
+sns.lineplot(x='post_correct', y='post_error', legend=False, color='k', ci=None,
+             data=pars4[pars4['subject_nickname'].isin(sjs)].groupby(['task']).mean().reset_index(),
+             ax=ax, style='task', markers={'traini':'o', 'biased':'^'}, markersize=6)
+
+ax.set_xlabel("History dependence after correct\n($\Delta$ rightward choice (%) at 0% contrast)")
+ax.set_ylabel("History dependence after error\n($\Delta$ rightward choice (%) at 0% contrast)")
+ax.set(xticks=[-20, 0, 20, 40, 60], yticks=[-20, 0, 20, 40, 60])
+
 sns.despine(trim=True)
+ax.axhline(linestyle=':', color='darkgrey')
+ax.axvline(linestyle=':', color='darkgrey')
 fig.tight_layout()
 fig.savefig(os.path.join(figpath, "figure4e_history_strategy.pdf"))
 fig.savefig(os.path.join(figpath, "figure4e_history_strategy.png"), dpi=600)
 plt.close("all")
 
-
-plt.close('all')
-fig, ax = plt.subplots(1, 1, figsize=[3.5, 3.5])
-pars5 = pars4.groupby(['institution_code', 'task']).mean().reset_index()
-# add one line, average per lab
-sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
-    linewidth=2, legend=False, data=pars5, ax=ax)
-sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
-    linewidth=2, legend=False, data=pars5, ax=ax, 
-    style='task', markers={'traini':'o', 'biased':'^'}, markersize=5)
-
-axlim = 0.5
-# ax.axhline(linewidth=0.75, color='k', zorder=-500)
-# ax.axvline(linewidth=0.75, color='k', zorder=-500)
-
-ax.set_xlabel("History-dependent bias shift\n($\Delta$ choice %) after correct")
-ax.set_ylabel("History-dependent bias shift\n($\Delta$ choice %) after error")
-ax.set(xticks=[0,10,20,30], yticks=[0,10, 20,30])
-sns.despine(trim=True)
-fig.tight_layout()
-fig.savefig(os.path.join(figpath, "figure4e_history_strategy_labs.pdf"))
-fig.savefig(os.path.join(figpath, "figure4e_history_strategy_labs.png"), dpi=600)
-plt.close("all")
-
+#
+# plt.close('all')
+# fig, ax = plt.subplots(1, 1, figsize=[3.5, 3.5])
+# pars5 = pars4.groupby(['institution_code', 'task']).mean().reset_index()
+# # add one line, average per lab
+# sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
+#     linewidth=2, legend=False, data=pars5, ax=ax)
+# sns.lineplot(x='post_correct', y='post_error', hue='institution_code', palette=pal,
+#     linewidth=2, legend=False, data=pars5, ax=ax,
+#     style='task', markers={'traini':'o', 'biased':'^'}, markersize=5)
+#
+# axlim = 0.5
+# # ax.axhline(linewidth=0.75, color='k', zorder=-500)
+# # ax.axvline(linewidth=0.75, color='k', zorder=-500)
+#
+# ax.set_xlabel("History-dependent bias shift\n($\Delta$ choice %) after correct")
+# ax.set_ylabel("History-dependent bias shift\n($\Delta$ choice %) after error")
+# ax.set(xticks=[0,10,20,30], yticks=[0,10, 20,30])
+# sns.despine(trim=True)
+# fig.tight_layout()
+# fig.savefig(os.path.join(figpath, "figure4e_history_strategy_labs.pdf"))
+# fig.savefig(os.path.join(figpath, "figure4e_history_strategy_labs.png"), dpi=600)
+# plt.close("all")
+#

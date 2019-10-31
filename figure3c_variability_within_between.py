@@ -21,7 +21,6 @@ from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
 
 # Settings
-fig_path = join(expanduser('~'), 'Figures', 'Behavior')
 fig_path = figpath()
 
 # Query sessions
@@ -108,7 +107,7 @@ learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['
                                                      'metric': 'Bias',
                                                      'lab': learned_zs_mean.index.values}))
 learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Reaction time'],
-                                                     'metric': 'Reaction time',
+                                                     'metric': 'Trial duration',
                                                      'lab': learned_zs_mean.index.values}))
 
 # Set color palette
@@ -118,7 +117,7 @@ sns.set_palette(use_palette)
 lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
-f, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = plt.subplots(2, 4, figsize=(16, 8))
+f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(20, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
@@ -142,7 +141,7 @@ ax4.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax5)
-ax5.set(ylabel='Time to trial completion (ms)', ylim=[0, 1000], xlabel='')
+ax5.set(ylabel='Trial duration (ms)', ylim=[0, 1000], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
 plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 

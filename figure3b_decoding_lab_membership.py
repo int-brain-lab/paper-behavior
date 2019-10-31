@@ -27,7 +27,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join, expanduser
 import seaborn as sns
-from paper_behavior_functions import query_sessions_around_criterion, seaborn_style
+from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style, figpath,
+                                      institution_map)
 from ibl_pipeline import subject, reference
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior
@@ -38,8 +39,8 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-FIG_PATH = join(expanduser('~'), 'Figures', 'Behavior')
-DECODER = 'lda'     # forest, bayes, regression or lda
+FIG_PATH = figpath()
+DECODER = 'forest'     # forest, bayes, regression or lda
 NUM_SPLITS = 3        # n in n-fold cross validation
 ITERATIONS = 2000     # how often to decode
 METRICS = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time']
@@ -115,15 +116,11 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
 
 # Drop mice with faulty RT
 learned = learned[learned['reaction_time'].notnull()]
-
-# Add (n = x) to lab names
-for i in learned.index.values:
-    learned.loc[i, 'lab_n'] = learned.loc[i, 'lab'] + ' (n=' + str(sum(
-            learned['lab'] == learned.loc[i, 'lab'])) + ')'
+learned['lab_number'] = learned.lab.map(institution_map()[0])
+learned = learned.sort_values('lab_number')
 
 # Initialize decoders
 print('\nDecoding of lab membership..')
-
 if DECODER == 'forest':
     clf = RandomForestClassifier(n_estimators=100)
 elif DECODER == 'bayes':
@@ -136,7 +133,7 @@ else:
 # Perform decoding of lab membership
 decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
                                         'control', 'control_shuffled', 'control_cm'])
-decod = learned
+decod = learned.copy()
 decoding_set = decod[METRICS].values
 control_set = decod[METRIS_CONTROL].values
 for i in range(ITERATIONS):

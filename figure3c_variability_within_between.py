@@ -77,6 +77,9 @@ learned['threshold'] = learned['threshold'].astype(float)
 learned['bias'] = learned['bias'].astype(float)
 learned['lapse_low'] = learned['lapse_low'].astype(float)
 
+# Save to csv
+learned.to_csv(join(fig_path, 'behavior_parameters.csv'))
+
 # Add all mice to dataframe seperately for plotting
 learned_2 = learned.copy()
 learned_2['lab'] = 'All'
@@ -117,7 +120,7 @@ sns.set_palette(use_palette)
 lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
-f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(20, 4))
+f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(16, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)

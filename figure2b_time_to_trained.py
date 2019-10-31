@@ -55,6 +55,9 @@ training_time['sessions'] = training_time['sessions'].astype(float)
 training_time['lab_number'] = training_time.lab.map(institution_map()[0])
 training_time = training_time.sort_values('lab_number')
 
+# Save csv
+training_time.to_csv(join(fig_path, 'training_time.csv'))
+
 # Add all mice to dataframe seperately for plotting
 training_time_all = training_time.copy()
 training_time_all['lab_number'] = 'All'

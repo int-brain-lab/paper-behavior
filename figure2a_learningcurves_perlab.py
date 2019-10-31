@@ -68,7 +68,7 @@ for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
-sns.lineplot(ax=fig.axes[-1], x='training_day', y='performance_easy', color='black',
+sns.lineplot(ax=fig.axes[0], x='training_day', y='performance_easy', color='black',
              data=behav[behav['subject_nickname'].str.contains('KS014')], legend=False)
 
 fig.set_axis_labels('Training day', 'Performance (%) on easy trials')

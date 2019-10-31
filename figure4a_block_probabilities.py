@@ -75,7 +75,7 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
         axes.add_patch(patches.Rectangle((left, 0), width, 100,
                                          fc=cmap_dic[blocknum.probabilityLeft.unique()[
                                              0]],
-                                         ec='none', alpha=0.3))
+                                         ec='none', alpha=0.2))
 
     #%%
     # 2. actual block probabilities as grey line
@@ -93,12 +93,12 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
     # 3. ANIMAL CHOICES, rolling window
     rightax = axes.twinx()
     behavtmp['choice_right'] = behavtmp.choice_right * 100
-    sns.lineplot(x='trial_id', y='choice_right', color='grey', ci=None,
-                 data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax)
+    sns.lineplot(x='trial_id', y='choice_right', color='firebrick', ci=None,
+                 data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax, linestyle=':')
     rightax.set(xlim=[-5, xmax], xlabel='Trial number',
                 ylabel='Rightwards choices (%)', ylim=[-1, 101])
-    rightax.yaxis.label.set_color("grey")
-    rightax.tick_params(axis='y', colors='grey')
+    rightax.yaxis.label.set_color("firebrick")
+    rightax.tick_params(axis='y', colors='firebrick')
 
     axes.set_yticks([0, 50, 100])
     rightax.set_yticks([0, 50, 100])

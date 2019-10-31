@@ -83,8 +83,8 @@ plt.tight_layout(pad=2)
 seaborn_style()
 sns.set_palette(use_palette)
 
-plt.savefig(join(fig_path, 'figure2_cumulative_proportion_trained.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2_cumulative_proportion_trained.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2d_training_time.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2d_training_time.png'), dpi=300)
 
 # Plot cumulative proportion of trained mice over days
 f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
@@ -95,5 +95,5 @@ ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Sessions',
 
 plt.tight_layout(pad=2)
 seaborn_style()
-plt.savefig(join(fig_path, 'figure2_training_time.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2_training_time.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.png'), dpi=300)

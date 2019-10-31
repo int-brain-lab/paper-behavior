@@ -3,10 +3,7 @@
 """
 Created on Fri Dec 21 10:30:25 2018
 
-Quantify the variability of behavioral metrics within and between labs of mouse behavior of a
-single session. The session is the middle session of the three day streak in which a mouse is
-deemed to be trained. This script doesn't perform any analysis but plots summary statistics
-over labs.
+Quantify the variability of the time to trained over labs.
 
 @author: Guido Meijer
 """
@@ -14,15 +11,16 @@ over labs.
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from os.path import join, expanduser
+from os.path import join
 import seaborn as sns
-from paper_behavior_functions import query_subjects, seaborn_style, institution_map, group_colors
+from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
+                                      group_colors, figpath)
 from ibl_pipeline import acquisition, behavior
 from ibl_pipeline import subject
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # Settings
-fig_path = join(expanduser('~'), 'Figures', 'Behavior')
+fig_path = figpath()
 
 # Query sessions
 subjects = query_subjects(as_dataframe=True)
@@ -37,7 +35,8 @@ for i, nickname in enumerate(subjects['subject_nickname']):
     # Get sessions and trials which are flagged as in_training
     ses_start = (acquisition.Session * subject.Subject * behavior_analysis.SessionTrainingStatus
                  & ('subject_nickname = "%s"' % nickname)
-                 & 'training_status = "in_training"').proj('session_start_time')
+                 & 'training_status = "in_training" OR training_status = "untrainable"').proj(
+                         'session_start_time')
     trials = (ses_start * acquisition.Session * behavior.TrialSet.Trial)
 
     # Add to dataframe
@@ -68,6 +67,8 @@ lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+sns.set_palette(use_palette)
+
 sns.boxplot(y='sessions', x='lab_number', data=training_time_all, ax=ax1)
 ax1.set(ylabel='Training duration (sessions)', xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
@@ -82,5 +83,17 @@ plt.tight_layout(pad=2)
 seaborn_style()
 sns.set_palette(use_palette)
 
-plt.savefig(join(fig_path, 'figure2b_training_time.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2b_training_time.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2_cumulative_proportion_trained.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2_cumulative_proportion_trained.png'), dpi=300)
+
+# Plot cumulative proportion of trained mice over days
+f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
+sns.distplot(training_time['sessions'], hist_kws=dict(cumulative=True),
+             kde_kws=dict(cumulative=True), bins=20)
+ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Sessions',
+        xlim=[0, 60], ylim=[0, 1])
+
+plt.tight_layout(pad=2)
+seaborn_style()
+plt.savefig(join(fig_path, 'figure2_training_time.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2_training_time.png'), dpi=300)

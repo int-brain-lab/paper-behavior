@@ -5,24 +5,20 @@ Anne Urai, CSHL, 2019
 
 import pandas as pd
 import numpy as np
-import sys
 import os
-import matplotlib.pyplot as plt
 import seaborn as sns
-from paper_behavior_functions import *
-import datajoint as dj
-from IPython import embed as shell  # for debugging
-
-# import wrappers etc
-from ibl_pipeline import reference, subject, action, acquisition, data, behavior
-from ibl_pipeline.utils import psychofit as psy
+import matplotlib.pyplot as plt
+from paper_behavior_functions import (query_subjects, seaborn_style, figpath,
+                                      group_colors, institution_map, seaborn_style)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
+from IPython import embed as shell  # for debugging
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
 figpath = figpath()
 pal = group_colors()
 institution_map, col_names = institution_map()
+col_names = col_names[:-1]
 
 # ================================= #
 # GET DATA FROM TRAINED ANIMALS
@@ -48,7 +44,8 @@ for index, group in behav.groupby(['lab_name', 'subject_nickname']):
 behav2 = pd.DataFrame([])
 for index, group in behav.groupby(['institution_code', 'subject_nickname']):
     group['performance_easy_trained'] = group.performance_easy
-    group.loc[group['session_date'] < group['date_trained'], 'performance_easy_trained'] = np.nan
+    group.loc[group['session_date'] < pd.to_datetime(group['date_trained']),
+              'performance_easy_trained'] = np.nan
     # add this
     behav2 = behav2.append(group)
 
@@ -60,27 +57,35 @@ behav = behav2
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
-                    col="institution_code", col_wrap=4, col_order=col_names,
+                    col="institution_code", col_wrap=7, col_order=col_names,
                     sharex=True, sharey=True, aspect=1, hue="subject_uuid", xlim=[-1, 41.5])
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.3)
 fig.map(sns.lineplot, "training_day",
         "performance_easy_trained", color='darkblue', alpha=0.3)
 fig.set_titles("{col_name}")
-for axidx, ax in enumerate(fig.axes.flat[0:-1]):
+for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
-sns.lineplot(ax=fig.axes[-2], x='training_day', y='performance_easy', color='black', 
+sns.lineplot(ax=fig.axes[-1], x='training_day', y='performance_easy', color='black',
              data=behav[behav['subject_nickname'].str.contains('KS014')], legend=False)
 
-# NOW ADD THE GROUP
-ax_group = fig.axes[-1] # overwrite this empty plot
-sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal, 
-    ax=ax_group, legend=False, data=behav, ci=None)
-ax_group.set_title('All labs', color='k', fontweight='bold')
 fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
-
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.pdf"))
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=600)
+
+# Plot all labs
+fig, ax1 = plt.subplots(1, 1, figsize=(4, 4))
+sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal,
+             ax=ax1, legend=False, data=behav, ci=None)
+ax1.set_title('All labs', color='k', fontweight='bold')
+ax1.set(xlabel='Training day', ylabel='Performance (%) on easy trials', xlim=[-1, 41.5])
+
+seaborn_style()
+plt.tight_layout(pad=2)
+fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.pdf"))
+fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.png"), dpi=600)
+
+

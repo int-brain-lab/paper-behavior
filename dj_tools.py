@@ -34,10 +34,10 @@ def fit_psychfunc(df):
     # df2['median_rt'] = df['rt'].median(skipna=True)
     # df2['mean_rt'] = df['rt'].mean(skipna=True)
 
-    # number of trials per day
-    df4 = df.groupby(['session_start_time'])['correct'].count().reset_index()
-    df2['ntrials_perday'] = [df4['correct'].values]
-    df2['ntrials'] = df['trial'].count()
+    # # number of trials per day
+    # df4 = df.groupby(['session_start_time'])['correct'].count().reset_index()
+    # df2['ntrials_perday'] = [df4['correct'].values]
+    # df2['ntrials'] = df['trial'].count()
 
     return df2
 

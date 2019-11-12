@@ -37,7 +37,7 @@ def fit_psychfunc(df):
     # # number of trials per day
     # df4 = df.groupby(['session_start_time'])['correct'].count().reset_index()
     # df2['ntrials_perday'] = [df4['correct'].values]
-    # df2['ntrials'] = df['trial'].count()
+    df2['ntrials'] = df['trial'].count()
 
     return df2
 

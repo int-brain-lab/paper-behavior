@@ -3,24 +3,15 @@ Plot full psychometric functions as a function of choice history,
 and separately for 20/80 and 80/20 blocks
 """
 
-import pandas as pd
-import numpy as np
-import sys
-import os
-import time
-import matplotlib.pyplot as plt
-import seaborn as sns
-from paper_behavior_functions import query_subjects
-import datajoint as dj
-from IPython import embed as shell  # for debugging
-from math import ceil
-# from figure_style import seaborn_style
-
 # import wrappers etc
-from ibl_pipeline import reference, subject, action, acquisition, data, behavior
-from ibl_pipeline.utils import psychofit as psy
+from ibl_pipeline import behavior
 from dj_tools import *
 from paper_behavior_functions import *
+
+import cmath
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+import math
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -159,6 +150,48 @@ ax.axvline(linestyle=':', color='darkgrey')
 fig.tight_layout()
 fig.savefig(os.path.join(figpath, "figure4e_history_strategy.pdf"))
 fig.savefig(os.path.join(figpath, "figure4e_history_strategy.png"), dpi=600)
+plt.close("all")
+
+# ================================= #
+# do stats on this
+# ================================= #
+
+# compute the shift by subtracting between the two tasks
+pars5 = pd.pivot_table(pars4, values=['post_correct', 'post_error'],
+                       index=['institution_code', 'subject_nickname'],
+                       columns=['task']).reset_index()
+pars5['coord_shift_x'] = pars5['post_correct']['biased'] - pars5['post_correct']['traini']
+pars5['coord_shift_y'] = pars5['post_error']['biased'] - pars5['post_error']['traini']
+
+# convert coordinates to norm and angle
+def cart2pol(x, y):
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return(rho, phi)
+
+r, phi = cart2pol(pars5['coord_shift_x'], pars5['coord_shift_y'])
+pars5['norm'] = r
+pars5['angle'] = phi
+pars5 = pars5.dropna()
+
+# stats on vector norm between laboratories:
+sm_lm = ols('norm ~ C(institution_code)', data=pars5).fit()
+table = sm.stats.anova_lm(sm_lm)  # Type 2 ANOVA DataFrame
+print(table)
+
+# stats on vector angle between laboratories:
+sm_lm = ols('angle ~ C(institution_code)', data=pars5).fit()
+table = sm.stats.anova_lm(sm_lm)  # Type 2 ANOVA DataFrame
+print(table)
+
+fig, ax = plt.subplots(2, 1)
+sns.swarmplot(x='institution_code', y='norm',
+             data=pars5, ax=ax[0])
+sns.swarmplot(x='institution_code', y='angle',
+             data=pars5, ax=ax[1])
+fig.tight_layout()
+fig.savefig(os.path.join(figpath, "history_shift_stats.pdf"))
+fig.savefig(os.path.join(figpath, "history_shift_stats.png"), dpi=600)
 plt.close("all")
 
 #

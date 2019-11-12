@@ -179,9 +179,21 @@ plt.close('all')
 # ================================================================== #
 
 bias = behav3.loc[behav3.signed_contrast == 0, :]
+
+# stats on bias shift between laboratories:
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+sm_lm = ols('biasshift ~ C(institution_code)', data=bias).fit()
+table = sm.stats.anova_lm(sm_lm, typ=2) # Type 2 ANOVA DataFrame
+print(table)
+
 # Add all mice to dataframe seperately for plotting
 bias_all = bias.copy()
+
+print('average bias shift across all mice: ')
+print(bias_all['biasshift'].mean())
 bias_all['institution_code'] = 'All'
+
 bias_all = bias.append(bias_all)
 
 # Set color palette

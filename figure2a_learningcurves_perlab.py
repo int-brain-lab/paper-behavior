@@ -88,4 +88,10 @@ plt.tight_layout(pad=2)
 fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.pdf"))
 fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.png"), dpi=300)
 
+# ================================= #
+# print some stats
+# ================================= #
 
+behav_summary = behav.groupby(['training_day'])['performance_easy'].mean().reset_index()
+print('number of days to reach 80% accuracy on easy trials: ')
+print(behav_summary.loc[behav_summary.performance_easy > 0.8, 'training_day'].min())

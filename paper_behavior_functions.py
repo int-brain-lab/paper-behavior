@@ -69,10 +69,10 @@ def query_subjects(as_dataframe=False):
     # Select subjects that reached trained_1a criterium before September 30th
     if as_dataframe is True:
         subjects = (
-            subj_query & 'date_trained < "2019-09-30"').fetch(format='frame')
+            subj_query & 'date_trained < "2019-10-31"').fetch(format='frame')
         subjects = subjects.sort_values(by=['lab_name']).reset_index()
     else:
-        subjects = (subj_query & 'date_trained < "2019-09-30"')
+        subjects = (subj_query & 'date_trained < "2019-10-31"')
     return subjects
 
 

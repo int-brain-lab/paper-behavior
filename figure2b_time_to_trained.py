@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
+from scipy.stats import f_oneway as anova
 import seaborn as sns
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
                                       group_colors, figpath)
@@ -55,8 +56,8 @@ training_time['sessions'] = training_time['sessions'].astype(float)
 training_time['lab_number'] = training_time.lab.map(institution_map()[0])
 training_time = training_time.sort_values('lab_number')
 
-# Save csv
-training_time.to_csv(join(fig_path, 'training_time.csv'))
+# Perform statistics
+anova()
 
 # Add all mice to dataframe seperately for plotting
 training_time_all = training_time.copy()
@@ -73,7 +74,7 @@ f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='sessions', x='lab_number', data=training_time_all, ax=ax1)
-ax1.set(ylabel='Training duration (sessions)', xlabel='')
+ax1.set(ylabel='Training day', xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
@@ -91,10 +92,15 @@ plt.savefig(join(fig_path, 'figure2d_training_time.png'), dpi=300)
 
 # Plot cumulative proportion of trained mice over days
 f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
-sns.distplot(training_time['sessions'], hist_kws=dict(cumulative=True),
-             kde_kws=dict(cumulative=True), bins=20)
+for i, lab in enumerate(np.unique(training_time['lab'])):
+    y, binEdges = np.histogram(training_time.loc[training_time['lab'] == lab, 'sessions'], bins=20)
+    y = np.cumsum(y)
+    y = y / np.max(y)
+    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+    ax1.plot(bincenters, y, '-o', color=lab_colors[i])
+
 ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Sessions',
-        xlim=[0, 60], ylim=[0, 1])
+        xlim=[0, 60], ylim=[0, 1.01])
 
 plt.tight_layout(pad=2)
 seaborn_style()

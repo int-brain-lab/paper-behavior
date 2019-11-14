@@ -12,13 +12,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
-from scipy.stats import f_oneway as anova
 import seaborn as sns
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
                                       group_colors, figpath)
 from ibl_pipeline import acquisition, behavior
 from ibl_pipeline import subject
 from ibl_pipeline.analyses import behavior as behavior_analysis
+from scipy import stats
+import scikit_posthocs as sp
+
 
 # Settings
 fig_path = figpath()
@@ -57,7 +59,21 @@ training_time['lab_number'] = training_time.lab.map(institution_map()[0])
 training_time = training_time.sort_values('lab_number')
 
 # Perform statistics
-anova()
+#Test normality
+normal  = stats.normaltest(training_time['sessions']) 
+
+if normal < 0.05:
+    kruskal = stats.kruskal(*[group['sessions'].values \
+                              for name, group in training_time.groupby('lab')])
+    if kruskal[1] < 0.05: #Proceed to posthocs
+        posthoc = sp.posthoc_dunn(training_time,val_col='sessions',\
+                                 group_col='lab')
+else:
+    anova = stats.f_oneway(*[group['sessions'].values \
+                              for name, group in training_time.groupby('lab')])
+    if anova[1] < 0.05: 
+        posthoc = sp.posthoc_tukey(training_time,val_col='sessions',\
+                                 group_col='lab')
 
 # Add all mice to dataframe seperately for plotting
 training_time_all = training_time.copy()

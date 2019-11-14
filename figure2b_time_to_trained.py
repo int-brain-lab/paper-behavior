@@ -21,7 +21,6 @@ from ibl_pipeline.analyses import behavior as behavior_analysis
 from scipy import stats
 import scikit_posthocs as sp
 
-
 # Settings
 fig_path = figpath()
 
@@ -59,21 +58,20 @@ training_time['lab_number'] = training_time.lab.map(institution_map()[0])
 training_time = training_time.sort_values('lab_number')
 
 #  statistics
-#Test normality
-_, normal  = stats.normaltest(training_time['sessions']) 
-
+# Test normality
+_, normal = stats.normaltest(training_time['sessions'])
 if normal < 0.05:
-    kruskal = stats.kruskal(*[group['sessions'].values \
+    kruskal = stats.kruskal(*[group['sessions'].values
                               for name, group in training_time.groupby('lab')])
-    if kruskal[1] < 0.05: #Proceed to posthocs
-        posthoc = sp.posthoc_dunn(training_time,val_col='sessions',\
-                                 group_col='lab')
+    if kruskal[1] < 0.05:  # Proceed to posthocs
+        posthoc = sp.posthoc_dunn(training_time, val_col='sessions',
+                                  group_col='lab')
 else:
-    anova = stats.f_oneway(*[group['sessions'].values \
-                              for name, group in training_time.groupby('lab')])
-    if anova[1] < 0.05: 
-        posthoc = sp.posthoc_tukey(training_time,val_col='sessions',\
-                                 group_col='lab')
+    anova = stats.f_oneway(*[group['sessions'].values
+                             for name, group in training_time.groupby('lab')])
+    if anova[1] < 0.05:
+        posthoc = sp.posthoc_tukey(training_time, val_col='sessions',
+                                   group_col='lab')
 
 # Add all mice to dataframe seperately for plotting
 training_time_all = training_time.copy()
@@ -90,7 +88,7 @@ f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='sessions', x='lab_number', data=training_time_all, ax=ax1)
-ax1.set(ylabel='Training day', xlabel='')
+ax1.set(ylabel='Days to trained', xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
@@ -115,7 +113,7 @@ for i, lab in enumerate(np.unique(training_time['lab'])):
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
     ax1.plot(bincenters, y, '-o', color=lab_colors[i])
 
-ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Sessions',
+ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Training day',
         xlim=[0, 60], ylim=[0, 1.01])
 
 plt.tight_layout(pad=2)

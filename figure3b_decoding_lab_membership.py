@@ -25,7 +25,7 @@ METRICS_CONTROL:    List of strings indicating which metrics to use for the posi
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from os.path import join, expanduser
+from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style, figpath,
                                       institution_map)
@@ -84,6 +84,9 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
               & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
     trials = trials.reset_index()
 
+    # Get n trials per day
+    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
+
     # Fit a psychometric function to these trials and get fit results
     fit_df = dj2pandas(trials)
     fit_result = fit_psychfunc(fit_df)
@@ -97,7 +100,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
                                                                     'institution_short')[0]
     learned.loc[i, 'perf_easy'] = perf_easy
-    learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials_perday'][0].mean()
+    learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
     learned.loc[i, 'reaction_time'] = fit_df.loc[fit_df['rt'].notnull(), 'rt'].median()*1000

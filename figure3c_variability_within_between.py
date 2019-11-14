@@ -55,7 +55,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
                                                                     'institution_short')[0]
     learned.loc[i, 'perf_easy'] = perf_easy
-    learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials_perday'][0].mean()
+    learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials'][0].mean()
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
     learned.loc[i, 'reaction_time'] = fit_df['rt'].median()*1000

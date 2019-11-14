@@ -19,6 +19,8 @@ from paper_behavior_functions import (query_sessions_around_criterion, seaborn_s
                                       institution_map, group_colors, figpath)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
+from scipy import stats
+import scikit_posthocs as sp
 
 # Settings
 fig_path = figpath()
@@ -41,6 +43,9 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     trials = (sessions * behavior.TrialSet.Trial
               & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
     trials = trials.reset_index()
+    
+    #Add n-trials per day
+    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
 
     # Fit a psychometric function to these trials and get fit results
     fit_df = dj2pandas(trials)
@@ -55,7 +60,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
                                                                     'institution_short')[0]
     learned.loc[i, 'perf_easy'] = perf_easy
-    learned.loc[i, 'n_trials'] = fit_result.loc[0, 'ntrials'][0].mean()
+    learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
     learned.loc[i, 'reaction_time'] = fit_df['rt'].median()*1000
@@ -85,6 +90,38 @@ learned_2 = learned.copy()
 learned_2['lab'] = 'All'
 learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)
+
+#Stats 
+
+stats_tests =  pd.DataFrame(columns= ['variable','test_type','p_value'])
+
+test_df = learned_2.loc[learned_2['lab'].isin(['UCL','SWC','Princeton',\
+                        'Berkeley','NYU','CSHL', 'CCU'])]
+
+for i,var in enumerate(['perf_easy','reaction_time','n_trials','threshold','bias']):
+    _,normal  = stats.normaltest(test_df[var]) 
+    
+    if normal < 0.05:
+        test_type  = 'kruskal'
+        test = stats.kruskal(*[group[var].values \
+                                  for name, group in test_df.groupby('lab')])
+        if test[1] < 0.05: #Proceed to posthocs
+            posthoc = sp.posthoc_dunn(test_df,val_col=var,\
+                                     group_col='lab')
+    else:
+        test_type  = 'anova'
+        test = stats.f_oneway(*[group[var].values \
+                                  for name, group in test_df.groupby('lab')])
+        if test[1] < 0.05: 
+            posthoc = sp.posthoc_tukey(test_df,val_col=var,\
+                                     group_col='lab')
+            
+    stats_tests.loc[i, 'variable'] = var
+    stats_tests.loc[i, 'test_type'] = test_type
+    stats_tests.loc[i, 'p_value'] = test[1]
+    
+
+
 
 # Z-score data
 learned_zs = pd.DataFrame()

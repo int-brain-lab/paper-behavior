@@ -58,9 +58,9 @@ training_time['sessions'] = training_time['sessions'].astype(float)
 training_time['lab_number'] = training_time.lab.map(institution_map()[0])
 training_time = training_time.sort_values('lab_number')
 
-# Perform statistics
+#  statistics
 #Test normality
-normal  = stats.normaltest(training_time['sessions']) 
+_, normal  = stats.normaltest(training_time['sessions']) 
 
 if normal < 0.05:
     kruskal = stats.kruskal(*[group['sessions'].values \

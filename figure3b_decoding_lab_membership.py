@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
 import seaborn as sns
+from datetime import timedelta
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style, figpath,
                                       institution_map)
 from ibl_pipeline import subject, reference
@@ -39,10 +40,13 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-FIG_PATH = figpath()
-DECODER = 'forest'     # forest, bayes, regression or lda
-NUM_SPLITS = 3        # n in n-fold cross validation
-ITERATIONS = 2000     # how often to decode
+DECODER = 'forest'      # forest, bayes, regression or lda
+NUM_SPLITS = 3          # n in n-fold cross validation
+ITERATIONS = 2000       # how often to decode
+SESSIONS = 'biased'     # trained: take the three sessions before trained criterion
+                        # biased: take the 50/50 block of trials from 15 sessions after biased
+FIG_PATH = join(figpath(), 'decoding_biased')
+SAVE_FIG = True
 METRICS = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time']
 METRIS_CONTROL = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time',
                   'time_zone']
@@ -66,13 +70,16 @@ def decoding(resp, labels, clf, NUM_SPLITS):
 
 
 # Query sessions
-sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]
+if SESSIONS == 'trained':
+    sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]
+elif SESSIONS == 'biased':
+    sessions = query_sessions_around_criterion(criterion='biased', days_from_criterion=[0, 15])[0]
 sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
                                 'threshold', 'bias', 'reaction_time',
-                                'lapse_low', 'lapse_high'])
+                                'lapse_low', 'lapse_high', 'time_zone', 'UTC'])
 
 for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     if np.mod(i+1, 10) == 0:
@@ -81,7 +88,8 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
 
     # Get the trials of the sessions around criterion
     trials = (sessions * behavior.TrialSet.Trial
-              & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
+              & 'subject_nickname = "%s"' % nickname
+              & 'trial_stim_prob_left = "0.5"').fetch(format='frame')
     trials = trials.reset_index()
 
     # Get n trials per day
@@ -107,7 +115,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
 
-    # Time zone to dataframe
+    # Get the time zone and the time of training of the last session
     time_zone = (sessions & 'subject_nickname = "%s"' % nickname).fetch('time_zone')[0]
     if (time_zone == 'Europe/Lisbon') or (time_zone == 'Europe/London'):
         time_zone_number = 0
@@ -115,7 +123,11 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
         time_zone_number = -5
     elif time_zone == 'America/Los_Angeles':
         time_zone_number = -7
+    session_time = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
+                                                            'session_start_time')[-1]
+    session_time = (session_time - timedelta(hours=time_zone_number)).time()
     learned.loc[i, 'time_zone'] = time_zone_number
+    learned.loc[i, 'UTC'] = session_time.hour
 
 # Drop mice with faulty RT
 learned = learned[learned['reaction_time'].notnull()]
@@ -131,7 +143,7 @@ elif DECODER == 'bayes':
 elif DECODER == 'regression':
     clf = LogisticRegression(solver='liblinear', multi_class='auto')
 else:
-    raise Exception('DECODER must be forest or bayes')
+    raise Exception('DECODER must be forest, bayes or regression')
 
 # Perform decoding of lab membership
 decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
@@ -144,68 +156,25 @@ for i in range(ITERATIONS):
         print('Iteration %d of %d' % (i+1, ITERATIONS))
     # Original dataset
     decoding_result.loc[i, 'original'], conf_matrix = decoding(
-            decoding_set, list(decod['lab']), clf, NUM_SPLITS)
+            decoding_set, list(decod['lab_number']), clf, NUM_SPLITS)
     decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
                                                   / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
-                                                           list(decod['lab'].sample(frac=1)),
+                                                           list(
+                                                              decod['lab_number'].sample(frac=1)),
                                                            clf, NUM_SPLITS)[0]
     # Positive control dataset
     decoding_result.loc[i, 'control'], conf_matrix = decoding(
-            control_set, list(decod['lab']), clf, NUM_SPLITS)
+            control_set, list(decod['lab_number']), clf, NUM_SPLITS)
     decoding_result.loc[i, 'control_cm'] = (conf_matrix
                                             / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
-                                                          list(decod['lab'].sample(frac=1)),
+                                                          list(decod['lab_number'].sample(frac=1)),
                                                           clf, NUM_SPLITS)[0]
 
 # Calculate if decoder performs above chance (positive values indicate above chance-level)
-sig = np.percentile(decoding_result['original']-np.mean(decoding_result['original_shuffled']), 5)
-sig_control = np.percentile(decoding_result['control']
-                            - np.mean(decoding_result['control_shuffled']), 0.001)
-
-# Plot decoding results
-f, ax1 = plt.subplots(1, 1, figsize=(4, 5))
-sns.violinplot(data=pd.concat([decoding_result['original']-decoding_result['original_shuffled'],
-                              decoding_result['control']-decoding_result['control_shuffled']],
-                              axis=1), color=[0.6, 0.6, 0.6], ax=ax1)
-ax1.plot([-1, 2], [0, 0], 'r--')
-ax1.set(ylabel='Decoding performance\nover chance level (F1 score)',
-        ylim=[-0.4, 0.8], xlim=[-0.8, 1.4],
-        xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(incl. timezone)'])
-ax1.text(0, 0.5, 'n.s.', fontsize=12, ha='center')
-ax1.text(1, 0.5, '***', fontsize=15, ha='center', va='center')
-# plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.tight_layout(pad=2)
-seaborn_style()
-
-plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.pdf' % DECODER), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.png' % DECODER), dpi=300)
-
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
-sns.heatmap(data=decoding_result['confusion_matrix'].mean())
-ax1.plot([0, 7], [0, 7], '--w')
-ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab')
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
-plt.tight_layout(pad=2)
-
-plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix.pdf'), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix.png'), dpi=300)
-
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
-sns.heatmap(data=decoding_result['control_cm'].mean())
-ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab')
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
-plt.tight_layout(pad=2)
-
-plt.savefig(join(FIG_PATH, 'control_confusion_matrix_%s.pdf' % DECODER), dpi=300)
-plt.savefig(join(FIG_PATH, 'control_confusion_matrix_%s.png' % DECODER), dpi=300)
+sig = np.percentile(decoding_result['original'], 5)
+sig_control = np.percentile(decoding_result['control'], 0.001)
 
 # Plot decoding results
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
@@ -219,9 +188,49 @@ ax1.text(0, 0.58, 'n.s.', fontsize=12, ha='center')
 ax1.text(1, 0.58, '***', fontsize=15, ha='center', va='center')
 plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.035, 'Chance level', color='r')
 # plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-
 plt.tight_layout(pad=2)
 seaborn_style()
 
-plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute_%s.pdf' % DECODER), dpi=300)
-plt.savefig(join(FIG_PATH, 'figure3_decoding_absolute_%s.png' % DECODER), dpi=300)
+if (DECODER == 'forest') & (SAVE_FIG is True):
+    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.png' % DECODER), dpi=300)
+elif SAVE_FIG is True:
+    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s.png' % DECODER), dpi=300)
+
+f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
+sns.heatmap(data=decoding_result['confusion_matrix'].mean())
+ax1.plot([0, 7], [0, 7], '--w')
+ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        ylim=[0, len(np.unique(list(decod['lab'])))],
+        xlim=[0, len(np.unique(list(decod['lab'])))],
+        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab')
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
+plt.gca().invert_yaxis()
+plt.tight_layout(pad=2)
+
+if (DECODER == 'forest') & (SAVE_FIG is True):
+    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s.png' % DECODER), dpi=300)
+elif SAVE_FIG is True:
+    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s.png' % DECODER), dpi=300)
+
+f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
+sns.heatmap(data=decoding_result['control_cm'].mean())
+ax1.plot([0, 7], [0, 7], '--w')
+ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
+        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab',
+        ylim=[0, len(np.unique(list(decod['lab'])))],
+        xlim=[0, len(np.unique(list(decod['lab'])))])
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
+plt.gca().invert_yaxis()
+plt.tight_layout(pad=2)
+
+if SAVE_FIG is True:
+    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s.png' % DECODER), dpi=300)

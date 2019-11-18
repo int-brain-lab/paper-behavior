@@ -184,7 +184,7 @@ plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.035, 'Chance level
 plt.tight_layout(pad=2)
 seaborn_style()
 
-if (DECODER == 'bayes') & (SAVE_FIG is True):
+if (DECODER == 'forest') & (SAVE_FIG is True):
     plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s_level1.pdf' % DECODER), dpi=300)
     plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s_level1.png' % DECODER), dpi=300)
 elif SAVE_FIG is True:
@@ -204,7 +204,7 @@ plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout(pad=2)
 
-if (DECODER == 'bayes') & (SAVE_FIG is True):
+if (DECODER == 'forest') & (SAVE_FIG is True):
     plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s_level1.pdf' % DECODER), dpi=300)
     plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s_level1.png' % DECODER), dpi=300)
 elif SAVE_FIG is True:

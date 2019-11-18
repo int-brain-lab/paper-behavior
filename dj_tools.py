@@ -74,7 +74,8 @@ def plot_psychometric(x, y, subj, **kwargs):
                  psy.erf_psycho_2gammas(pars, np.arange(98, 103)), **kwargs)
 
     # now break the x-axis
-    # if 100 in df.signed_contrast.values and not 50 in df.signed_contrast.values:
+    # if 100 in df.signed_contrast.values and not 50 in
+    # df.signed_contrast.values:
     df['signed_contrast'] = df['signed_contrast'].replace(-100, -35)
     df['signed_contrast'] = df['signed_contrast'].replace(100, 35)
 
@@ -83,8 +84,8 @@ def plot_psychometric(x, y, subj, **kwargs):
 
     # plot datapoints with errorbars on top
     if df['subject_nickname'].nunique() > 1:
-        sns.lineplot(df3['signed_contrast'], df3['choice'], err_style="bars", 
-            linewidth=0, linestyle='None', mew=0.5,
+        sns.lineplot(df3['signed_contrast'], df3['choice'], err_style="bars",
+                     linewidth=0, linestyle='None', mew=0.5,
                      marker='o', ci=68, **kwargs)
 
     # # ADD TEXT WITH THE PSYCHOMETRIC FUNCTION PARAMETERS
@@ -144,17 +145,26 @@ def plot_chronometric(x, y, subj, **kwargs):
     # df2 = df2.groupby(['signed_contrast']).mean().reset_index()
     df2 = df2[['signed_contrast', 'rt', 'subject_nickname']]
 
-    # if 100 in df.signed_contrast.values and not 50 in df.signed_contrast.values:
+    # if 100 in df.signed_contrast.values and not 50 in
+    # df.signed_contrast.values:
     df2['signed_contrast'] = df2['signed_contrast'].replace(-100, -35)
     df2['signed_contrast'] = df2['signed_contrast'].replace(100, 35)
 
     ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5,
-                 ci=68, data=df2, **kwargs)
+                      ci=68, data=df2, **kwargs)
 
     # all the points
     if df['subject_nickname'].nunique() > 1:
-        sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5, linewidth=0,
-                      marker='o', ci=68, data=df2, **kwargs)
+        sns.lineplot(
+            x='signed_contrast',
+            y='rt',
+            err_style="bars",
+            mew=0.5,
+            linewidth=0,
+            marker='o',
+            ci=68,
+            data=df2,
+            **kwargs)
 
     ax.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
     ax.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
@@ -173,8 +183,15 @@ def add_n(x, y, sj, **kwargs):
                        'choice2': y, 'subject_nickname': sj})
 
     # ADD TEXT ABOUT NUMBER OF ANIMALS AND TRIALS
-    plt.text(15, 0.2, '%d mice, %d trials' % (df.subject_nickname.nunique(), df.choice.count()),
-             fontweight='normal', fontsize=6, color='k')
+    plt.text(
+        15,
+        0.2,
+        '%d mice, %d trials' %
+        (df.subject_nickname.nunique(),
+         df.choice.count()),
+        fontweight='normal',
+        fontsize=6,
+        color='k')
 
 
 def dj2pandas(behav):
@@ -189,7 +206,7 @@ def dj2pandas(behav):
         behav['trial_stim_contrast_right'] - behav['trial_stim_contrast_left']) * 100
     behav['signed_contrast'] = behav.signed_contrast.astype(int)
 
-    behav['trial'] = behav.trial_id # for psychfuncfit
+    behav['trial'] = behav.trial_id  # for psychfuncfit
     val_map = {'CCW': 1, 'No Go': 0, 'CW': -1}
     behav['choice'] = behav['trial_response_choice'].map(val_map)
     behav['correct'] = np.where(
@@ -208,8 +225,9 @@ def dj2pandas(behav):
 
     # compute rt
     if 'trial_response_time' in behav.columns:
-        behav['rt'] = behav['trial_response_time'] - behav['trial_stim_on_time']
-            # ignore a bunch of things for missed trials
+        behav['rt'] = behav['trial_response_time'] - \
+            behav['trial_stim_on_time']
+        # ignore a bunch of things for missed trials
         # don't count RT if there was no response
         behav.loc[behav.choice == 0, 'rt'] = np.nan
         # don't count RT if there was no response

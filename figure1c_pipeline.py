@@ -46,14 +46,21 @@ print('Implanted: %d'%implanted_subjects)
 # 2. all mice that started habituationChoiceWorld
 # ============================================= #
 
-# Query all subjects with project ibl_neuropixel_brainwide_01
-query2 = query * acquisition.Session & 'task_protocol LIKE "%habituation%"'
-started_subjects = get_mouse_n(query2)
-print('HabituationChoiceWorld: %d'%started_subjects)
+# # Query all subjects with project ibl_neuropixel_brainwide_01
+# query2 = query * acquisition.Session & 'task_protocol LIKE "%habituation%"'
+#
+# # # figure out which subjects may have died in surgery
+# # query1_fetch = query.fetch(format='frame').reset_index()
+# # query2_fetch = query2.fetch(format='frame').reset_index()
+# # dead_sjs = list(set(query1_fetch.subject_nickname.unique()) - set(query2_fetch.subject_nickname.unique()))
+# # dead_query = query1_fetch[query1_fetch['subject_nickname'].isin(dead_sjs)]
+#
+# started_subjects = get_mouse_n(query2)
+# print('HabituationChoiceWorld: %d'%started_subjects)
 
 # Query all subjects with project ibl_neuropixel_brainwide_01
-query2 = query * acquisition.Session & 'task_protocol LIKE "%training%"'
-started_subjects = get_mouse_n(query2)
+query3 = query * acquisition.Session & 'task_protocol LIKE "%training%"'
+started_subjects = get_mouse_n(query3)
 print('TrainingChoiceWorld: %d'%started_subjects)
 
 # ============================================= #
@@ -63,6 +70,12 @@ print('TrainingChoiceWorld: %d'%started_subjects)
 trained_subjects = get_mouse_n(query_subjects())
 print('Trained: %d'%trained_subjects)
 
+# ============================================= #
+# 3. all mice that reached trained
+# ============================================= #
+
+trained_subjects = get_mouse_n(query_subjects())
+print('Trained: %d'%trained_subjects)
 
 
 #

@@ -75,13 +75,10 @@ learned['lab_number'] = learned.lab.map(institution_map()[0])
 learned = learned.sort_values('lab_number')
 
 # Convert to float
-learned[['perf_easy', 'reaction_time', 'threshold', 'n_trials'
+learned[['perf_easy', 'reaction_time', 'threshold', 'n_trials',
          'bias', 'lapse_low', 'lapse_high']] = learned[['perf_easy', 'reaction_time',
                                                         'threshold', 'n_trials', 'bias',
                                                         'lapse_low', 'lapse_high']].astype(float)
-
-# Save to csv
-learned.to_csv(join(fig_path, 'behavior_parameters.csv'))
 
 # Add all mice to dataframe seperately for plotting
 learned_2 = learned.copy()

@@ -3,21 +3,23 @@
 """
 Created on Fri Dec 21 10:30:25 2018
 
-Decode in which lab a mouse was trained based on its behavioral metrics during a single session in
-which it is determined that the mouse was trained. The session is the middle session of the three
-sessions used to determine if a mouse is trained. As a positive control, the time zone in which
-the mouse was trained is included in the dataset since the timezone provides geographical
-information. Decoding is performed using cross-validated Random Forest classification. Chance level
-is determined by shuffling the lab labels and decoding again.
+Decode in which lab a mouse was trained based on its behavioral metrics during the first 15
+sessions in the level 2 task (biased blocks). Only the first 90 trials are used from each session
+because in these trials the stimulus prior is still 50/50 and not 80/20.
+
+As a positive control, the time zone in which the mouse was trained is included in the dataset
+since the timezone provides geographical information. Decoding is performed using cross-validated
+classification. Chance level is determined by shuffling the lab labels and decoding again.
 
 --------------
 Parameters
-FIG_PATH:           String containing a path where to save the output figure
+DECODER:            Which decoder to use: 'bayes', 'forest', or 'regression'
 NUM_SPLITS:         The N in N-fold cross validation
 ITERATIONS:         Number of times to split the dataset in test and train and decode
 METRICS:            List of strings indicating which behavioral metrics to include
                     during decoding of lab membership
 METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
+FIG_PATH:           String containing a path where to save the output figure
 
 @author: Guido Meijer
 """
@@ -40,16 +42,13 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-DECODER = 'forest'      # forest, bayes, regression or lda
+DECODER = 'bayes'       # forest, bayes or regression
 NUM_SPLITS = 3          # n in n-fold cross validation
-ITERATIONS = 2000       # how often to decode
-SESSIONS = 'biased'     # trained: take the three sessions before trained criterion
-                        # biased: take the 50/50 block of trials from 15 sessions after biased
-FIG_PATH = join(figpath(), 'decoding_biased')
+ITERATIONS = 2000        # how often to decode
+METRICS = ['perf_easy', 'threshold', 'bias', 'reaction_time']
+METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'reaction_time', 'time_zone']
+FIG_PATH = figpath()
 SAVE_FIG = True
-METRICS = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time']
-METRIS_CONTROL = ['perf_easy', 'n_trials', 'threshold', 'bias', 'reaction_time',
-                  'time_zone']
 
 
 # Decoding function with n-fold cross validation
@@ -70,15 +69,11 @@ def decoding(resp, labels, clf, NUM_SPLITS):
 
 
 # Query sessions
-if SESSIONS == 'trained':
-    sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]
-elif SESSIONS == 'biased':
-    sessions = query_sessions_around_criterion(criterion='biased', days_from_criterion=[0, 15])[0]
+sessions = query_sessions_around_criterion(criterion='biased', days_from_criterion=[0, 15])[0]
 sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # Create dataframe with behavioral metrics of all mice
-learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
-                                'threshold', 'bias', 'reaction_time',
+learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'threshold', 'bias', 'reaction_time',
                                 'lapse_low', 'lapse_high', 'time_zone', 'UTC'])
 
 for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
@@ -86,32 +81,28 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
         print('Loading data of subject %d of %d' % (i+1, len(
                 np.unique(sessions.fetch('subject_nickname')))))
 
-    # Get the trials of the sessions around criterion
+    # Get only the trials of the 50/50 blocks
     trials = (sessions * behavior.TrialSet.Trial
               & 'subject_nickname = "%s"' % nickname
               & 'trial_stim_prob_left = "0.5"').fetch(format='frame')
     trials = trials.reset_index()
 
-    # Get n trials per day
-    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
-
     # Fit a psychometric function to these trials and get fit results
     fit_df = dj2pandas(trials)
     fit_result = fit_psychfunc(fit_df)
 
-    # Calculate performance on easy trials
-    perf_easy = (np.sum(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])
-                 / np.size(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])) * 100
+    # Get RT and performance
+    reaction_time = trials['rt'].median()*1000
+    perf_easy = trials['correct_easy'].mean()*100
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
     learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
                                                                     'institution_short')[0]
     learned.loc[i, 'perf_easy'] = perf_easy
-    learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
-    learned.loc[i, 'reaction_time'] = fit_df.loc[fit_df['rt'].notnull(), 'rt'].median()*1000
+    learned.loc[i, 'reaction_time'] = reaction_time
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
 
@@ -184,19 +175,19 @@ ax1.plot([-1, 2], [np.mean(decoding_result['original_shuffled']),
                    np.mean(decoding_result['original_shuffled'])], 'r--')
 ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
         xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(incl. timezone)'])
-ax1.text(0, 0.58, 'n.s.', fontsize=12, ha='center')
-ax1.text(1, 0.58, '***', fontsize=15, ha='center', va='center')
+ax1.text(0, 0.6, 'n.s.', fontsize=12, ha='center')
+ax1.text(1, 0.6, '***', fontsize=15, ha='center', va='center')
 plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.035, 'Chance level', color='r')
 # plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 seaborn_style()
 
-if (DECODER == 'forest') & (SAVE_FIG is True):
-    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.png' % DECODER), dpi=300)
+if (DECODER == 'bayes') & (SAVE_FIG is True):
+    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s_level2.png' % DECODER), dpi=300)
 elif SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_level2.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
@@ -211,12 +202,12 @@ plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout(pad=2)
 
-if (DECODER == 'forest') & (SAVE_FIG is True):
-    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s.png' % DECODER), dpi=300)
+if (DECODER == 'bayes') & (SAVE_FIG is True):
+    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s_level2.png' % DECODER), dpi=300)
 elif SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_level2.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['control_cm'].mean())
@@ -232,5 +223,5 @@ plt.gca().invert_yaxis()
 plt.tight_layout(pad=2)
 
 if SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s_level2.png' % DECODER), dpi=300)

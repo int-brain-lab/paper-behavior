@@ -41,9 +41,9 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-DECODER = 'bayes'       # forest, bayes or regression
-NUM_SPLITS = 3          # n in n-fold cross validation
-ITERATIONS = 2000        # how often to decode
+DECODER = 'bayes'           # forest, bayes or regression
+NUM_SPLITS = 3              # n in n-fold cross validation
+ITERATIONS = 2000           # how often to decode
 METRICS = ['perf_easy', 'threshold', 'bias', 'reaction_time', 'n_trials']
 METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'reaction_time', 'n_trials',
                   'time_zone']
@@ -185,11 +185,11 @@ plt.tight_layout(pad=2)
 seaborn_style()
 
 if (DECODER == 'bayes') & (SAVE_FIG is True):
-    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s_level1.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3i_decoding_%s_level1.png' % DECODER), dpi=300)
 elif SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_level1.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_level1.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
@@ -205,11 +205,11 @@ plt.gca().invert_yaxis()
 plt.tight_layout(pad=2)
 
 if (DECODER == 'bayes') & (SAVE_FIG is True):
-    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s_level1.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3j_confusion_matrix_%s_level1.png' % DECODER), dpi=300)
 elif SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_level1.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_level1.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['control_cm'].mean())
@@ -225,5 +225,7 @@ plt.gca().invert_yaxis()
 plt.tight_layout(pad=2)
 
 if SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_control_confusion_matrix_%s.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH,
+                     'suppfig_control_confusion_matrix_%s_level1.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH,
+                     'suppfig_control_confusion_matrix_%s_level1.png' % DECODER), dpi=300)

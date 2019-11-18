@@ -12,6 +12,7 @@ import cmath
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import math
+import pycircstat
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -179,9 +180,18 @@ sm_lm = ols('norm ~ C(institution_code)', data=pars5).fit()
 table = sm.stats.anova_lm(sm_lm)  # Type 2 ANOVA DataFrame
 print(table)
 
-# stats on vector angle between laboratories:
-sm_lm = ols('angle ~ C(institution_code)', data=pars5).fit()
-table = sm.stats.anova_lm(sm_lm)  # Type 2 ANOVA DataFrame
+# use pycircstat Watson-Williams test
+pars6 = pars5.groupby('institution_code')['angle'].aggregate(lambda x: list(x)).reset_index()
+angles_grouped = pars6['angle'].values
+
+pval, table = pycircstat.watson_williams(angles_grouped[0],
+                                         angles_grouped[1],
+                                         angles_grouped[2],
+                                         angles_grouped[3],
+                                         angles_grouped[4],
+                                         angles_grouped[5],
+                                         angles_grouped[6])
+print('circular one-way anova')
 print(table)
 
 fig, ax = plt.subplots(2, 1)

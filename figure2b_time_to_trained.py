@@ -116,7 +116,9 @@ for i, lab in enumerate(np.unique(training_time['lab'])):
 ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Training day',
         xlim=[0, 60], ylim=[0, 1.01])
 
+sns.despine(trim=True, offset=5)
 plt.tight_layout(pad=2)
 seaborn_style()
 plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.png'), dpi=300)
+print('done')

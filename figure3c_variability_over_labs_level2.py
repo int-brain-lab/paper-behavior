@@ -117,7 +117,6 @@ learned_zs = pd.DataFrame()
 learned_zs['lab'] = learned['lab']
 learned_zs['lab_number'] = learned['lab_number']
 learned_zs['Performance'] = stats.zscore(learned['perf_easy'])
-learned_zs['Number of trials'] = stats.zscore(learned['n_trials'])
 learned_zs['Threshold'] = stats.zscore(learned['threshold'])
 learned_zs['Bias'] = stats.zscore(learned['bias'])
 learned_zs['Reaction time'] = stats.zscore(learned['reaction_time'])
@@ -126,9 +125,6 @@ learned_zs['Reaction time'] = stats.zscore(learned['reaction_time'])
 learned_zs_mean = learned_zs.groupby('lab_number').mean()
 learned_zs_new = pd.DataFrame({'zscore': learned_zs_mean['Performance'], 'metric': 'Performance',
                                'lab': learned_zs_mean.index.values})
-learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Number of trials'],
-                                                     'metric': 'Number of trials',
-                                                     'lab': learned_zs_mean.index.values}))
 learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Threshold'],
                                                      'metric': 'Threshold',
                                                      'lab': learned_zs_mean.index.values}))
@@ -146,38 +142,33 @@ sns.set_palette(use_palette)
 lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
-f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(16, 4))
+f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(13, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
-ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[75, 101], xlabel='')
+ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[65, 101], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax2)
-ax2.set(ylabel='Number of trials', ylim=[0, 2600], xlabel='')
+sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax2)
+ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 40], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax3)
-ax3.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 40], xlabel='')
+sns.boxplot(y='bias', x='lab_number', data=learned_2, ax=ax3)
+ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='bias', x='lab_number', data=learned_2, ax=ax4)
-ax4.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
+sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax4)
+ax4.set(ylabel='Trial duration (ms)', ylim=[0, 1600], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax5)
-ax5.set(ylabel='Trial duration (ms)', ylim=[0, 1600], xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
-plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
-
 plt.tight_layout(pad=2)
 seaborn_style()
-plt.savefig(join(fig_path, 'figure3b_metrics_per_lab_biased.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure3b_metrics_per_lab_biased.png'), dpi=300)
+plt.savefig(join(fig_path, 'suppfig_metrics_per_lab_level2.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'suppfig_metrics_per_lab_level2.png'), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.5, 4.5))
 sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', palette=group_colors(),
@@ -194,5 +185,5 @@ ax1.yaxis.set_tick_params(labelbottom=True)
 plt.tight_layout(pad=2)
 seaborn_style()
 
-plt.savefig(join(fig_path, 'figure3c_deviation_biased.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure3c_deviation_biased.png'), dpi=300)
+plt.savefig(join(fig_path, 'suppfig_deviation_level2.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'suppfig_deviation_level2.png'), dpi=300)

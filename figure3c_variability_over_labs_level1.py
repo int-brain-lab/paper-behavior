@@ -50,9 +50,10 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     fit_df = dj2pandas(trials)
     fit_result = fit_psychfunc(fit_df)
 
-    # Calculate performance on easy trials
-    perf_easy = (np.sum(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])
-                 / np.size(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])) * 100
+    # Get RT, performance and number of trials
+    reaction_time = trials['rt'].median()*1000
+    perf_easy = trials['correct_easy'].mean()*100
+    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
@@ -60,9 +61,9 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
                                                                     'institution_short')[0]
     learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = ntrials_perday
+    learned.loc[i, 'reaction_time'] = reaction_time
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
-    learned.loc[i, 'reaction_time'] = fit_df['rt'].median()*1000
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
 
@@ -74,12 +75,10 @@ learned['lab_number'] = learned.lab.map(institution_map()[0])
 learned = learned.sort_values('lab_number')
 
 # Convert to float
-learned['perf_easy'] = learned['perf_easy'].astype(float)
-learned['reaction_time'] = learned['reaction_time'].astype(float)
-learned['n_trials'] = learned['n_trials'].astype(float)
-learned['threshold'] = learned['threshold'].astype(float)
-learned['bias'] = learned['bias'].astype(float)
-learned['lapse_low'] = learned['lapse_low'].astype(float)
+learned[['perf_easy', 'reaction_time', 'threshold', 'n_trials'
+         'bias', 'lapse_low', 'lapse_high']] = learned[['perf_easy', 'reaction_time',
+                                                        'threshold', 'n_trials', 'bias',
+                                                        'lapse_low', 'lapse_high']].astype(float)
 
 # Save to csv
 learned.to_csv(join(fig_path, 'behavior_parameters.csv'))
@@ -185,8 +184,8 @@ plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 
 plt.tight_layout(pad=2)
 seaborn_style()
-plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure3b_metrics_per_lab.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure3b_metrics_per_lab_level1.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure3b_metrics_per_lab_level1.png'), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.5, 4.5))
 sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', palette=group_colors(),
@@ -203,5 +202,5 @@ ax1.yaxis.set_tick_params(labelbottom=True)
 plt.tight_layout(pad=2)
 seaborn_style()
 
-plt.savefig(join(fig_path, 'figure3c_deviation.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure3c_deviation.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure3c_deviation_level1.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure3c_deviation_level1.png'), dpi=300)

@@ -29,8 +29,7 @@ sessions = query_sessions_around_criterion(criterion='biased', days_from_criteri
 sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # Create dataframe with behavioral metrics of all mice
-learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
-                                'threshold', 'bias', 'reaction_time',
+learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'threshold', 'bias', 'reaction_time',
                                 'lapse_low', 'lapse_high'])
 
 for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
@@ -38,32 +37,28 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
         print('Loading data of subject %d of %d' % (i+1, len(
                 np.unique(sessions.fetch('subject_nickname')))))
 
-    # Get the trials of the sessions around criterion
+    # Get only the trials of the 50/50 blocks
     trials = (sessions * behavior.TrialSet.Trial
               & 'subject_nickname = "%s"' % nickname
               & 'trial_stim_prob_left = "0.5"').fetch(format='frame')
     trials = trials.reset_index()
 
-    # Add n-trials per day
-    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
-
     # Fit a psychometric function to these trials and get fit results
     fit_df = dj2pandas(trials)
     fit_result = fit_psychfunc(fit_df)
 
-    # Calculate performance on easy trials
-    perf_easy = (np.sum(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])
-                 / np.size(fit_df.loc[fit_df['correct_easy'].notnull(), 'correct_easy'])) * 100
+    # Get performance and reaction time
+    reaction_time = trials['rt'].median()*1000
+    perf_easy = trials['correct_easy'].mean()*100
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
     learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
                                                                     'institution_short')[0]
     learned.loc[i, 'perf_easy'] = perf_easy
-    learned.loc[i, 'n_trials'] = trials.shape[0]
+    learned.loc[i, 'reaction_time'] = reaction_time
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
-    learned.loc[i, 'reaction_time'] = fit_df['rt'].median()*1000
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
 
@@ -75,15 +70,10 @@ learned['lab_number'] = learned.lab.map(institution_map()[0])
 learned = learned.sort_values('lab_number')
 
 # Convert to float
-learned['perf_easy'] = learned['perf_easy'].astype(float)
-learned['reaction_time'] = learned['reaction_time'].astype(float)
-learned['n_trials'] = learned['n_trials'].astype(float)
-learned['threshold'] = learned['threshold'].astype(float)
-learned['bias'] = learned['bias'].astype(float)
-learned['lapse_low'] = learned['lapse_low'].astype(float)
-
-# Save to csv
-learned.to_csv(join(fig_path, 'behavior_parameters.csv'))
+learned[['perf_easy', 'reaction_time', 'threshold',
+         'bias', 'lapse_low', 'lapse_high']] = learned[['perf_easy', 'reaction_time',
+                                                        'threshold', 'bias', 'lapse_low',
+                                                        'lapse_high']].astype(float)
 
 # Add all mice to dataframe seperately for plotting
 learned_2 = learned.copy()
@@ -97,7 +87,7 @@ posthoc_tests = {}
 test_df = learned_2.loc[learned_2['lab_number'].isin(['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5',
                                                       'Lab 6', 'Lab 7'])]
 
-for i, var in enumerate(['perf_easy', 'reaction_time', 'n_trials', 'threshold', 'bias']):
+for i, var in enumerate(['perf_easy', 'reaction_time', 'threshold', 'bias']):
     _, normal = stats.normaltest(test_df[var])
 
     if normal < 0.05:
@@ -160,7 +150,7 @@ f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(16, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
-ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[60, 101], xlabel='')
+ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[75, 101], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 

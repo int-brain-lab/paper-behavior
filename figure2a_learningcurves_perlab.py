@@ -50,6 +50,8 @@ for index, group in behav.groupby(['institution_code', 'subject_nickname']):
     behav2 = behav2.append(group)
 
 behav = behav2
+behav['performance_easy'] = behav.performance_easy * 100
+behav['performance_easy_trained'] = behav.performance_easy_trained * 100
 
 # ================================= #
 # LEARNING CURVES
@@ -94,4 +96,4 @@ fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.png"), dpi=3
 
 behav_summary = behav.groupby(['training_day'])['performance_easy'].mean().reset_index()
 print('number of days to reach 80% accuracy on easy trials: ')
-print(behav_summary.loc[behav_summary.performance_easy > 0.8, 'training_day'].min())
+print(behav_summary.loc[behav_summary.performance_easy > 80, 'training_day'].min())

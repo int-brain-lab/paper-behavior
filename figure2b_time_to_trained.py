@@ -65,13 +65,13 @@ if normal < 0.05:
                               for name, group in training_time.groupby('lab')])
     if kruskal[1] < 0.05:  # Proceed to posthocs
         posthoc = sp.posthoc_dunn(training_time, val_col='sessions',
-                                  group_col='lab')
+                                  group_col='lab_number')
 else:
     anova = stats.f_oneway(*[group['sessions'].values
                              for name, group in training_time.groupby('lab')])
     if anova[1] < 0.05:
         posthoc = sp.posthoc_tukey(training_time, val_col='sessions',
-                                   group_col='lab')
+                                   group_col='lab_number')
 
 # Add all mice to dataframe seperately for plotting
 training_time_all = training_time.copy()

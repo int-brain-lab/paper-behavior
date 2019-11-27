@@ -128,7 +128,7 @@ for didx, day in enumerate(days):
     # ================================================================== #
 
     plt.close('all')
-    fig, ax = plt.subplots(1, 1, figsize=(2.5, 2.5))
+    fig, ax = plt.subplots(1, 1, figsize=(3, 2.5))
 
     # # RTS THROUGHOUT SESSION
     # sns.scatterplot(x='trial_start_time', y='rt', style='correct', hue='correct',
@@ -147,7 +147,7 @@ for didx, day in enumerate(days):
     ax.set(xlabel="Time in session (min)")
 
     if didx == 0:
-        ax.set(ylabel="Time to trial completion (s)")
+        ax.set(ylabel="Trial duration (s)")
     else:
         ax.set(ylabel=" ")
         
@@ -173,6 +173,7 @@ for didx, day in enumerate(days):
         
     ax2.yaxis.label.set_color("deepskyblue")
     ax2.tick_params(axis='y', colors='deepskyblue')
+    ax2.spines['right'].set_color('deepskyblue')
 
     # INDICATE THE REASON AND TRIAL AT WHICH SESSION SHOULD HAVE ENDED
     end_x = behavtmp.loc[behavtmp.trial_id == behavtmp.end_status_index.unique()[
@@ -180,9 +181,15 @@ for didx, day in enumerate(days):
     ax2.axvline(x=end_x, color='darkgrey')
     # ax2.annotate(behavtmp.end_status.unique()[0], xy=(end_x, 100), xytext=(end_x, 105),
     #              arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
+    print(behavtmp.end_status.unique()[0])
 
     ax.set(title='Training day %d' % (day))
     # sns.despine(trim=True)
+    sns.despine(ax=ax, top=True, left=False, right=False)
+    sns.despine(ax=ax2, top=True,  left=False, right=False)
+
+    #sns.despine(ax=ax2, right=True, left=False)
+
     plt.tight_layout()
     fig.savefig(os.path.join(
         figpath, "figure1_example_disengagement_day%d.pdf" % (day)))

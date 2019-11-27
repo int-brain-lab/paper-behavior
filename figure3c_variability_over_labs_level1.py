@@ -159,23 +159,23 @@ ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax2)
-ax2.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
+sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax2)
+ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 25], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax3)
-ax3.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 25], xlabel='')
+sns.boxplot(y='bias', x='lab_number', data=learned_2, ax=ax3)
+ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='bias', x='lab_number', data=learned_2, ax=ax4)
-ax4.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
+sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax4)
+ax4.set(ylabel='Trial duration (ms)', ylim=[0, 1000], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax5)
-ax5.set(ylabel='Trial duration (ms)', ylim=[0, 1000], xlabel='')
+sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax5)
+ax5.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
 plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 

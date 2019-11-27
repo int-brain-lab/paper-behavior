@@ -164,7 +164,7 @@ for i in range(ITERATIONS):
                                                           clf, NUM_SPLITS)[0]
 
 # Calculate if decoder performs above chance (positive values indicate above chance-level)
-sig = np.percentile(decoding_result['original'], 5)
+sig = np.percentile(decoding_result['original'], 2.5)
 sig_control = np.percentile(decoding_result['control'], 0.001)
 
 # Plot decoding results

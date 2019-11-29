@@ -34,18 +34,24 @@ behav['lab'] = behav['institution_short']
 behav['lab_number'] = behav.lab.map(institution_map()[0])
 
 # Get variability over days
-var_days = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
+mean_days = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
+std_days = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
 for i, day in enumerate(bin_centers):
     this_behav = behav[(behav['training_day'] > day-np.floor(bin_size/2))
                        & (behav['training_day'] < day+np.floor(bin_size/2))]
-    var_days[day] = this_behav.groupby('lab_number').std()['performance_easy']
+    mean_days[day] = this_behav.groupby('lab_number').mean()['performance_easy']
+    std_days[day] = this_behav.groupby('lab_number').std()['performance_easy']
 
 # Plot output
 colors = group_colors()
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
-for i, lab in enumerate(var_days.index.values):
-    ax1.plot(var_days.loc[lab], color=colors[i], lw=2)
-ax1.set(xlabel='Training days', ylabel='Variability (std)')
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+for i, lab in enumerate(std_days.index.values):
+    ax1.plot(std_days.loc[lab], color=colors[i], lw=2)
+ax1.set(xlabel='Training days', ylabel='Variability (std)', title='Within labs')
+
+ax2.plot(mean_days.std(), lw=2)
+ax2.set(xlabel='Training days', ylabel='Variability (std)', title='Between labs')
+
 
 plt.tight_layout(pad=2)
 plt.savefig(join(fig_path, 'variability_over_time.pdf'), dpi=300)

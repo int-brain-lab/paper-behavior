@@ -43,16 +43,20 @@ for i, day in enumerate(bin_centers):
     std_days[day] = this_behav.groupby('lab_number').std()['performance_easy']
 
 # Plot output
+
 colors = group_colors()
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
 for i, lab in enumerate(std_days.index.values):
-    ax1.plot(std_days.loc[lab], color=colors[i], lw=2)
+    ax1.plot(std_days.loc[lab], color=colors[i], lw=2, label='Lab %s' % (i + 1))
+    ax1.legend(frameon=False, loc='lower center', ncol=3, bbox_to_anchor=(0.5, -0.47))
 ax1.set(xlabel='Training days', ylabel='Variability (std)', title='Within labs')
-
+ax1.set(xlim=[0, 40])
 ax2.plot(mean_days.std(), lw=2)
 ax2.set(xlabel='Training days', ylabel='Variability (std)', title='Between labs')
+ax2.set(xlim=[0, 40])
 
+seaborn_style()
+#plt.tight_layout(pad=4)
 
-plt.tight_layout(pad=2)
 plt.savefig(join(fig_path, 'variability_over_time.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'variability_over_time.png'), dpi=300)

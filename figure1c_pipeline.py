@@ -71,14 +71,18 @@ trained_subjects = get_mouse_n(query_subjects())
 print('Trained: %d'%trained_subjects)
 
 # ============================================= #
-# 3. all mice that reached trained
+# how many mice are in training?
 # ============================================= #
 
-trained_subjects = get_mouse_n(query_subjects())
-print('Trained: %d'%trained_subjects)
+subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+              & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+    acquisition.Session, session_start_time='max(session_start_time)')
+subj_query = subject.Subject * subj_query * (behavior_analysis.SessionTrainingStatus() &
+                                             'training_status="in_training"')
 
+in_training = get_mouse_n(subj_query)
+print('in training: %d'%in_training)
 
-#
 #
 # #  TIP - use these commands to get all status types:
 # #   import datajoint as dj

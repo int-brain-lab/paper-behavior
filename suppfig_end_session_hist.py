@@ -37,8 +37,8 @@ bins = [0, 6, 13, 20, 27, 34]
 ax = df.pivot(columns='end_status_id').n.plot(
     kind='hist', color=colors, bins=bins, stacked=True, density=True)  # weights=369,
 ax.legend(ids.keys())
-ax.set_xlabel('Session #', labelpad=15)
-ax.set_ylabel('Frequency', labelpad=15)
+ax.set_xlabel('Session #')
+ax.set_ylabel('Frequency')
 plt.gcf().savefig(os.path.join(save_path, "suppfig_end_status_histogram.png"))
 
 # Unity plot
@@ -66,8 +66,8 @@ for i in range(counts.shape[0]):
 
 ax.set_xticks([1] + [i * 7 for i in range(1, round(max_n_days+7/7))])
 ax.set_xlim([.5, counts.shape[1]+.5])
-ax.set_xlabel('Session #', labelpad=15)
-ax.set_ylabel('Proportion', labelpad=15)
+ax.set_xlabel('Session #')
+ax.set_ylabel('Proportion')
 
 ax.legend()
 plt.gcf().savefig(os.path.join(save_path, "suppfig_end_status_histogram_normalized.png"))

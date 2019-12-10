@@ -9,6 +9,7 @@ Functions for behavioral paper analysis
 
 from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
+import matplotlib
 import os
 import datajoint as dj
 from ibl_pipeline.analyses import behavior as behavior_analysis
@@ -33,6 +34,8 @@ def seaborn_style():
     """
     sns.set(style="ticks", context="paper", font_scale=1.2)
     sns.despine(trim=True)
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def figpath():

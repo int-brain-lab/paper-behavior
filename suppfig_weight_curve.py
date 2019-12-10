@@ -42,4 +42,4 @@ plt.gca().set(xlabel='# Days water restricted', ylabel='Normalized weight change
 #  Make fancy
 seaborn_style()
 sns.set()
-plt.show()
+plt.gcf().savefig(os.path.join(save_path, "suppfig_weight_curve.png"))

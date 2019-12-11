@@ -114,7 +114,7 @@ for i, lab in enumerate(np.unique(training_time['lab'])):
     ax1.plot(bincenters, y, '-o', color=lab_colors[i])
 
 ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Training day',
-        xlim=[0, 60], ylim=[0, 1.01])
+        xlim=[0, 60], ylim=[0, 1.02])
 
 sns.despine(trim=True, offset=5)
 plt.tight_layout(pad=2)

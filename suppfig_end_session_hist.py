@@ -17,7 +17,7 @@ save_path = figpath()  # Our figure save path
 colors = group_colors()
 seaborn_style()
 
-endcriteria = dj.create_virtual_module('SessionEndCriteriaImplemented', 
+endcriteria = dj.create_virtual_module('SessionEndCriteriaImplemented',
                                        'group_shared_end_criteria')
 sessions = query_sessions().proj(session_start_date='date(session_start_time)')
 subj_crit = query_subjects().aggr(
@@ -25,14 +25,12 @@ subj_crit = query_subjects().aggr(
                      first_day='min(date(session_start_time))').proj('first_day')
 session_num = (sessions * subj_crit).proj(n='DATEDIFF(session_start_date, first_day)')
 
-df = (endcriteria.SessionEndCriteria * session_num).fetch(format='frame')  # Fetch data
+df = (endcriteria.SessionEndCriteriaImplemented * session_num).fetch(format='frame')  # Fetch data
 
 # Convert statuses to numerical
 plt.figure()
-ids = {k[0]: v for v, k in enumerate(endcriteria.EndCriteria.fetch())}
-del ids['perf<40']
+ids = {k: v for v, k in enumerate(df['end_status'].unique())}
 df['end_status_id'] = df['end_status'].map(ids)
-df['end_status_id'][df['end_status_id'] == 4] = 5
 bins = [0, 6, 13, 20, 27, 34]
 ax = df.pivot(columns='end_status_id').n.plot(
     kind='hist', color=colors, bins=bins, stacked=True, density=True)  # weights=369,
@@ -69,5 +67,5 @@ ax.set_xlim([.5, counts.shape[1]+.5])
 ax.set_xlabel('Session #')
 ax.set_ylabel('Proportion')
 
-ax.legend()
+ax.legend(loc='lower left')
 plt.gcf().savefig(os.path.join(save_path, "suppfig_end_status_histogram_normalized.png"))

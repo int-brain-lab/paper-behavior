@@ -8,7 +8,6 @@ from ibl_pipeline import acquisition
 from paper_behavior_functions import \
     (figpath, query_sessions, query_subjects, group_colors, seaborn_style)
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import os
 
@@ -18,7 +17,8 @@ save_path = figpath()  # Our figure save path
 colors = group_colors()
 seaborn_style()
 
-endcriteria = dj.create_virtual_module('SessionEndCriteria', 'group_shared_end_criteria')
+endcriteria = dj.create_virtual_module('SessionEndCriteriaImplemented', 
+                                       'group_shared_end_criteria')
 sessions = query_sessions().proj(session_start_date='date(session_start_time)')
 subj_crit = query_subjects().aggr(
                      acquisition.Session(),

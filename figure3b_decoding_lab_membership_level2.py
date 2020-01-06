@@ -42,11 +42,11 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-DECODER = 'bayes'           # forest, bayes or regression
+DECODER = 'forest'           # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
-METRICS = ['perf_easy', 'threshold', 'bias', 'reaction_time']
-METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'reaction_time', 'time_zone']
+METRICS = ['perf_easy', 'threshold', 'bias']
+METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'time_zone']
 FIG_PATH = figpath()
 SAVE_FIG = True
 

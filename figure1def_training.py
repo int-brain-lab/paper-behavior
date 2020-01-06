@@ -77,7 +77,7 @@ for didx, day in enumerate(days):
         * (acquisition.Session.proj(session_date='date(session_start_time)') &
            'session_date = "%s"' % thisdate) \
         * behavior.TrialSet.Trial() \
-        * endcriteria.SessionEndCriteria()
+        * endcriteria.SessionEndCriteriaImplemented()
     behavtmp = dj_tools.dj2pandas(b.fetch(format='frame').reset_index())
     behavtmp['trial_start_time'] = behavtmp.trial_start_time / 60  # in minutes
 

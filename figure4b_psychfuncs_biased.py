@@ -24,7 +24,9 @@ from ibl_pipeline.utils import psychofit as psy
 sys.path.insert(0, '../python')
 
 # INITIALIZE A FEW THINGS
-sns.set(style="ticks", context="paper", font_scale=1.2)
+seaborn_style()
+# sns.set(style="ticks", context="paper", font_scale=1.2)
+
 figpath = figpath()
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 sns.set_palette(cmap)  # palette for water types
@@ -202,7 +204,7 @@ use_palette = use_palette + [[1, 1, 0.2]]
 sns.set_palette(use_palette)
 
 # plot
-f, ax1 = plt.subplots(1, 1, figsize=(3.5, 3))
+f, ax1 = plt.subplots(1, 1, figsize=(3, 3.5))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='biasshift', x='institution_code', data=bias_all, ax=ax1)

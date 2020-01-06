@@ -21,7 +21,7 @@ import matplotlib as mpl
 from ibl_pipeline import subject, behavior, acquisition
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 endcriteria = dj.create_virtual_module(
-    'SessionEndCriteria', 'group_shared_end_criteria')  # from Miles
+    'SessionEndCriteriaImplemented', 'group_shared_end_criteria')  # from Miles
 
 # grab some plotting functions from datajoint
 sys.path.append(os.path.join(os.path.dirname(__file__),

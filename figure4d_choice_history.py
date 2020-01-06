@@ -61,7 +61,7 @@ behav['previous_name'] = behav.previous_outcome_name + \
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col='task', hue='previous_name',
-                    sharex=True, sharey=True, aspect=1, palette='Paired',
+                    sharex=True, sharey=True, aspect=0.7, palette='Paired',
                     hue_order=['post_error, right', 'post_correct, right',
                                'post_error, left', 'post_correct, left'])
 fig.map(plot_psychometric, "signed_contrast",

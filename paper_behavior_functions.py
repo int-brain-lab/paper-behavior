@@ -69,7 +69,7 @@ def query_subjects(as_dataframe=False):
         'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
         date_trained='min(date(session_start_time))')
 
-    # Select subjects that reached trained_1a criterium before September 30th
+    # Select subjects that reached trained_1a criterium before November 30th
     if as_dataframe is True:
         subjects = (
             subj_query & 'date_trained < "2019-11-30"').fetch(format='frame')

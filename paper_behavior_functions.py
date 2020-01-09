@@ -11,6 +11,7 @@ from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
 import matplotlib
 import os
+import numpy as np
 import datajoint as dj
 from ibl_pipeline.analyses import behavior as behavior_analysis
 # from IPython import embed as shell  # for debugging
@@ -51,13 +52,14 @@ def figpath():
     return fig_dir
 
 
-def query_subjects(as_dataframe=False):
+def query_subjects(as_dataframe=False, from_list = True):
     """
     Query all mice for analysis of behavioral data
 
     Parameters
     ----------
     as_dataframe: boolean if true returns a pandas dataframe (default is False)
+    from_list: loads files from list uuids (array of uuids objects)
     """
 
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
@@ -68,6 +70,11 @@ def query_subjects(as_dataframe=False):
         & 'training_status="trained_1a" OR training_status="trained_1b"',
         'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
         date_trained='min(date(session_start_time))')
+    
+    if from_list==True:
+        ids = np.load('uuids_trained1.npy', allow_pickle=True)
+        subj_query = subj_query & [{'subject_uuid': u_id} for u_id in ids]
+
 
     # Select subjects that reached trained_1a criterium before November 30th
     if as_dataframe is True:

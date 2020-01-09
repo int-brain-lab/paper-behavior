@@ -52,7 +52,7 @@ def figpath():
     return fig_dir
 
 
-def query_subjects(as_dataframe=False, from_list = True):
+def query_subjects(as_dataframe=False, from_list = True, criterion = 'trained'):
     """
     Query all mice for analysis of behavioral data
 
@@ -60,18 +60,38 @@ def query_subjects(as_dataframe=False, from_list = True):
     ----------
     as_dataframe: boolean if true returns a pandas dataframe (default is False)
     from_list: loads files from list uuids (array of uuids objects)
+    criterion: what criterion by the 30th of November - trained (includes
+    a and b), biased, ready4ephysrig
     """
 
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they were flagged as trained_1a
-    subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+    
+    if criterion == 'trained':
+        subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+                      & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+            (acquisition.Session * behavior_analysis.SessionTrainingStatus())
+            & 'training_status="trained_1a" OR training_status="trained_1b"',
+            'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
+            date_trained='min(date(session_start_time))')
+    
+    if criterion == 'biased':
+        subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
         (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-        & 'training_status="trained_1a" OR training_status="trained_1b"',
+        & 'task_protocol LIKE "%biased%"',
         'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
         date_trained='min(date(session_start_time))')
     
-    if from_list==True:
+    if criterion == 'ready4ephysrig':
+        subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
+        & 'training_status="ready4ephysrig"',
+        'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
+        date_trained='min(date(session_start_time))')
+                      
+    if from_list == True:
         ids = np.load('uuids_trained1.npy', allow_pickle=True)
         subj_query = subj_query & [{'subject_uuid': u_id} for u_id in ids]
 
@@ -124,6 +144,8 @@ def query_sessions(task='all', stable=False, as_dataframe=False):
     else:
         raise Exception('task must be all, training or biased')
 
+    # Sessions only after november
+    sessions = sessions & 'date(session_start_time) < "2019-11-30"'
     # If required only output sessions with stable hardware
     if stable is True:
         sessions = sessions & 'date(session_start_time) > "2019-06-10"'
@@ -161,7 +183,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     """
 
     # Query all included subjects
-    use_subjects = query_subjects().proj('subject_uuid')
+    use_subjects = query_subjects(criterion = criterion).proj('subject_uuid')
 
     # Query per subject the date at which the criterion is reached
     if criterion == 'trained':
@@ -192,6 +214,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
             & ('training_day - day_of_crit between %d and %d'
                % (-days_from_criterion[0], days_from_criterion[1]))).proj(
                    'subject_uuid', 'subject_nickname', 'session_date')
+    #Use days before the 30th of Novemeber
 
     # Use dates to query sessions
     ses_query = (acquisition.Session).aggr(

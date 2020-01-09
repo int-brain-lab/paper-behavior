@@ -106,7 +106,7 @@ def query_subjects(as_dataframe=False, from_list = True, criterion = 'trained'):
     return subjects
 
 
-def query_sessions(task='all', stable=False, as_dataframe=False):
+def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov = True):
     """
     Query all sessions for analysis of behavioral data
 
@@ -117,6 +117,8 @@ def query_sessions(task='all', stable=False, as_dataframe=False):
     stable:          boolean if True only return sessions with stable hardware, which means
                      sessions after July 10, 2019 (default is False)
     as_dataframe:    boolean if True returns a pandas dataframe (default is False)
+    force_30nov:     whether the animal had to reach the criterion by the 30th of Nov. Only
+                     applies to biased and ready for ephys criterion
     """
 
     # Query sessions
@@ -145,7 +147,8 @@ def query_sessions(task='all', stable=False, as_dataframe=False):
         raise Exception('task must be all, training or biased')
 
     # Sessions only after november
-    sessions = sessions & 'date(session_start_time) < "2019-11-30"'
+    if force_30nov == True:
+        sessions = sessions & 'date(session_start_time) < "2019-11-30"'
     # If required only output sessions with stable hardware
     if stable is True:
         sessions = sessions & 'date(session_start_time) > "2019-06-10"'
@@ -160,7 +163,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False):
 
 
 def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0],
-                                    as_dataframe=False):
+                                    as_dataframe=False, force_30nov = True):
     """
     Query all sessions for analysis of behavioral data
 
@@ -180,10 +183,15 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     days:                   The training days around the criterion day. Can be used in conjunction
                             with tables that have session_date as primary key (such as
                             behavior_analysis.BehavioralSummaryByDate)
+    force_30nov:            whether the animal had to reach the criterion by the 30th of Nov. Only
+                            applies to biased and ready for ephys criterion
     """
 
     # Query all included subjects
-    use_subjects = query_subjects(criterion = criterion).proj('subject_uuid')
+    if force_30nov == True:
+        use_subjects = query_subjects(criterion = criterion).proj('subject_uuid')
+    else:
+        use_subjects = query_subjects().proj('subject_uuid')
 
     # Query per subject the date at which the criterion is reached
     if criterion == 'trained':

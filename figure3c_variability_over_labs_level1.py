@@ -160,7 +160,7 @@ ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax2)
-ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 25], xlabel='')
+ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 40], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 

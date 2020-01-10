@@ -30,7 +30,7 @@ sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'threshold', 'bias', 'reaction_time',
-                                'lapse_low', 'lapse_high'])
+                                'lapse_low', 'lapse_high', 'n_trials'])
 
 for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     if np.mod(i+1, 10) == 0:
@@ -47,9 +47,10 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     fit_df = dj2pandas(trials)
     fit_result = fit_psychfunc(fit_df)
 
-    # Get performance and reaction time
+    # Get performance, reaction time and number of trials
     reaction_time = trials['rt'].median()*1000
     perf_easy = trials['correct_easy'].mean()*100
+    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
@@ -61,6 +62,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
+    learned.loc[i, 'n_trials'] = ntrials_perday
 
 # Drop mice with faulty RT
 learned = learned[learned['reaction_time'].notnull()]
@@ -142,11 +144,11 @@ sns.set_palette(use_palette)
 lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
-f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(13, 4))
+f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(16, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
-ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[65, 101], xlabel='')
+ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
@@ -162,6 +164,11 @@ plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax4)
 ax4.set(ylabel='Trial duration (ms)', ylim=[0, 1600], xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
+plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
+
+sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax4)
+ax4.set(ylabel='Number of trials', ylim=[0, 1000], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 

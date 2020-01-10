@@ -104,7 +104,7 @@ def query_subjects(as_dataframe=False, from_list=True, criterion='trained'):
     return subjects
 
 
-def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov = True):
+def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov=False):
     """
     Query all sessions for analysis of behavioral data
 
@@ -120,7 +120,10 @@ def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov = T
     """
 
     # Query sessions
-    use_subjects = query_subjects().proj('subject_uuid')
+    if force_30nov is True:
+        use_subjects = query_subjects(criterion = criterion).proj('subject_uuid')
+    else:
+        use_subjects = query_subjects().proj('subject_uuid')
 
     # Query all sessions or only training or biased if required
     if task == 'all':
@@ -144,9 +147,9 @@ def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov = T
     else:
         raise Exception('task must be all, training or biased')
 
-    # Sessions only after november
-    if force_30nov == True:
-        sessions = sessions & 'date(session_start_time) < "2019-11-30"'
+    # Only use sessions up until the end of December
+    sessions = sessions & 'date(session_start_time) < "2019-12-31"'
+
     # If required only output sessions with stable hardware
     if stable is True:
         sessions = sessions & 'date(session_start_time) > "2019-06-10"'
@@ -161,7 +164,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov = T
 
 
 def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0],
-                                    as_dataframe=False, force_30nov = True):
+                                    as_dataframe=False, force_30nov=False):
     """
     Query all sessions for analysis of behavioral data
 
@@ -186,8 +189,8 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     """
 
     # Query all included subjects
-    if force_30nov == True:
-        use_subjects = query_subjects(criterion = criterion).proj('subject_uuid')
+    if force_30nov is True:
+        use_subjects = query_subjects(criterion=criterion).proj('subject_uuid')
     else:
         use_subjects = query_subjects().proj('subject_uuid')
 

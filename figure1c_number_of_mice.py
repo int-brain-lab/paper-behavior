@@ -23,6 +23,7 @@ subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.Sub
 mice_in_training = (subj_query & 'last_training_session > "2019-11-30"')
 mice_at_start = len(all_mice)-len(mice_in_training)
 print('Number of mice at start: %d' % mice_at_start)
+print('Number of mice still in training: %d' % len(mice_in_training))
 
 # Get dropout after implantation
 mice_trained = (subj_query & 'last_training_session < "2019-11-30"')

@@ -3,22 +3,16 @@ PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS OF TRAINED ANIMALS
 Anne Urai, CSHL, 2019
 """
 
-import pandas as pd
-import numpy as np
 import seaborn as sns
-import sys
 import os
 import matplotlib.pyplot as plt
-from paper_behavior_functions import *
-import datajoint as dj
+from paper_behavior_functions import (figpath, seaborn_style, group_colors,
+                                      query_sessions_around_criterion, institution_map)
 from IPython import embed as shell  # for debugging
-from scipy.special import erf  # for psychometric functions
 
 # import wrappers etc
-from ibl_pipeline import reference, subject, action, acquisition, data, behavior
-from ibl_pipeline.utils import psychofit as psy
-from ibl_pipeline.analyses import behavior as behavioral_analyses
-from dj_tools import *
+from ibl_pipeline import reference, subject, behavior
+from dj_tools import plot_psychometric, dj2pandas
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -65,7 +59,8 @@ fig.map(plot_psychometric, "signed_contrast", "choice_right",
         "subject_nickname", color='gray', alpha=0.7)
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(sorted(behav.institution_name.unique())[axidx], color=pal[axidx], fontweight='bold')
+    ax.set_title(sorted(behav.institution_name.unique())[axidx],
+                 color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
 tmpdat = behav[behav['subject_nickname'].str.contains('KS014')]

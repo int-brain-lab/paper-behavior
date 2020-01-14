@@ -50,6 +50,11 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     # Get performance, reaction time and number of trials
     reaction_time = trials['rt'].median()*1000
     perf_easy = trials['correct_easy'].mean()*100
+
+    # Get all the trials to get number of trials
+    trials = (sessions * behavior.TrialSet.Trial
+              & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
+    trials = trials.reset_index()
     ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
 
     # Add results to dataframe
@@ -163,14 +168,14 @@ ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax4)
-ax4.set(ylabel='Trial duration (ms)', ylim=[0, 1600], xlabel='')
+ax4.set(ylabel='Trial duration (ms)', ylim=[0, 3500], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 
-sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax4)
-ax4.set(ylabel='Number of trials', ylim=[0, 1000], xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
-plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
+sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax5)
+ax5.set(ylabel='Number of trials', ylim=[0, 1200], xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
+plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 
 plt.tight_layout(pad=2)
 seaborn_style()

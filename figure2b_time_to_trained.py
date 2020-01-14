@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 21 10:30:25 2018
-
 Quantify the variability of the time to trained over labs.
 
 @author: Guido Meijer
+16 Jan 2020
 """
 
 import pandas as pd
@@ -106,8 +105,9 @@ plt.savefig(join(fig_path, 'figure2d_training_time.png'), dpi=300)
 
 # Plot cumulative proportion of trained mice over days
 f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
-for i, lab in enumerate(np.unique(training_time['lab'])):
-    y, binEdges = np.histogram(training_time.loc[training_time['lab'] == lab, 'sessions'], bins=20)
+for i, lab in enumerate(np.unique(training_time['lab_number'])):
+    y, binEdges = np.histogram(training_time.loc[training_time['lab_number'] == lab, 'sessions'],
+                               bins=20)
     y = np.cumsum(y)
     y = y / np.max(y)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])

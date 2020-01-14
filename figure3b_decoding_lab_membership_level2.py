@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 21 10:30:25 2018
-
 Decode in which lab a mouse was trained based on its behavioral metrics during the first 15
 sessions in the level 2 task (biased blocks). Only the first 90 trials are used from each session
 because in these trials the stimulus prior is still 50/50 and not 80/20.
@@ -22,6 +20,7 @@ METRICS_CONTROL:    List of strings indicating which metrics to use for the posi
 FIG_PATH:           String containing a path where to save the output figure
 
 @author: Guido Meijer
+16 Jan 2020
 """
 
 import pandas as pd
@@ -163,9 +162,14 @@ for i in range(ITERATIONS):
                                                           list(decod['lab_number'].sample(frac=1)),
                                                           clf, NUM_SPLITS)[0]
 
-# Calculate if decoder performs above chance (positive values indicate above chance-level)
-sig = np.percentile(decoding_result['original'], 2.5)
+# Calculate if decoder performs above chance
+chance_level = decoding_result['original_shuffled'].mean()
+significance = np.percentile(decoding_result['original'], 2.5)
 sig_control = np.percentile(decoding_result['control'], 0.001)
+if chance_level > significance:
+    print('Classification performance not significanlty above chance')
+else:
+    print('Above chance classification performance!')
 
 # Plot decoding results
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))

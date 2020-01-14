@@ -4,13 +4,13 @@ Anne Urai, CSHL, 2019
 """
 
 from IPython import embed as shell  # for debugging
-from ibl_pipeline import reference, subject, action, acquisition, data, behavior
+from ibl_pipeline import subject, acquisition, behavior
 import pandas as pd
 import os
 import seaborn as sns
 import numpy as np
-from paper_behavior_functions import *
-from dj_tools import *
+from paper_behavior_functions import seaborn_style, figpath
+from dj_tools import dj2pandas
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
@@ -29,8 +29,9 @@ behav = pd.DataFrame({'probability_left': [50, 50, 20, 20, 80, 80],
                       'prob': [50, 50, 20, 80, 80, 20]})
 
 fig = sns.FacetGrid(behav,
-                    col="probability_left", hue="probability_left", col_wrap=3, col_order=[50, 20, 80],
-                    palette=cmap, sharex=True, sharey=True, aspect=0.6, height=2.2)
+                    col="probability_left", hue="probability_left", col_wrap=3,
+                    col_order=[50, 20, 80], palette=cmap, sharex=True, sharey=True,
+                    aspect=0.6, height=2.2)
 # fig.map(sns.distplot, "stimulus_side", kde=False, norm_hist=True, bins=2, hist_kws={'rwidth':1})
 fig.map(sns.barplot, "stimulus_side", "prob")
 fig.set(xticks=[-0, 1], xlim=[-0.5, 1.5],
@@ -47,9 +48,10 @@ plt.close('all')
 # EXAMPLE SESSION TIMECOURSE
 # ================================= #
 
-b = (subject.Subject & 'subject_nickname="KS014"') * \
-    behavior.TrialSet.Trial * \
-    (acquisition.Session & 'task_protocol LIKE "%biased%"' & 'session_start_time BETWEEN "2019-08-30" and "2019-08-31"')
+b = ((subject.Subject & 'subject_nickname="KS014"')
+     * behavior.TrialSet.Trial
+     * (acquisition.Session & 'task_protocol LIKE "%biased%"'
+        & 'session_start_time BETWEEN "2019-08-30" and "2019-08-31"'))
 bdat = b.fetch(order_by='session_start_time, trial_id',
                format='frame').reset_index()
 behav = dj2pandas(bdat)
@@ -77,7 +79,7 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
                                              0]],
                                          ec='none', alpha=0.2))
 
-    #%%
+    # %%
     # 2. actual block probabilities as grey line
     behavtmp['stim_sign'] = 100 * ((np.sign(behavtmp.signed_contrast) / 2) + 0.5)
     # sns.scatterplot(x='trial_id', y='stim_sign', data=behav, color='grey',
@@ -88,13 +90,14 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
     axes.set(xlim=[-5, xmax], xlabel='Trial number', ylabel='Stimuli on right (%)', ylim=[-1, 101])
     axes.yaxis.label.set_color("black")
     axes.tick_params(axis='y', colors='black')
-    #%%
+    # %%
 
     # 3. ANIMAL CHOICES, rolling window
     rightax = axes.twinx()
     behavtmp['choice_right'] = behavtmp.choice_right * 100
     sns.lineplot(x='trial_id', y='choice_right', color='firebrick', ci=None,
-                 data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax, linestyle=':')
+                 data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax,
+                 linestyle=':')
     rightax.set(xlim=[-5, xmax], xlabel='Trial number',
                 ylabel='Rightwards choices (%)', ylim=[-1, 101])
     rightax.yaxis.label.set_color("firebrick")

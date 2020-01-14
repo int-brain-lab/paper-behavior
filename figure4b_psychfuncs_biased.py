@@ -106,7 +106,7 @@ fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsiz
 fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12,
                 arrowprops=dict(facecolor=cmap[2], shrink=0.05))
 fig.despine(trim=True)
-fig.axes[0][0].set_title('All mice', fontweight='bold', color='k')
+fig.axes[0][0].set_title('All mice: n = %d'%behav.subject_nickname.nunique(), fontweight='bold', color='k')
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased.png"), dpi=600)
@@ -149,11 +149,11 @@ behav3['biasshift'] = behav3[20] - behav3[80]
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav3,
-                    col="institution_code", col_wrap=7, col_order=col_names,
+                    col="institution_code", col_wrap=4, col_order=col_names,
                     sharex=True, sharey=True, aspect=1, hue="subject_nickname")
 fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$ Rightward choice (%)')
+fig.set_axis_labels('Signed contrast (%)', '$\Delta$ Rightward choices (%)')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat[0:-1]):
     ax.set_title(sorted(behav.institution_name.unique())[axidx], color=pal[axidx], fontweight='bold')
@@ -169,8 +169,8 @@ for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav3[behav3['institution_code'].str.contains(inst)]
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
                       tmp_behav.subject_nickname, ax=ax_group, legend=False, color=pal[i])
-ax_group.set_title('All labs', color='k', fontweight='bold')
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$ Rightward choice (%)')
+ax_group.set_title('All labs: %d mice'%behav.subject_nickname.nunique(), color='k', fontweight='bold')
+fig.set_axis_labels('Signed contrast (%)', '$\Delta$ Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure4c_biasshift.pdf"))
 fig.savefig(os.path.join(figpath, "figure4c_biasshift.png"), dpi=300)
@@ -208,7 +208,7 @@ f, ax1 = plt.subplots(1, 1, figsize=(3, 3.5))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='biasshift', x='institution_code', data=bias_all, ax=ax1)
-ax1.set(ylabel='$\Delta$ Rightward choice (%)\n at 0% contrast', ylim=[0, 51], xlabel='')
+ax1.set(ylabel='$\Delta$ Rightward choices (%)\n at 0% contrast', ylim=[0, 51], xlabel='')
 [tick.set_color(pal[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 21 10:30:25 2018
-
 Quantify the variability of behavioral metrics within and between labs of mouse behavior.
 This script doesn't perform any analysis but plots summary statistics over labs.
 
 @author: Guido Meijer
+16 Jan 2020
 """
 
 import pandas as pd

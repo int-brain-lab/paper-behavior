@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Sep  3 10:15:42 2019
+General functions and queries for the analysis of behavioral data
 
-Functions for behavioral paper analysis
-
-@author: guido
+@authors: Guido Meijer, Anne Urai & Alejandro Pan Vazquez
+16 Jan 2020
 """
 
 from ibl_pipeline import subject, acquisition, reference

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 21 10:30:25 2018
-
 Decode in which lab a mouse was trained based on its behavioral metrics during the three sessions
 of level 1 training in which the mouse was determined to be trained.
 
@@ -21,6 +19,7 @@ METRICS_CONTROL:    List of strings indicating which metrics to use for the posi
 FIG_PATH:           String containing a path where to save the output figure
 
 @author: Guido Meijer
+16 Jan 2020
 """
 
 import pandas as pd
@@ -47,7 +46,7 @@ ITERATIONS = 2000           # how often to decode
 METRICS = ['perf_easy', 'threshold', 'bias']
 METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'time_zone']
 FIG_PATH = figpath()
-SAVE_FIG = True
+SAVE_FIG = False
 
 
 # Decoding function with n-fold cross validation
@@ -164,16 +163,20 @@ for i in range(ITERATIONS):
                                                           list(decod['lab_number'].sample(frac=1)),
                                                           clf, NUM_SPLITS)[0]
 
-# Calculate if decoder performs above chance (positive values indicate above chance-level)
-sig = np.percentile(decoding_result['original'], 5)
+# Calculate if decoder performs above chance
+chance_level = decoding_result['original_shuffled'].mean()
+significance = np.percentile(decoding_result['original'], 2.5)
 sig_control = np.percentile(decoding_result['control'], 0.001)
+if chance_level > significance:
+    print('Classification performance not significanlty above chance')
+else:
+    print('Above chance classification performance!')
 
 # Plot decoding results
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control']], axis=1),
                color=[0.6, 0.6, 0.6], ax=ax1)
-ax1.plot([-1, 2], [np.mean(decoding_result['original_shuffled']),
-                   np.mean(decoding_result['original_shuffled'])], 'r--')
+ax1.plot([-1, 2], [chance_level, chance_level], 'r--')
 ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
         xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(incl. timezone)'])
 ax1.text(0, 0.6, 'n.s.', fontsize=12, ha='center')

@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 21 10:30:25 2018
-
 Quantify the variability of behavioral metrics within and between labs of mouse behavior.
 This script doesn't perform any analysis but plots summary statistics over labs.
 
 @author: Guido Meijer
+16 Jan 2020
 """
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
 from os.path import join
-import seaborn as sns
-from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath, query_subjects)
-from dj_tools import dj2pandas, fit_psychfunc
-from ibl_pipeline import behavior, subject, reference
-import scikit_posthocs as sp
+from paper_behavior_functions import (seaborn_style, institution_map, group_colors, figpath,
+                                      query_subjects)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # Settings
@@ -56,7 +50,6 @@ ax2.set(xlabel='Training days', ylabel='Variability (std)', title='Between labs'
 ax2.set(xlim=[0, 40])
 
 seaborn_style()
-plt.tight_layout() # plt.tight_layout(pad=4)
-
+plt.tight_layout(pad=2)
 plt.savefig(join(fig_path, 'variability_over_time.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'variability_over_time.png'), dpi=300)

@@ -40,6 +40,8 @@ print('Number of mice that went into training: %d' % len(mice_training))
 # Get number of mice that reached trained
 print('Number of mice that reached trained: %d' % len(query_subjects()))
 
+print('Number of mice that are still in training: %d' % len(mice_in_training))
+
 # Get number of mice ready for ephys
 subj_query = (query_subjects().proj('subject_uuid') * subject.Subject * subject.SubjectProject
               & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(

@@ -51,5 +51,5 @@ ax2.set(xlim=[0, 40])
 
 seaborn_style()
 plt.tight_layout(pad=2)
-plt.savefig(join(fig_path, 'variability_over_time.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'variability_over_time.png'), dpi=300)
+plt.savefig(join(fig_path, 'suppfig4_variability_over_time.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'suppfig4_variability_over_time.png'), dpi=300)

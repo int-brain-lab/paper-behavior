@@ -1,6 +1,9 @@
 """
 Plot full psychometric functions as a function of choice history,
 and separately for 20/80 and 80/20 blocks
+
+Anne Urai
+16 Jan 2020
 """
 
 # import wrappers etc
@@ -30,8 +33,7 @@ institution_map, col_names = institution_map()
 # ================================= #
 
 use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[
-                                                             2, 3],
+                                                         days_from_criterion=[2, 3],
                                                          as_dataframe=False)
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -59,8 +61,7 @@ behav = behav[~behav.signed_contrast.isin(removecontrasts)]
 # PREVIOUS CHOICE - SUMMARY PLOT
 # ================================= #
 
-behav['previous_name'] = behav.previous_outcome_name + \
-    ', ' + behav.previous_choice_name
+behav['previous_name'] = behav.previous_outcome_name + ', ' + behav.previous_choice_name
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
@@ -148,8 +149,8 @@ sns.lineplot(x='post_correct', y='post_error', legend=False, color='k', ci=None,
                                                  ['task']).mean().reset_index(),
              ax=ax, style='task', markers={'traini': 'o', 'biased': '^'}, markersize=6)
 
-ax.set_xlabel("History dependence after correct\n($\Delta$ rightward choice (%) at 0% contrast)")
-ax.set_ylabel("History dependence after error\n($\Delta$ rightward choice (%) at 0% contrast)")
+ax.set_xlabel("History dependence after correct\n(\u0394 rightward choice (%) at 0% contrast)")
+ax.set_ylabel("History dependence after error\n(\u0394 rightward choice (%) at 0% contrast)")
 ax.set(xticks=[-20, 0, 20, 40, 60], yticks=[-20, 0, 20, 40, 60])
 
 sns.despine(trim=True)
@@ -171,11 +172,13 @@ pars5 = pd.pivot_table(pars4, values=['post_correct', 'post_error'],
 pars5['coord_shift_x'] = pars5['post_correct']['biased'] - pars5['post_correct']['traini']
 pars5['coord_shift_y'] = pars5['post_error']['biased'] - pars5['post_error']['traini']
 
+
 # convert coordinates to norm and angle
 def cart2pol(x, y):
     rho = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y, x)
     return(rho, phi)
+
 
 r, phi = cart2pol(pars5['coord_shift_x'], pars5['coord_shift_y'])
 pars5['norm'] = r

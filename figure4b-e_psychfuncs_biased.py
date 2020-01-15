@@ -1,27 +1,26 @@
 """
 PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS IN BIASED BLOCKS
-Anne Urai, CSHL, 2019
+
+Anne Urai
+16 Jan 2020
 """
 
-from dj_tools import *
+from dj_tools import dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric
 import pandas as pd
 import numpy as np
-import sys
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
-from paper_behavior_functions import *
-import datajoint as dj
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
+                                      query_sessions_around_criterion)
 from IPython import embed as shell  # for debugging
-from scipy.special import erf  # for psychometric functions
 
 # import wrappers etc
-from ibl_pipeline import reference, subject, action, acquisition, data, behavior
-from ibl_pipeline.utils import psychofit as psy
-from ibl_pipeline.analyses import behavior as behavioral_analyses
+from ibl_pipeline import reference, subject, acquisition, behavior
 from ibl_pipeline.utils import psychofit as psy
 
-sys.path.insert(0, '../python')
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -38,9 +37,9 @@ institution_map, col_names = institution_map()
 # FOR OUR EXAMPLE ANIMAL
 # ================================= #
 
-b = (subject.Subject & 'subject_nickname="KS014"') * \
-    behavior.TrialSet.Trial * \
-    (acquisition.Session & 'task_protocol LIKE "%biased%"')
+b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
+     & 'subject_nickname="KS014"' & 'task_protocol LIKE "%biased%"')
+
 bdat = b.fetch(order_by='session_start_time, trial_id',
                format='frame').reset_index()
 behav = dj2pandas(bdat)
@@ -106,7 +105,8 @@ fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsiz
 fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12,
                 arrowprops=dict(facecolor=cmap[2], shrink=0.05))
 fig.despine(trim=True)
-fig.axes[0][0].set_title('All mice: n = %d'%behav.subject_nickname.nunique(), fontweight='bold', color='k')
+fig.axes[0][0].set_title('All mice: n = %d' % behav.subject_nickname.nunique(),
+                         fontweight='bold', color='k')
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased.png"), dpi=600)
@@ -145,7 +145,7 @@ behav3 = pd.pivot_table(behav2, values='choice',
                         columns=['probabilityLeft']).reset_index()
 behav3['biasshift'] = behav3[20] - behav3[80]
 
-##### PLOT ##########
+# %% PLOT
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav3,
@@ -153,10 +153,11 @@ fig = sns.FacetGrid(behav3,
                     sharex=True, sharey=True, aspect=1, hue="subject_nickname")
 fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$ Rightward choices (%)')
+fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choices (%)')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat[0:-1]):
-    ax.set_title(sorted(behav.institution_name.unique())[axidx], color=pal[axidx], fontweight='bold')
+    ax.set_title(sorted(behav.institution_name.unique())[axidx],
+                 color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
 tmpdat = behav3[behav3['subject_nickname'].str.contains('KS014')]
@@ -169,11 +170,12 @@ for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav3[behav3['institution_code'].str.contains(inst)]
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
                       tmp_behav.subject_nickname, ax=ax_group, legend=False, color=pal[i])
-ax_group.set_title('All labs: %d mice'%behav.subject_nickname.nunique(), color='k', fontweight='bold')
-fig.set_axis_labels('Signed contrast (%)', '$\Delta$ Rightward choices (%)')
+ax_group.set_title('All labs: %d mice' % behav.subject_nickname.nunique(),
+                   color='k', fontweight='bold')
+fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choices (%)')
 fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure4c_biasshift.pdf"))
-fig.savefig(os.path.join(figpath, "figure4c_biasshift.png"), dpi=300)
+fig.savefig(os.path.join(figpath, "figure4c-d_biasshift.pdf"))
+fig.savefig(os.path.join(figpath, "figure4c-d_biasshift.png"), dpi=300)
 plt.close('all')
 
 # ================================================================== #
@@ -183,10 +185,8 @@ plt.close('all')
 bias = behav3.loc[behav3.signed_contrast == 0, :]
 
 # stats on bias shift between laboratories:
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
 sm_lm = ols('biasshift ~ C(institution_code)', data=bias).fit()
-table = sm.stats.anova_lm(sm_lm, typ=2) # Type 2 ANOVA DataFrame
+table = sm.stats.anova_lm(sm_lm, typ=2)  # Type 2 ANOVA DataFrame
 print(table)
 
 # Add all mice to dataframe seperately for plotting
@@ -208,11 +208,10 @@ f, ax1 = plt.subplots(1, 1, figsize=(3, 3.5))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='biasshift', x='institution_code', data=bias_all, ax=ax1)
-ax1.set(ylabel='$\Delta$ Rightward choices (%)\n at 0% contrast', ylim=[0, 51], xlabel='')
+ax1.set(ylabel='\u0394 Rightward choices (%)\n at 0% contrast', ylim=[0, 51], xlabel='')
 [tick.set_color(pal[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 seaborn_style()
 plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.pdf'))
 plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.png'), dpi=300)
-

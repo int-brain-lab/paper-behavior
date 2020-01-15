@@ -32,8 +32,9 @@ training_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
                             acquisition.Session() & 'task_protocol LIKE "%training%"',
                             num_sessions='count(session_start_time)').fetch(format='frame')
-print('Number of mice after habituation: %d' % (len(mice_training)
-                                                + sum(training_query['num_sessions'] == 0)))
+print('Number of mice that went into habituation: %d' % (len(mice_training)
+                                                         + sum(
+                                                             training_query['num_sessions'] == 0)))
 print('Number of mice that went into training: %d' % len(mice_training))
 
 # Get number of mice that reached trained

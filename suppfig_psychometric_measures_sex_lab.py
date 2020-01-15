@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul  3 13:35:18 2019
-
-@author: ibladmin
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
 Created on Wed Jul  3 11:28:01 2019
 
 @author: ibladmin
@@ -87,7 +79,7 @@ for labname in users:
                 subj = subject.Subject & 'subject_nickname="{}"'.format(mouse)
                 last_session = subj.aggr(behavior.TrialSet, session_start_time='max(session_start_time)')
                 training_status = (behavior_analysis.SessionTrainingStatus & last_session).fetch1('training_status')
-                
+
                 if training_status in ['trained', 'ready for ephys']:
                     first_trained_session = subj.aggr(behavior_analysis.SessionTrainingStatus & 'training_status="trained"', first_trained='min(session_start_time)')
                     first_trained_session_time = first_trained_session.fetch1('first_trained')
@@ -97,7 +89,7 @@ for labname in users:
                     days_to_trained = sum(behav['date'].unique() < trained_date.to_datetime64())
                     # how many trials to trained?
                     trials_to_trained = sum(behav['date'] < trained_date.to_datetime64())
-                       
+
                     #average threshold
                     pars = pd.DataFrame((behavior_analysis.BehavioralSummaryByDate.PsychResults * subject.Subject * subject.SubjectLab & \
                                          'subject_nickname="%s"'%mouse & 'lab_name="%s"'%labname).fetch(as_dict=True))
@@ -107,13 +99,13 @@ for labname in users:
                                                 >= first_trained_session_time.date()), 'lapse_high'].mean()
                     average_lapse_low  = pars.loc[(pars['prob_left'] == 0.5) & (pars['session_date'] \
                                                 >= first_trained_session_time.date()), 'lapse_low'].mean()
-                else:   
+                else:
                     days_to_trained = np.nan
                     trials_to_trained = np.nan
                     average_threshold = np.nan
                     average_lapse_high = np.nan
                     average_lapse_low = np.nan
-    
+
                 if training_status == 'ready for ephys':
                     #Only counting from ready to ephys status
                     first_ephystrained_session = subj.aggr(behavior_analysis.SessionTrainingStatus & \
@@ -123,9 +115,9 @@ for labname in users:
                     ephys_date = pd.DatetimeIndex([first_ephystrained_session_time])[0]
                     days_to_ephys = sum((behav['date'].unique() < ephys_date.to_datetime64()) & (behav['date'].unique() > trained_date.to_datetime64()))
                     trials_to_ephys = sum((behav['date'] < ephys_date.to_datetime64()) & (behav['date'] > trained_date.to_datetime64()))
-                    
+
                     #Bias analysis
-                
+
                     pars = pd.DataFrame((behavior_analysis.BehavioralSummaryByDate.PsychResults * \
                                          subject.Subject * subject.SubjectLab & 'subject_nickname="%s"'%mouse & \
                                          'lab_name="%s"'%labname).fetch(as_dict=True))
@@ -133,13 +125,13 @@ for labname in users:
                                                 >= first_ephystrained_session_time.date()), 'bias'].mean()
                     average_bias_02  = pars.loc[(pars['prob_left'] == 0.2) & (pars['session_date'] \
                                                 >= first_ephystrained_session_time.date()), 'bias'].mean()
-                    
+
                 else:
                     average_bias_08 = np.nan
                     average_bias_02= np.nan
                     days_to_ephys = np.nan
                     trials_to_ephys= np.nan
-                    
+
                 # keep track
                 allsubjects.loc[allsubjects['subject_nickname'] == mouse, ['days_to_trained']] = days_to_trained
                 allsubjects.loc[allsubjects['subject_nickname'] == mouse, ['trials_to_trained']] = trials_to_trained
@@ -151,11 +143,11 @@ for labname in users:
                 allsubjects.loc[allsubjects['subject_nickname'] == mouse, ['average_lapse_low']] = average_lapse_low
                 allsubjects.loc[allsubjects['subject_nickname'] == mouse, ['average_bias08']] = average_bias_08
                 allsubjects.loc[allsubjects['subject_nickname'] == mouse, ['average_bias02']] = average_bias_02
-                
+
             except:
                 pass
-            
-            
+
+
 ##Plot average psychometric measures
 #Stats:
 measures = pd.DataFrame (index = ['trials_to_trained', 'average_bias08', \
@@ -178,10 +170,10 @@ for measure in measures.index.values:
                                                         measure].dropna())
     measures.loc[measure, 's'] = s
     measures.loc[measure, 'p'] = p * len(measures.index.values)  #Simple Bonferroni Correction
-   
+
 #Ceil p values to 1
 measures.loc[(measures['p'] > 1), 'p'] =1
-   
+
 #plotting
 psychometric_measures, ax = plt.subplots(2,3,figsize=(10,6),sharex = True)
 sns.boxplot(x="lab_name", y="average_threshold", data=allsubjects,  ax=ax[0,0])

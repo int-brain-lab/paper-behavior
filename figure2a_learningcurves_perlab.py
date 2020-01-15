@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 from paper_behavior_functions import (query_subjects, seaborn_style, figpath,
                                       group_colors, institution_map, seaborn_style)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
-from IPython import embed as shell  # for debugging
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -35,7 +34,8 @@ behav['institution_code'] = behav.institution_short.map(institution_map)
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)
-behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
+behav['institution_name'] = behav.institution_code + \
+    ': ' + behav.n_mice.apply(str) + ' mice'
 
 # make sure each mouse starts at 0
 for index, group in behav.groupby(['lab_name', 'subject_nickname']):
@@ -69,7 +69,8 @@ fig.map(sns.lineplot, "training_day",
         "performance_easy_trained", color='darkblue', alpha=0.3)
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_name.unique()[axidx], color=pal[axidx], fontweight='bold')
+    ax.set_title(behav.institution_name.unique()[
+                 axidx], color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
 sns.lineplot(ax=fig.axes[0], x='training_day', y='performance_easy', color='black',
@@ -85,17 +86,21 @@ fig, ax1 = plt.subplots(1, 1, figsize=(4, 4))
 sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal,
              ax=ax1, legend=False, data=behav, ci=None)
 ax1.set_title('All labs', color='k', fontweight='bold')
-ax1.set(xlabel='Training day', ylabel='Performance (%) on easy trials', xlim=[-1, 41.5])
+ax1.set(xlabel='Training day',
+        ylabel='Performance (%) on easy trials', xlim=[-1, 41.5])
 
 seaborn_style()
 plt.tight_layout(pad=2)
 fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.pdf"))
-fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.png"), dpi=300)
+fig.savefig(os.path.join(
+    figpath, "figure2b_learningcurves_all_labs.png"), dpi=300)
 
 # ================================= #
 # print some stats
 # ================================= #
 
-behav_summary = behav.groupby(['training_day'])['performance_easy'].mean().reset_index()
+behav_summary = behav.groupby(['training_day'])[
+    'performance_easy'].mean().reset_index()
 print('number of days to reach 80% accuracy on easy trials: ')
-print(behav_summary.loc[behav_summary.performance_easy > 80, 'training_day'].min())
+print(behav_summary.loc[behav_summary.performance_easy >
+                        80, 'training_day'].min())

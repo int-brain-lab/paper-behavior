@@ -9,8 +9,6 @@ import os
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors,
                                       query_sessions_around_criterion, institution_map)
-from IPython import embed as shell  # for debugging
-
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from dj_tools import plot_psychometric, dj2pandas
@@ -27,7 +25,8 @@ col_names = col_names[:-1]
 # ================================= #
 
 use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
-                                                         days_from_criterion=[2, 0],
+                                                         days_from_criterion=[
+                                                             2, 0],
                                                          as_dataframe=False)
 # restrict by list of dicts with uuids for these sessions
 b = use_sessions * subject.Subject * subject.SubjectLab * reference.Lab * \
@@ -50,7 +49,8 @@ print(behav.describe())
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)
-behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
+behav['institution_name'] = behav.institution_code + \
+    ': ' + behav.n_mice.apply(str) + ' mice'
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,

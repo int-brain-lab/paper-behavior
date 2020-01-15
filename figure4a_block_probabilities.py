@@ -5,7 +5,6 @@ Block structure in the biased task for an example session
 15 January 2020
 """
 
-from IPython import embed as shell  # for debugging
 from ibl_pipeline import subject, acquisition, behavior
 import pandas as pd
 import os
@@ -42,7 +41,8 @@ for ax, title in zip(fig.axes.flat, ['50/50', '80/20', '20/80']):
     ax.set_title(title)
     ax.set_xticklabels(['Left', 'Right'], rotation=45)
 fig.set_axis_labels('', 'Probability (%)')
-fig.savefig(os.path.join(figpath, "figure4_panel_block_distribution.png"), dpi=600)
+fig.savefig(os.path.join(
+    figpath, "figure4_panel_block_distribution.png"), dpi=600)
 fig.savefig(os.path.join(figpath, "figure4_panel_block_distribution.pdf"))
 plt.close('all')
 
@@ -83,13 +83,15 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
 
     # %%
     # 2. actual block probabilities as grey line
-    behavtmp['stim_sign'] = 100 * ((np.sign(behavtmp.signed_contrast) / 2) + 0.5)
+    behavtmp['stim_sign'] = 100 * \
+        ((np.sign(behavtmp.signed_contrast) / 2) + 0.5)
     # sns.scatterplot(x='trial_id', y='stim_sign', data=behav, color='grey',
     #                 marker='o', ax=axes, legend=False, alpha=0.5,
     #                 ec='none', linewidth=0, zorder=2)
     sns.lineplot(x='trial_id', y='stim_sign', color='black', ci=None,
                  data=behavtmp[['trial_id', 'stim_sign']].rolling(10).mean(), ax=axes)
-    axes.set(xlim=[-5, xmax], xlabel='Trial number', ylabel='Stimuli on right (%)', ylim=[-1, 101])
+    axes.set(xlim=[-5, xmax], xlabel='Trial number',
+             ylabel='Stimuli on right (%)', ylim=[-1, 101])
     axes.yaxis.label.set_color("black")
     axes.tick_params(axis='y', colors='black')
     # %%
@@ -110,6 +112,8 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
     axes.set_title('Example session')
 
     plt.tight_layout()
-    fig.savefig(os.path.join(figpath, "figure4_panel_session_course_%s.png" % dayidx), dpi=600)
-    fig.savefig(os.path.join(figpath, "figure4_panel_session_course_%s.pdf" % dayidx))
+    fig.savefig(os.path.join(
+        figpath, "figure4_panel_session_course_%s.png" % dayidx), dpi=600)
+    fig.savefig(os.path.join(
+        figpath, "figure4_panel_session_course_%s.pdf" % dayidx))
     plt.close('all')

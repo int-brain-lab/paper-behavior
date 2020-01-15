@@ -2,7 +2,7 @@
 """
 Query the number of mice at different timepoints of the pipeline
 
-Anne Urai & Guido Meijer
+@author: Anne Urai & Guido Meijer
 16 Jan 2020
 """
 

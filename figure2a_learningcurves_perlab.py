@@ -1,6 +1,8 @@
 """
-SIGMOIDAL LEARNING CURVES DURING TRAINING
-Anne Urai, CSHL, 2019
+Learning curves for all labs
+
+@author: Anne Urai
+15 January 2020
 """
 
 import pandas as pd

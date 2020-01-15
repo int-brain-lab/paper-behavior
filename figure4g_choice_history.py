@@ -1,9 +1,8 @@
 """
-Plot full psychometric functions as a function of choice history,
-and separately for 20/80 and 80/20 blocks
+History-dependent choice strategy across tasks
 
-Anne Urai
-16 Jan 2020
+@author: Anne Urai
+15 January 2020
 """
 
 # import wrappers etc

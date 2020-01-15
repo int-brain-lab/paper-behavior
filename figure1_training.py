@@ -1,7 +1,8 @@
 """
-TRAINING PROGRESSION FOR AN EXAMPLE MOUSE
-Anne Urai, CSHL, 2019
-@editor: Gaelle Chapuis, UCL, 2019
+Training progression for an example mouse
+
+@author: Anne Urai, Gaelle Chapuis
+15 January 2020
 """
 
 import dj_tools

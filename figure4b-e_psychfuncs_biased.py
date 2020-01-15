@@ -1,8 +1,8 @@
 """
-PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS IN BIASED BLOCKS
+Psychometric function and choice shifts in the biased task
 
-Anne Urai
-16 Jan 2020
+@author: Anne Urai
+15 January 2020
 """
 
 from dj_tools import dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric

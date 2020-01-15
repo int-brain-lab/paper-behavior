@@ -1,6 +1,8 @@
 """
-SCHEMATIC OF BLOCK STRUCTURE
-Anne Urai, CSHL, 2019
+Block structure in the biased task for an example session
+
+@author: Anne Urai
+15 January 2020
 """
 
 from IPython import embed as shell  # for debugging

@@ -1,8 +1,9 @@
 """
-PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS OF TRAINED ANIMALS
-Anne Urai, CSHL, 2019
-"""
+Psychometric functions of training mice, within and across labs
 
+@author: Anne Urai
+15 January 2020
+"""
 import seaborn as sns
 import os
 import matplotlib.pyplot as plt

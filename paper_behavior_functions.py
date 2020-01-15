@@ -103,7 +103,8 @@ def query_subjects(as_dataframe=False, from_list=True, criterion='trained'):
     return subjects
 
 
-def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov=False):
+def query_sessions(task='all', stable=False, as_dataframe=False,
+                   force_30nov=False, criterion='biased'):
     """
     Query all sessions for analysis of behavioral data
 
@@ -120,7 +121,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False, force_30nov=Fal
 
     # Query sessions
     if force_30nov is True:
-        use_subjects = query_subjects(criterion = criterion).proj('subject_uuid')
+        use_subjects = query_subjects(criterion=criterion).proj('subject_uuid')
     else:
         use_subjects = query_subjects().proj('subject_uuid')
 

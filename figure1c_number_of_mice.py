@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 19 16:15:10 2019
+Query the number of mice at different timepoints of the pipeline
 
-@author: guido
+Anne Urai & Guido Meijer
+16 Jan 2020
 """
 
-import datetime
 from paper_behavior_functions import query_subjects
 from ibl_pipeline import subject, acquisition, reference
 from ibl_pipeline.analyses import behavior as behavior_analysis

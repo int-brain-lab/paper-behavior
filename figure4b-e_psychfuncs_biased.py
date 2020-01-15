@@ -15,8 +15,6 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
                                       query_sessions_around_criterion)
-from IPython import embed as shell  # for debugging
-
 # import wrappers etc
 from ibl_pipeline import reference, subject, acquisition, behavior
 from ibl_pipeline.utils import psychofit as psy
@@ -88,7 +86,8 @@ print(behav.describe())
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)
-behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
+behav['institution_name'] = behav.institution_code + \
+    ': ' + behav.n_mice.apply(str) + ' mice'
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
@@ -98,7 +97,8 @@ behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(s
 fig = sns.FacetGrid(behav,
                     hue="probabilityLeft", palette=cmap,
                     sharex=True, sharey=True, aspect=1)
-fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname")
+fig.map(plot_psychometric, "signed_contrast",
+        "choice_right", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsize=12,
                 arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')
@@ -208,7 +208,8 @@ f, ax1 = plt.subplots(1, 1, figsize=(3, 3.5))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='biasshift', x='institution_code', data=bias_all, ax=ax1)
-ax1.set(ylabel='\u0394 Rightward choices (%)\n at 0% contrast', ylim=[0, 51], xlabel='')
+ax1.set(ylabel='\u0394 Rightward choices (%)\n at 0% contrast',
+        ylim=[0, 51], xlabel='')
 [tick.set_color(pal[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)

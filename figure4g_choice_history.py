@@ -32,7 +32,8 @@ institution_map, col_names = institution_map()
 # ================================= #
 
 use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[2, 3],
+                                                         days_from_criterion=[
+                                                             2, 3],
                                                          as_dataframe=False)
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -60,7 +61,8 @@ behav = behav[~behav.signed_contrast.isin(removecontrasts)]
 # PREVIOUS CHOICE - SUMMARY PLOT
 # ================================= #
 
-behav['previous_name'] = behav.previous_outcome_name + ', ' + behav.previous_choice_name
+behav['previous_name'] = behav.previous_outcome_name + \
+    ', ' + behav.previous_choice_name
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
@@ -87,7 +89,7 @@ plt.close('all')
 print('fitting psychometric functions...')
 pars = behav.groupby(['institution_code', 'subject_nickname', 'task',
                       'previous_choice_name', 'previous_outcome_name']).apply(
-                                                              fit_psychfunc).reset_index()
+    fit_psychfunc).reset_index()
 
 # instead of the bias in % contrast, take the choice shift at x = 0
 # now read these out at the presented levels of signed contrast
@@ -131,7 +133,8 @@ sns.lineplot(x='post_correct', y='post_error',
              units='subject_nickname', estimator=None, hue='institution_code', alpha=0.3,
              palette=pal, data=pars4, ax=ax, legend=False)
 # markers; only for those subjects with all 4 conditions
-num_dp = pars4.groupby(['subject_nickname'])['post_error'].count().reset_index()
+num_dp = pars4.groupby(['subject_nickname'])[
+    'post_error'].count().reset_index()
 sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
 sns.lineplot(x='post_correct', y='post_error',
              units='subject_nickname', estimator=None, hue='institution_code', palette=pal,
@@ -141,15 +144,17 @@ sns.lineplot(x='post_correct', y='post_error',
 # add black line for the group
 sns.lineplot(x='post_correct', y='post_error', legend=False, color='k', ci=None,
              data=pars4[pars4['subject_nickname'].isin(sjs)].groupby(
-                                                 ['task']).mean().reset_index(),
+                 ['task']).mean().reset_index(),
              ax=ax)
 sns.lineplot(x='post_correct', y='post_error', legend=False, color='k', ci=None,
              data=pars4[pars4['subject_nickname'].isin(sjs)].groupby(
-                                                 ['task']).mean().reset_index(),
+                 ['task']).mean().reset_index(),
              ax=ax, style='task', markers={'traini': 'o', 'biased': '^'}, markersize=6)
 
-ax.set_xlabel("History dependence after correct\n(\u0394 rightward choice (%) at 0% contrast)")
-ax.set_ylabel("History dependence after error\n(\u0394 rightward choice (%) at 0% contrast)")
+ax.set_xlabel(
+    "History dependence after correct\n(\u0394 rightward choice (%) at 0% contrast)")
+ax.set_ylabel(
+    "History dependence after error\n(\u0394 rightward choice (%) at 0% contrast)")
 ax.set(xticks=[-20, 0, 20, 40, 60], yticks=[-20, 0, 20, 40, 60])
 
 sns.despine(trim=True)
@@ -168,8 +173,10 @@ plt.close("all")
 pars5 = pd.pivot_table(pars4, values=['post_correct', 'post_error'],
                        index=['institution_code', 'subject_nickname'],
                        columns=['task']).reset_index()
-pars5['coord_shift_x'] = pars5['post_correct']['biased'] - pars5['post_correct']['traini']
-pars5['coord_shift_y'] = pars5['post_error']['biased'] - pars5['post_error']['traini']
+pars5['coord_shift_x'] = pars5['post_correct']['biased'] - \
+    pars5['post_correct']['traini']
+pars5['coord_shift_y'] = pars5['post_error']['biased'] - \
+    pars5['post_error']['traini']
 
 
 # convert coordinates to norm and angle
@@ -190,7 +197,8 @@ table = sm.stats.anova_lm(sm_lm)  # Type 2 ANOVA DataFrame
 print(table)
 
 # use pycircstat Watson-Williams test
-pars6 = pars5.groupby('institution_code')['angle'].aggregate(lambda x: list(x)).reset_index()
+pars6 = pars5.groupby('institution_code')['angle'].aggregate(
+    lambda x: list(x)).reset_index()
 angles_grouped = pars6['angle'].values
 
 pval, table = pycircstat.watson_williams(angles_grouped[0],

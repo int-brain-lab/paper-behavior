@@ -30,8 +30,8 @@ mice_training = (subj_query & 'last_training_session < "2019-11-30"')
 # Get dropout during habituation
 training_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
                   & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-                            acquisition.Session() & 'task_protocol LIKE "%training%"',
-                            num_sessions='count(session_start_time)').fetch(format='frame')
+    acquisition.Session() & 'task_protocol LIKE "%training%"',
+    num_sessions='count(session_start_time)').fetch(format='frame')
 print('Number of mice that went into habituation: %d' % (len(mice_training)
                                                          + sum(
                                                              training_query['num_sessions'] == 0)))
@@ -43,8 +43,8 @@ print('Number of mice that reached trained: %d' % len(query_subjects()))
 # Get number of mice ready for ephys
 subj_query = (query_subjects().proj('subject_uuid') * subject.Subject * subject.SubjectProject
               & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-        (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-        & 'training_status="ready4ephysrig"',
-        'subject_nickname', 'sex', 'subject_birth_date',
-        date_trained='min(date(session_start_time))')
+    (acquisition.Session * behavior_analysis.SessionTrainingStatus())
+    & 'training_status="ready4ephysrig"',
+    'subject_nickname', 'sex', 'subject_birth_date',
+    date_trained='min(date(session_start_time))')
 print('Number of mice that reached ready for ephys: %d' % len(subj_query))

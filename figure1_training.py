@@ -5,17 +5,13 @@ Training progression for an example mouse
 15 January 2020
 """
 
-import dj_tools
-from paper_behavior_functions import *   # noqa
 import numpy as np
 import pandas as pd
 import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datajoint as dj
-from IPython import embed as shell     # noqa # for debugging
 import os
-import datetime
 import matplotlib as mpl
 
 # import wrappers etc
@@ -27,9 +23,15 @@ endcriteria = dj.create_virtual_module(
 # grab some plotting functions from datajoint
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
-import load_mouse_data_datajoint, behavior_plots  # noqa
+import behavior_plots  # noqa
+import load_mouse_data_datajoint
+import dj_tools
+from paper_behavior_functions import seaborn_style, figpath
 
+# ================================= #
 # INITIALIZE A FEW THINGS
+# ================================= #
+
 seaborn_style()   # noqa
 figpath = figpath()   # noqa
 plt.close('all')
@@ -55,24 +57,27 @@ ax[0].set_xlabel('Training days')
 ax[0].set_title('Example mouse')
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.pdf"))
-fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.png"), dpi=600)
+fig.savefig(os.path.join(
+    figpath, "figure1_example_contrastheatmap.png"), dpi=600)
 
 # ================================================================== #
 # PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
 # ================================================================== #
 
-b = ((subject.Subject & 'subject_nickname = "%s"' % mouse) \
-    * (subject.SubjectLab & 'lab_name="%s"' % lab) \
-    * behavioral_analyses.BehavioralSummaryByDate)
+b = ((subject.Subject & 'subject_nickname = "%s"' % mouse)
+     * (subject.SubjectLab & 'lab_name="%s"' % lab)
+     * behavioral_analyses.BehavioralSummaryByDate)
 behav = b.fetch(format='frame').reset_index()
-behav['training_day'] = behav.training_day - behav.training_day.min() + 1  # start at session 1
+behav['training_day'] = behav.training_day - \
+    behav.training_day.min() + 1  # start at session 1
 days = [2, 7, 10, 14]
 
 for didx, day in enumerate(days):
 
     # get data for today
     print(day)
-    thisdate = behav[behav.training_day == day]['session_date'].dt.strftime('%Y-%m-%d').item()
+    thisdate = behav[behav.training_day ==
+                     day]['session_date'].dt.strftime('%Y-%m-%d').item()
     b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
         * (subject.SubjectLab & 'lab_name="%s"' % lab) \
         * (acquisition.Session.proj(session_date='date(session_start_time)') &
@@ -100,9 +105,9 @@ for didx, day in enumerate(days):
     ax.set(title='Training day %d' % (day))
     sns.despine(trim=True)
     plt.tight_layout()
-    fig.savefig(os.path.join( 
+    fig.savefig(os.path.join(
         figpath, "figure1_example_psychfunc_day%d.pdf" % (day)))
-    fig.savefig(os.path.join( 
+    fig.savefig(os.path.join(
         figpath, "figure1_example_psychfunc_day%d.png" % (day)), dpi=600)
 
     # # CHRONOMETRIC FUNCTIONS
@@ -151,7 +156,7 @@ for didx, day in enumerate(days):
         ax.set(ylabel="Trial duration (s)")
     else:
         ax.set(ylabel=" ")
-        
+
     # right y-axis with sliding performance
     # from :
     # https://stackoverflow.com/questions/36988123/pandas-groupby-and-rolling-apply-ignoring-nans
@@ -164,14 +169,14 @@ for didx, day in enumerate(days):
     ax2 = ax.twinx()
     sns.lineplot(x='trial_start_time', y='correct_easy', color='deepskyblue', ci=None,
                  data=s, ax=ax2)
-    ax2.set(xlabel='', 
+    ax2.set(xlabel='',
             ylim=[0, 101], yticks=[0, 50, 100])
 
     if day == max(days):
         ax2.set(ylabel="Accuracy (%)")
     else:
         ax2.set(ylabel=" ")
-        
+
     ax2.yaxis.label.set_color("deepskyblue")
     ax2.tick_params(axis='y', colors='deepskyblue')
     ax2.spines['right'].set_color('deepskyblue')
@@ -188,8 +193,6 @@ for didx, day in enumerate(days):
     # sns.despine(trim=True)
     sns.despine(ax=ax, top=True, left=False, right=False)
     sns.despine(ax=ax2, top=True,  left=False, right=False)
-
-    #sns.despine(ax=ax2, right=True, left=False)
 
     plt.tight_layout()
     fig.savefig(os.path.join(

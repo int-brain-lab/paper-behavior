@@ -7,16 +7,17 @@ Create list of UUIDs used in the paper
 """
 
 import numpy as np
+from os.path import join
 from ibl_pipeline import reference, subject, acquisition, behavior
 from ibl_pipeline.analyses import behavior as behavior_analysis
-from paper_behavior_functions import query_subjects, query_sessions_around_criterion
+from paper_behavior_functions import query_subjects, query_sessions_around_criterion, figpath
+
+# Get path to save
+SAVE_PATH = figpath()
 
 # All subjects
 subjects = query_subjects(as_dataframe=True)
 
-# Fig2b_time_to_trained
-# Query sessions
-subjects = query_subjects(as_dataframe=True)
 # Create dataframe with behavioral metrics of all mice
 ses_2b = []
 for i, nickname in enumerate(subjects['subject_nickname']):
@@ -34,18 +35,17 @@ for i, nickname in enumerate(subjects['subject_nickname']):
     else:
         ses_2b = np.append(ses_2b, sess)
 
-np.save('fig2b_uuids.npy', ses_2b)
+np.save(join(SAVE_PATH, 'fig4b_uuids.npy'), ses_2b)
 
 # Figure4b
 use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
                                                          days_from_criterion=[2, 0],
                                                          as_dataframe=False)
 # restrict by list of dicts with uuids for these sessions
-b = (use_sessions & 'task_protocol LIKE "%biased%"') \
-    * subject.Subject * subject.SubjectLab * reference.Lab * \
-    behavior.TrialSet
+b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab * behavior.TrialSet
+     & 'task_protocol LIKE "%biased%"')
 # reduce the size of the fetch
 b2 = b.proj('session_uuid')
 bdat = b2.fetch(format='frame').reset_index()
 fig4b = bdat['session_uuid']
-np.save('fig4b_uuids.npy', fig4b)
+np.save(join(SAVE_PATH, 'fig4b_uuids.npy'), fig4b)

@@ -19,7 +19,7 @@ METRICS:            List of strings indicating which behavioral metrics to inclu
 METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
 FIG_PATH:           String containing a path where to save the output figure
 
-@author: Guido Meijer
+Guido Meijer
 16 Jan 2020
 """
 
@@ -186,9 +186,12 @@ plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.035, 'Chance level
 plt.tight_layout(pad=2)
 seaborn_style()
 
-if SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_level2.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_level2.png' % DECODER), dpi=300)
+if (DECODER == 'forest') & (SAVE_FIG is True):
+    plt.savefig(join(FIG_PATH, 'fig3_decoding_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'fig3_decoding_%s_level2.png' % DECODER), dpi=300)
+elif SAVE_FIG is True:
+    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_level2.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
@@ -204,8 +207,8 @@ plt.gca().invert_yaxis()
 plt.tight_layout(pad=2)
 
 if SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_level2.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_level2.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
 sns.heatmap(data=decoding_result['control_cm'].mean())
@@ -222,6 +225,6 @@ plt.tight_layout(pad=2)
 
 if SAVE_FIG is True:
     plt.savefig(join(FIG_PATH,
-                     'suppfig_control_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
+                     'suppfig3_control_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
     plt.savefig(join(FIG_PATH,
-                     'suppfig_control_confusion_matrix_%s_level2.png' % DECODER), dpi=300)
+                     'suppfig3_control_confusion_matrix_%s_level2.png' % DECODER), dpi=300)

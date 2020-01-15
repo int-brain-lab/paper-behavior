@@ -4,7 +4,7 @@
 Quantify the variability of behavioral metrics within and between labs of mouse behavior.
 This script doesn't perform any analysis but plots summary statistics over labs.
 
-@author: Guido Meijer
+Guido Meijer
 16 Jan 2020
 """
 

@@ -23,11 +23,18 @@ subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.Sub
 mice_in_training = (subj_query & 'last_training_session > "2019-11-30"')
 mice_at_start = len(all_mice)-len(mice_in_training)
 print('Number of mice at start: %d' % mice_at_start)
-print('Number of mice still in training: %d' % len(mice_in_training))
 
-# Get dropout after implantation
-mice_trained = (subj_query & 'last_training_session < "2019-11-30"')
-print('Number of mice that went into training: %d' % len(mice_trained))
+# Get mice that when into training
+mice_training = (subj_query & 'last_training_session < "2019-11-30"')
+
+# Get dropout during habituation
+training_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+                  & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+                            acquisition.Session() & 'task_protocol LIKE "%training%"',
+                            num_sessions='count(session_start_time)').fetch(format='frame')
+print('Number of mice after habituation: %d' % (len(mice_training)
+                                                + sum(training_query['num_sessions'] == 0)))
+print('Number of mice that went into training: %d' % len(mice_training))
 
 # Get number of mice that reached trained
 print('Number of mice that reached trained: %d' % len(query_subjects()))

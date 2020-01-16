@@ -29,7 +29,7 @@ sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'threshold', 'bias', 'reaction_time',
-                                'lapse_low', 'lapse_high', 'n_trials'])
+                                'lapse_low', 'lapse_high', 'n_trials', 'n_sessions'])
 
 for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     if np.mod(i+1, 10) == 0:
@@ -55,6 +55,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
               & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
     trials = trials.reset_index()
     ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
+    nsessions = trials.groupby('session_uuid').size().shape[0]
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
@@ -67,6 +68,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
     learned.loc[i, 'n_trials'] = ntrials_perday
+    learned.loc[i, 'n_sessions'] = nsessions
 
 # Drop mice with faulty RT
 learned = learned[learned['reaction_time'].notnull()]
@@ -76,10 +78,10 @@ learned['lab_number'] = learned.lab.map(institution_map()[0])
 learned = learned.sort_values('lab_number')
 
 # Convert to float
-learned[['perf_easy', 'reaction_time', 'threshold',
+learned[['perf_easy', 'reaction_time', 'threshold', 'n_sessions',
          'bias', 'lapse_low', 'lapse_high']] = learned[['perf_easy', 'reaction_time',
-                                                        'threshold', 'bias', 'lapse_low',
-                                                        'lapse_high']].astype(float)
+                                                        'threshold', 'n_sessions', 'bias',
+                                                        'lapse_low', 'lapse_high']].astype(float)
 
 # Add all mice to dataframe seperately for plotting
 learned_2 = learned.copy()

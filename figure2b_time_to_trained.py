@@ -122,3 +122,14 @@ seaborn_style()
 plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.png'), dpi=300)
 print('done')
+
+# Get stats in text
+# Interquartile range per lab
+iqtr = training_time.groupby(['lab'])[
+    'sessions'].quantile(0.75) - training_time.groupby(['lab'])[
+    'sessions'].quantile(0.25)
+# Training time as a whole
+m_train = training_time['sessions'].mean()
+s_train = training_time['sessions'].std()
+fastest = training_time['sessions'].max()
+slowest = training_time['sessions'].min()

@@ -200,3 +200,14 @@ seaborn_style()
 
 plt.savefig(join(fig_path, 'figure3c_deviation_level1.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure3c_deviation_level1.png'), dpi=300)
+
+# Get stats in text
+
+perf_mean = test_df['perf_easy'].mean()
+perf_std = test_df['perf_easy'].std()
+thres_mean = test_df['threshold'].mean()
+thres_std = test_df['threshold'].std()
+rt_median = test_df['reaction_time'].median()
+rt_std = test_df['reaction_time'].std()
+trials_mean = test_df['n_trials'].mean()
+trials_std = test_df['n_trials'].std()

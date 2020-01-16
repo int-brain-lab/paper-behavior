@@ -98,7 +98,8 @@ fig.savefig(os.path.join(
 # ================================= #
 # print some stats
 # ================================= #
-
+behav_summary_std = behav.groupby(['training_day'])[
+    'performance_easy'].std().reset_index()
 behav_summary = behav.groupby(['training_day'])[
     'performance_easy'].mean().reset_index()
 print('number of days to reach 80% accuracy on easy trials: ')

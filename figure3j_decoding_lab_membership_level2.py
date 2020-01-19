@@ -172,16 +172,16 @@ else:
     print('Above chance classification performance!')
 
 # Plot decoding results
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
+f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
 sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control']], axis=1),
                color=[0.6, 0.6, 0.6], ax=ax1)
 ax1.plot([-1, 2], [np.mean(decoding_result['original_shuffled']),
                    np.mean(decoding_result['original_shuffled'])], 'r--')
-ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.72],
+ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
         xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(incl. timezone)'])
-ax1.text(0, 0.65, 'n.s.', fontsize=12, ha='center')
-ax1.text(1, 0.65, '***', fontsize=15, ha='center', va='center')
-plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.035, 'Chance level', color='r')
+# ax1.text(0, 0.65, 'n.s.', fontsize=12, ha='center')
+# ax1.text(1, 0.65, '***', fontsize=15, ha='center', va='center')
+plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.04, 'Chance level', color='r')
 # plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 seaborn_style()

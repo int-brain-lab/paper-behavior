@@ -6,13 +6,12 @@ These instructions require anaconda (https://www.anaconda.com/distribution/#down
 
 In an Anaconda prompt window:
 1. Create a new conda environment: `conda create --name djenv`
-2. `conda activate djenv`
-3. `pip install datajoint`
-4. `pip install ibl-pipeline`
-5. `conda install seaborn`
-6. `cd <directory-you-want-this-in>` create a folder for this repository and go to that directory
-7. `git clone https://github.com/int-brain-lab/paper-behavior.git`
-8. `git clone https://github.com/int-brain-lab/IBL-pipeline` in the same parent folder as this repo (only for figure 1)
+2. `pip install datajoint`
+3. `pip install ibl-pipeline`
+4. `conda install seaborn`
+5. `cd <directory-you-want-this-in>` create a folder for this repository and go to that directory
+6. `git clone https://github.com/int-brain-lab/paper-behavior.git`
+7. `git clone https://github.com/int-brain-lab/IBL-pipeline` in the same parent folder as this repo (only for figure 1)
 
 ### Obtain a DataJoint account through IBL JupyterHub
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.

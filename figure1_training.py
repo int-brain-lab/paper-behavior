@@ -21,6 +21,8 @@ endcriteria = dj.create_virtual_module(
     'SessionEndCriteriaImplemented', 'group_shared_end_criteria')  # from Miles
 
 # grab some plotting functions from datajoint
+# (this is a tricky dependency, as is it can not be run in a python shell, it makes the whole file 
+# need to run as an executable eg. >>> python figure1_training.py in windows command prompt)
 sys.path.append(os.path.join(os.path.dirname(__file__),
                              '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
 import behavior_plots  # noqa
@@ -110,37 +112,12 @@ for didx, day in enumerate(days):
     fig.savefig(os.path.join(
         figpath, "figure1_example_psychfunc_day%d.png" % (day)), dpi=600)
 
-    # # CHRONOMETRIC FUNCTIONS
-    # fig, ax = plt.subplots(1, 1, figsize=(2, 2))
-    # behavior_plots.plot_chronometric(behavtmp.rename(
-    #     columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
-    # ax.grid(False)
-    # ax.set(xlabel="Signed contrast (%)", ylabel="RT (s)", ylim=[0, 1.5])
-    # ax.set(title='Day %d' % (didx + 1))
-
-    # # rt axis scaling
-    # ax.set(ylim=[0.1, 1.5], yticks=[0.1, 1.5])
-    # ax.set_yscale("log")
-    # ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
-    #                                                       ('{{:.{:1d}f}}'.format(int(np.maximum(
-    #                                                           -np.log10(y), 0)))).format(y)))
-    # sns.despine(trim=True)
-    # plt.tight_layout()
-    # fig.savefig(os.path.join(
-    #     figpath, "figure1_example_chronfunc_day%d.pdf" % (didx + 1)), dpi=600)
-
     # ================================================================== #
     # WITHIN-TRIAL DISENGAGEMENT CRITERIA
     # ================================================================== #
 
     plt.close('all')
     fig, ax = plt.subplots(1, 1, figsize=(3, 2.5))
-
-    # # RTS THROUGHOUT SESSION
-    # sns.scatterplot(x='trial_start_time', y='rt', style='correct', hue='correct',
-    #                 palette={1: "#1b9e77", 0: "#d95f02"},
-    #                 markers={1: 'o', 0: 'X'}, s=10, edgecolors='face',
-    #                 alpha=.5, data=behavtmp, ax=ax, legend=False)
 
     # running median overlaid
     sns.lineplot(x='trial_start_time', y='rt', color='black', ci=None,

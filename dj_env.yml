@@ -28,5 +28,5 @@ dependencies:
    - scikit_posthocs
    - pycircstat
    - nose
-   - scikitlearn
+   - scikit-learn
 

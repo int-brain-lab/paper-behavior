@@ -8,7 +8,7 @@ In an Anaconda prompt window:
 1. Create a folder for this repository and go to that directory: `cd <directory-you-want-this-in>` 
 2. Clone the repo: `git clone https://github.com/int-brain-lab/paper-behavior.git`
 3. Create a new conda environment: `conda env create -f dj_env.yml`
-4. Activate this environment: `conda activate djenv`
+4. Activate this environment: `conda activate dj_env`
 5. Install requirements: `pip install -r requirements.txt` 
 6. Clone this in the same parent folder as this repo (only for figure 1): `git clone https://github.com/int-brain-lab/IBL-pipeline` 
 

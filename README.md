@@ -10,6 +10,7 @@ In an Anaconda prompt window:
 3. `conda install pip`
 4. `pip install datajoint`
 5. `pip install ibl-pipeline`
+`pip install scikit_posthocs` `pip install pycircstats` `pip install nose` `pip install sklearn`
 6. `conda install seaborn`
 7. `cd <directory-you-want-this-in>` create a folder for this repository and go to that directory
 8. `git clone https://github.com/int-brain-lab/paper-behavior.git`

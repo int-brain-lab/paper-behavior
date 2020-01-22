@@ -8,8 +8,9 @@ In an Anaconda prompt window:
 1. Create a folder for this repository and go to that directory: `cd <directory-you-want-this-in>` 
 2. Clone the repo: `git clone https://github.com/int-brain-lab/paper-behavior.git`
 3. Create a new conda environment: `conda env create -f dj_env.yml`
-4. Install requirements: `pip install -r requirements.txt` 
-5. Clone this in the same parent folder as this repo (only for figure 1): `git clone https://github.com/int-brain-lab/IBL-pipeline` 
+4. Activate this environment: `conda activate djenv`
+5. Install requirements: `pip install -r requirements.txt` 
+6. Clone this in the same parent folder as this repo (only for figure 1): `git clone https://github.com/int-brain-lab/IBL-pipeline` 
 
 ### Obtain a DataJoint account through IBL JupyterHub
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.

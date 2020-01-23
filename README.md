@@ -6,7 +6,7 @@ These instructions require anaconda (https://www.anaconda.com/distribution/#down
 
 In an Anaconda prompt window:
 1. Create a folder for this repository and go to that directory: `cd <directory-you-want-this-in>` 
-2. Clone the repo: `git clone https://github.com/int-brain-lab/paper-behavior.git`
+2. Clone the repo: `git clone https://github.com/int-brain-lab/paper-behavior.git` and go into it `cd paper-behavior`
 3. Create a new conda environment: `conda env create -f dj_env.yml`
 4. Activate this environment: `conda activate dj_env`
 5. Install requirements: `pip install -r requirements.txt` 

@@ -1,5 +1,5 @@
 # paper-behavior
-This repository contains code to reproduce all figures of the behavior paper by the International Brain Laboratory. 
+This repository contains code to reproduce all figures of the behavior paper by the International Brain Laboratory. If reusing any part of this code please cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.01.17.909838v2) in which these figures appear. 
 
 ### Installation
 These instructions require anaconda (https://www.anaconda.com/distribution/#download-section) for Python 3 and git (https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)

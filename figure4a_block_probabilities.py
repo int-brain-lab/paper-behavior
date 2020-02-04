@@ -113,7 +113,7 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
 
     plt.tight_layout()
     fig.savefig(os.path.join(
-        figpath, "figure4_panel_session_course_%s.png" % dayidx), dpi=600)
+        figpath, "figure4_panel_session_course_%s.png" % dayidx.date()), dpi=600)
     fig.savefig(os.path.join(
-        figpath, "figure4_panel_session_course_%s.pdf" % dayidx))
+        figpath, "figure4_panel_session_course_%s.pdf" % dayidx.date()))
     plt.close('all')

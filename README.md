@@ -1,19 +1,16 @@
 # paper-behavior
-This repository contains code to reproduce all figures of the behavior paper by the International Brain Laboratory. 
+This repository contains code to reproduce all figures of the behavior paper by the International Brain Laboratory. If reusing any part of this code please cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.01.17.909838v2) in which these figures appear. 
 
 ### Installation
 These instructions require anaconda (https://www.anaconda.com/distribution/#download-section) for Python 3 and git (https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
 In an Anaconda prompt window:
-1. Create a new conda environment: `conda create --name djenv`
-2. `conda activate djenv`
-3. `conda install pip`
-4. `pip install datajoint`
-5. `pip install ibl-pipeline`
-6. `conda install seaborn`
-7. `cd <directory-you-want-this-in>` create a folder for this repository and go to that directory
-8. `git clone https://github.com/int-brain-lab/paper-behavior.git`
-9. `git clone https://github.com/int-brain-lab/IBL-pipeline` in the same parent folder as this repo (only for figure 1)
+1. Create a folder for this repository and go to that directory: `cd <directory-you-want-this-in>` 
+2. Clone the repo: `git clone https://github.com/int-brain-lab/paper-behavior.git` and go into it `cd paper-behavior`
+3. Create a new conda environment: `conda env create -f dj_env.yml`
+4. Activate this environment: `conda activate dj_env`
+5. Install requirements: `pip install -r requirements.txt` 
+6. Clone this in the same parent folder as this repo (only for figure 1; can do `cd ..` to come back to parent folder): `git clone https://github.com/int-brain-lab/IBL-pipeline` 
 
 ### Obtain a DataJoint account through IBL JupyterHub
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.

@@ -11,7 +11,7 @@ from paper_behavior_functions import (figpath, seaborn_style, group_colors,
                                       query_sessions_around_criterion, institution_map)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
-from dj_tools import plot_psychometric, dj2pandas
+from dj_tools import plot_psychometric, dj2pandas, plot_chronometric
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -34,7 +34,8 @@ b = use_sessions * subject.Subject * subject.SubjectLab * reference.Lab * \
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
             'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
+            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+            'trial_response_time', 'trial_stim_on_time')
 bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                 format='frame').reset_index()
 behav = dj2pandas(bdat)
@@ -86,3 +87,22 @@ plt.tight_layout(pad=2)
 
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_all_labs.pdf"))
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_all_labs.png"), dpi=300)
+
+# ================================= #
+# single summary panel
+# ================================= #
+
+# Plot all labs
+fig, ax1 = plt.subplots(1, 2, figsize=(8, 4))
+plot_psychometric(behav.signed_contrast, behav.choice_right,
+                      behav.subject_nickname, ax=ax1[0], legend=False, color='k')
+ax1[0].set_title('Psychometric function', color='k', fontweight='bold')
+ax1[0].set(xlabel='Signed contrast (%)', ylabel='Rightward choice (%)')
+
+plot_chronometric(behav.signed_contrast, behav.rt,
+                      behav.subject_nickname, ax=ax1[1], legend=False, color='k')
+ax1[1].set_title('Chronometric function', color='k', fontweight='bold')
+ax1[1].set(xlabel='Signed contrast (%)', ylabel='Trial duration (s)', ylim=[0, 1.4])
+seaborn_style()
+plt.tight_layout(pad=2)
+fig.savefig(os.path.join(figpath, "summary_psych_chron.pdf"))

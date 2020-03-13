@@ -149,6 +149,7 @@ def plot_chronometric(x, y, subj, **kwargs):
     # df.signed_contrast.values:
     df2['signed_contrast'] = df2['signed_contrast'].replace(-100, -35)
     df2['signed_contrast'] = df2['signed_contrast'].replace(100, 35)
+    df2 = df2.loc[np.abs(df2.signed_contrast) != 50, :] # remove those
 
     ax = sns.lineplot(x='signed_contrast', y='rt', err_style="bars", mew=0.5,
                       ci=68, data=df2, **kwargs)
@@ -169,6 +170,7 @@ def plot_chronometric(x, y, subj, **kwargs):
     ax.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
     ax.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
                        size='small', rotation=45)
+    ax.set_xlim([-40, 40])
 
     if df['signed_contrast'].min() >= 0:
         ax.set_xlim([-5, 40])

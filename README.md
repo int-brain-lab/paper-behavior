@@ -12,6 +12,13 @@ In an Anaconda prompt window:
 5. Install requirements: `pip install -r requirements.txt` 
 6. Clone this in the same parent folder as this repo (only for figure 1; can do `cd ..` to come back to parent folder): `git clone https://github.com/int-brain-lab/IBL-pipeline` 
 
+Alternative to the `requirements.txt`:
+1. Follow these instructions https://github.com/int-brain-lab/iblenv to install the unified iblenv
+2. additionally, install
+`pip install pycircstat`
+`pip install nose`
+`pip install scikit_posthocs`
+
 ### Obtain a DataJoint account through IBL JupyterHub
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.
 

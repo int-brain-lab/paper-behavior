@@ -62,7 +62,7 @@ behav['performance_easy_trained'] = behav.performance_easy_trained * 100
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col="institution_code", col_wrap=7, col_order=col_names,
-                    sharex=True, sharey=True, aspect=0.7, hue="subject_uuid", xlim=[-1, 41.5])
+                    sharex=True, sharey=True, aspect=0.7, hue="subject_uuid", xlim=[-1, 42])
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.3)
 fig.map(sns.lineplot, "training_day",

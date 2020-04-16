@@ -180,9 +180,10 @@ plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 
 plt.tight_layout(pad=2)
 seaborn_style()
-plt.savefig(join(fig_path, 'suppfig_metrics_per_lab_level2.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'suppfig_metrics_per_lab_level2.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure3g-i_metrics_per_lab_level2.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure3g-i_metrics_per_lab_level2.png'), dpi=300)
 
+"""
 f, ax1 = plt.subplots(1, 1, figsize=(4.5, 4.5))
 sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', palette=group_colors(),
               size=8, ax=ax1)
@@ -200,3 +201,4 @@ seaborn_style()
 
 plt.savefig(join(fig_path, 'suppfig_deviation_level2.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'suppfig_deviation_level2.png'), dpi=300)
+"""

@@ -20,12 +20,12 @@ subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.Sub
     & 'training_status="in_training"',
     'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
     last_training_session='max(date(session_start_time))')
-mice_in_training = (subj_query & 'last_training_session > "2019-11-30"')
+mice_in_training = (subj_query & 'last_training_session > "2020-03-23"')
 mice_at_start = len(all_mice)-len(mice_in_training)
 print('Number of mice at start: %d' % mice_at_start)
 
 # Get mice that when into training
-mice_training = (subj_query & 'last_training_session < "2019-11-30"')
+mice_training = (subj_query & 'last_training_session <= "2020-03-23"')
 
 # Get dropout during habituation
 training_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject

@@ -106,3 +106,4 @@ ax1[1].set(xlabel='Signed contrast (%)', ylabel='Trial duration (s)', ylim=[0, 1
 seaborn_style()
 plt.tight_layout(pad=2)
 fig.savefig(os.path.join(figpath, "summary_psych_chron.pdf"))
+plt.show()

@@ -51,7 +51,7 @@ def figpath():
     return fig_dir
 
 
-def query_subjects(as_dataframe=False, from_list=True, criterion='trained'):
+def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
     """
     Query all mice for analysis of behavioral data
 
@@ -95,11 +95,14 @@ def query_subjects(as_dataframe=False, from_list=True, criterion='trained'):
 
     # Select subjects that reached trained_1a criterium before November 30th
     if as_dataframe is True:
+        # subjects = (
+        #     subj_query & 'date_trained < "2019-11-30"').fetch(format='frame')
         subjects = (
-            subj_query & 'date_trained < "2019-11-30"').fetch(format='frame')
+            subj_query & 'date_trained <= "2020-03-23"').fetch(format='frame')
         subjects = subjects.sort_values(by=['lab_name']).reset_index()
     else:
-        subjects = (subj_query & 'date_trained < "2019-11-30"')
+        # subjects = (subj_query & 'date_trained < "2019-11-30"')
+        subjects = (subj_query & 'date_trained <= "2020-03-23"')
     return subjects
 
 
@@ -148,7 +151,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
         raise Exception('task must be all, training or biased')
 
     # Only use sessions up until the end of December
-    sessions = sessions & 'date(session_start_time) < "2019-12-31"'
+    sessions = sessions & 'date(session_start_time) <= "2020-03-23"'
 
     # If required only output sessions with stable hardware
     if stable is True:

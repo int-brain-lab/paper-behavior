@@ -85,8 +85,8 @@ ax1.set(xlabel='Signed contrast (%)', ylabel='Rightward choice (%)')
 seaborn_style()
 plt.tight_layout(pad=2)
 
-fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_all_labs.pdf"))
-fig.savefig(os.path.join(figpath, "figure3a_psychfuncs_all_labs.png"), dpi=300)
+fig.savefig(os.path.join(figpath, "figure3b_psychfuncs_all_labs.pdf"))
+fig.savefig(os.path.join(figpath, "figure3b_psychfuncs_all_labs.png"), dpi=300)
 
 # ================================= #
 # single summary panel

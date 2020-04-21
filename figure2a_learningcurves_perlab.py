@@ -62,12 +62,13 @@ behav['performance_easy_trained'] = behav.performance_easy_trained * 100
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col="institution_code", col_wrap=7, col_order=col_names,
-                    sharex=True, sharey=True, aspect=0.7, hue="subject_uuid", xlim=[-1, 41.5])
+                    sharex=True, sharey=True, aspect=0.7, hue="subject_uuid", xlim=[-1, 40])
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.3)
 fig.map(sns.lineplot, "training_day",
         "performance_easy_trained", color='darkblue', alpha=0.3)
 fig.set_titles("{col_name}")
+fig.set(xticks=[0, 20, 40])
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_name.unique()[
                  axidx], color=pal[axidx], fontweight='bold')
@@ -87,7 +88,8 @@ sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', pal
              ax=ax1, legend=False, data=behav, ci=None)
 ax1.set_title('All labs', color='k', fontweight='bold')
 ax1.set(xlabel='Training day',
-        ylabel='Performance (%) on easy trials', xlim=[-1, 41.5])
+        ylabel='Performance (%) on easy trials', xlim=[-1, 40])
+ax1.set(xticks=[0, 20, 40])
 
 seaborn_style()
 plt.tight_layout(pad=2)

@@ -5,19 +5,15 @@ This repository contains code to reproduce all figures of the behavior paper by 
 These instructions require anaconda (https://www.anaconda.com/distribution/#download-section) for Python 3 and git (https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
 In an Anaconda prompt window:
-1. Create a folder for this repository and go to that directory: `cd <directory-you-want-this-in>` 
-2. Clone the repo: `git clone https://github.com/int-brain-lab/paper-behavior.git` and go into it `cd paper-behavior`
-3. Create a new conda environment: `conda env create -f dj_env.yml`
-4. Activate this environment: `conda activate dj_env`
-5. Install requirements: `pip install -r requirements.txt` 
-6. Clone this in the same parent folder as this repo (only for figure 1; can do `cd ..` to come back to parent folder): `git clone https://github.com/int-brain-lab/IBL-pipeline` 
-
-Alternative to the `requirements.txt`:
 1. Follow these instructions https://github.com/int-brain-lab/iblenv to install the unified iblenv
 2. additionally, install
 `pip install pycircstat`
+
 `pip install nose`
+
 `pip install scikit_posthocs`
+
+`conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/`
 
 ### Obtain a DataJoint account through IBL JupyterHub
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.
@@ -32,8 +28,7 @@ Alternative to the `requirements.txt`:
 You'll be able to run the code after the settings above.
 
 ### How to run the code
-All the scripts start with the name of the figure they produce. To run a script you need to add the local path of the repository to your Python environment so that the functions in `paper_behavior_functions` and `dj_tools` can be found. Either change the working directory of your Python IDE to the path where you cloned the repository or run the commands `import_sys` and `sys.path.insert('~/path/to/repository')`.
-All figure panels will appear in the `exported_figs` folder.
+All the scripts start with the name of the figure they produce. The figure panels will appear in the `exported_figs` subfolder.
 
 ### Questions?
 If you have any problems running this code, please open an issue or get in touch with the code's authors (written at the top of each script).

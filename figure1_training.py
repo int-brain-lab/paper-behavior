@@ -2,7 +2,7 @@
 Training progression for an example mouse
 
 @author: Anne Urai, Gaelle Chapuis
-15 January 2020
+21 April 2020
 """
 
 import numpy as np
@@ -23,10 +23,12 @@ endcriteria = dj.create_virtual_module(
 # grab some plotting functions from datajoint
 # (this is a tricky dependency, as is it can not be run in a python shell, it makes the whole file 
 # need to run as an executable eg. >>> python figure1_training.py in windows command prompt)
-sys.path.append(os.path.join(os.path.dirname(__file__),
-                             '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
-import behavior_plots  # noqa
-import load_mouse_data_datajoint
+# sys.path.append(os.path.join(os.path.dirname(__file__),
+#                              '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
+# import ibl_pipeline.prelim_analyses.behavioral_snapshots.behavior_plots  # noqa
+
+# this only works if conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/ has been added to iblenv
+import load_mouse_data_datajoint, behavior_plots
 import dj_tools
 from paper_behavior_functions import seaborn_style, figpath
 

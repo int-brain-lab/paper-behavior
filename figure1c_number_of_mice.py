@@ -23,32 +23,10 @@ print('1. Total # of mice in brainwide project: %d' % len(all_mice))
 # Exclude mice that are still in training at the date of cutt-off
 # ==================================================
 
-all_mice_df = all_mice.fetch(format='frame').reset_index()
-
-still_training = []
-# for each mouse, get its latest training status
-for m in all_mice_df.subject_uuid:
-  subj_query = (subject.Subject & dict(subject_uuid=m))
-  last_session = subj_query.aggr(
-      behavior.TrialSet, session_start_time='max(session_start_time)')
-
-# what was the last session of this mouse?
-  if not len(last_session):
-    training_status = 'no_data'
-    last_session_date = None
-  else:
-     training_status = behavior_analysis.SessionTrainingStatus & last_session
-     if len(training_status):
-        training_status = (training_status).fetch1('training_status')
-        last_session_date = last_session.fetch1('session_start_time')
-
-        # do we exclude this animal, as it's still in training?
-        # still count it if it has died
-        if training_status in 'in_training' \
-          and not len(subj_query & subject.Death):
-            nickname = subj_query.fetch1('subject_nickname')
-            still_training.append({'subject':nickname, 'last_training':last_session_date})
-
+still_training = all_mice * subject.Subject.aggr(behavior_analysis.SessionTrainingStatus,
+                                        session_start_time='max(session_start_time)')\
+                   * behavior_analysis.SessionTrainingStatus - subject.Death \
+                    & 'training_status = "in_training"' & 'session_start_time > "2020-03-01"'
 
 # ==================================================
 # Get mice that started training

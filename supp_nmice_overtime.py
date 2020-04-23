@@ -11,6 +11,7 @@ import pandas as pd
 
 
 dates = ['2019-01-01', '2019-03-01', '2020-01-01', '2020-04-01']
+dates = ['2019-01-01', '2019-05-01', '2019-11-01', '2020-04-01']
 
 print('All mice in database:')
 for d in dates:

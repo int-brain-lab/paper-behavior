@@ -77,31 +77,12 @@ training_time_all = training_time.copy()
 training_time_all['lab_number'] = 'All'
 training_time_all = training_time.append(training_time_all)
 
+# %% PLOT
+
 # Set figure style and color palette
 use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(training_time['lab']))
 use_palette = use_palette + [[1, 1, 0.2]]
 lab_colors = group_colors()
-
-# Plot behavioral metrics per lab
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
-sns.set_palette(use_palette)
-
-sns.boxplot(y='sessions', x='lab_number', data=training_time_all, ax=ax1)
-ax1.set(ylabel='Days to trained', xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-
-sns.boxplot(y='trials', x='lab_number', data=training_time_all, ax=ax2)
-ax2.set(ylabel='Training duration (trials)', xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
-
-plt.tight_layout(pad=2)
-seaborn_style()
-sns.set_palette(use_palette)
-
-plt.savefig(join(fig_path, 'figure2d_training_time.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2d_training_time.png'), dpi=300)
 
 # Plot cumulative proportion of trained mice over days
 f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
@@ -121,7 +102,58 @@ plt.tight_layout(pad=2)
 seaborn_style()
 plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.png'), dpi=300)
-print('done')
+
+# Plot number of sessions to trained per lab
+f = plt.figure()
+grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
+sns.set_palette(use_palette)
+
+ax1 = plt.subplot(grid[0, :2])
+sns.swarmplot(y='sessions', x='lab_number', data=training_time, ax=ax1)
+ax1.set(ylabel='Days to trained', xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+
+ax2 = plt.subplot(grid[0, 2], sharey=ax1)
+sns.violinplot(y='sessions', x='lab_number',
+               data=training_time_all[training_time_all['lab_number'] == 'All'], ax=ax2)
+ax2.set(ylabel='', xlabel='', ylim=[-1, 60])
+ax2.get_yaxis().set_visible(False)
+ax2.set_frame_on(False)
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
+
+plt.tight_layout(pad=2)
+seaborn_style()
+sns.set_palette(use_palette)
+
+plt.savefig(join(fig_path, 'figure2d_training_time_days.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2d_training_time_days.png'), dpi=300)
+
+# Plot number of trials to trained per lab
+f = plt.figure()
+grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
+sns.set_palette(use_palette)
+
+ax1 = plt.subplot(grid[0, :2])
+sns.swarmplot(y='trials', x='lab_number', data=training_time, ax=ax1)
+ax1.set(ylabel='Trials to trained', xlabel='')
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+
+ax2 = plt.subplot(grid[0, 2], sharey=ax1)
+sns.violinplot(y='trials', x='lab_number',
+               data=training_time_all[training_time_all['lab_number'] == 'All'], ax=ax2)
+ax2.set(ylabel='', xlabel='', ylim=[-500, 50000])
+ax2.get_yaxis().set_visible(False)
+ax2.set_frame_on(False)
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
+
+plt.tight_layout(pad=2)
+seaborn_style()
+sns.set_palette(use_palette)
+
+plt.savefig(join(fig_path, 'figure2d_training_time_trials.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2d_training_time_trials.png'), dpi=300)
 
 # Get stats in text
 # Interquartile range per lab

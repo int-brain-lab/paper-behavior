@@ -7,6 +7,7 @@ Learning curves for all labs
 
 import pandas as pd
 import numpy as np
+from scipy.signal import medfilt
 import os
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -21,7 +22,7 @@ pal = group_colors()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
-# ================================= #
+# %% ============================== #
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
@@ -31,11 +32,19 @@ behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
                 format='frame').reset_index()
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
+# exclude sessions with fewer than 100 trials
+behav = behav[behav['n_trials_date'] > 100]
+
+# convolve performance over 3 days
+for i, nickname in enumerate(behav['subject_nickname'].unique()):
+    perf = behav.loc[behav['subject_nickname'] == nickname, 'performance_easy'].values
+    perf_conv = medfilt(perf, kernel_size=3)
+    behav.loc[behav['subject_nickname'] == nickname, 'performance_easy'] = perf_conv
+
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)
-behav['institution_name'] = behav.institution_code + \
-    ': ' + behav.n_mice.apply(str) + ' mice'
+behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
 
 # make sure each mouse starts at 0
 for index, group in behav.groupby(['lab_name', 'subject_nickname']):
@@ -55,7 +64,7 @@ behav = behav2
 behav['performance_easy'] = behav.performance_easy * 100
 behav['performance_easy_trained'] = behav.performance_easy_trained * 100
 
-# ================================= #
+# %% ============================== #
 # LEARNING CURVES
 # ================================= #
 

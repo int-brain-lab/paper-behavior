@@ -60,7 +60,7 @@ def plot_psychometric(x, y, subj, **kwargs):
                                  parstart=np.array(
                                      [df2['signed_contrast'].mean(), 15., 0.05, 0.05]),
                                  parmin=np.array(
-                                     [df2['signed_contrast'].min(), 0., 0., 0.]),
+                                     [df2['signed_contrast'].min(), 2.5, 0., 0.]),
                                  parmax=np.array([df2['signed_contrast'].max(), 30., 0.5, 0.5]))
 
     # plot psychfunc

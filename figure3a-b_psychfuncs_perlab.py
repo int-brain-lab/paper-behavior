@@ -25,12 +25,11 @@ col_names = col_names[:-1]
 # ================================= #
 
 use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
-                                                         days_from_criterion=[
-                                                             2, 0],
+                                                         days_from_criterion=[2, 0],
                                                          as_dataframe=False)
+
 # restrict by list of dicts with uuids for these sessions
-b = use_sessions * subject.Subject * subject.SubjectLab * reference.Lab * \
-    behavior.TrialSet.Trial
+b = use_sessions * subject.Subject * subject.SubjectLab * reference.Lab * behavior.TrialSet.Trial
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
             'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
@@ -50,8 +49,7 @@ print(behav.describe())
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)
-behav['institution_name'] = behav.institution_code + \
-    ': ' + behav.n_mice.apply(str) + ' mice'
+behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
 
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,

@@ -27,13 +27,14 @@ institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
 # Settings
-DECODER = 'forest'
+DECODER = 'forest'          # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
 METRICS = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
            'lapsehigh_l', 'lapsehigh_r']
 METRICS_CONTROL = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
                    'lapsehigh_l', 'lapsehigh_r', 'time_zone']
+PLOT_METRICS = False
 SAVE_FIG = True
 
 
@@ -107,50 +108,51 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
 
 # %% Plot metrics
 
-f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16, 4))
-lab_colors = group_colors()
+if PLOT_METRICS:
+    f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16, 4))
+    lab_colors = group_colors()
 
-ax1.plot([10, 20], [10, 20], linestyle='dashed', color=[0.6, 0.6, 0.6])
-for i, lab in enumerate(biased_fits['lab'].unique()):
-    ax1.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].mean(),
-                 biased_fits.loc[biased_fits['lab'] == lab, 'threshold_r'].mean(),
-                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
-                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold')
+    ax1.plot([10, 20], [10, 20], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    for i, lab in enumerate(biased_fits['lab'].unique()):
+        ax1.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].mean(),
+                     biased_fits.loc[biased_fits['lab'] == lab, 'threshold_r'].mean(),
+                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
+                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
+                     fmt='s', color=lab_colors[i])
+    ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold')
 
-ax2.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
-for i, lab in enumerate(biased_fits['lab'].unique()):
-    ax2.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].mean(),
-                 biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].mean(),
-                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].sem(),
-                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax2.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse left')
+    ax2.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    for i, lab in enumerate(biased_fits['lab'].unique()):
+        ax2.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].mean(),
+                     biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].mean(),
+                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].sem(),
+                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].sem(),
+                     fmt='s', color=lab_colors[i])
+    ax2.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse left')
 
-ax3.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
-for i, lab in enumerate(biased_fits['lab'].unique()):
-    ax3.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].mean(),
-                 biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_r'].mean(),
-                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
-                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax3.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse right')
+    ax3.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    for i, lab in enumerate(biased_fits['lab'].unique()):
+        ax3.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].mean(),
+                     biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_r'].mean(),
+                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
+                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
+                     fmt='s', color=lab_colors[i])
+    ax3.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse right')
 
-ax4.plot([0, 0], [-10, 10], linestyle='dashed', color=[0.6, 0.6, 0.6])
-ax4.plot([-10, 10], [0, 0], linestyle='dashed', color=[0.6, 0.6, 0.6])
-for i, lab in enumerate(biased_fits['lab'].unique()):
-    ax4.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].mean(),
-                 biased_fits.loc[biased_fits['lab'] == lab, 'bias_r'].mean(),
-                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
-                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax4.set(xlabel='80:20 block', ylabel='20:80 block', title='Bias')
+    ax4.plot([0, 0], [-10, 10], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    ax4.plot([-10, 10], [0, 0], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    for i, lab in enumerate(biased_fits['lab'].unique()):
+        ax4.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].mean(),
+                     biased_fits.loc[biased_fits['lab'] == lab, 'bias_r'].mean(),
+                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
+                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
+                     fmt='s', color=lab_colors[i])
+    ax4.set(xlabel='80:20 block', ylabel='20:80 block', title='Bias')
 
-plt.tight_layout(pad=2)
-seaborn_style()
-plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.png'), dpi=300)
+    plt.tight_layout(pad=2)
+    seaborn_style()
+    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.pdf'), dpi=300)
+    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.png'), dpi=300)
 
 # %% Do decoding
 

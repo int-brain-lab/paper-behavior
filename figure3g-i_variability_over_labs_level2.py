@@ -24,8 +24,9 @@ import scikit_posthocs as sp
 fig_path = figpath()
 
 # Query sessions
-sessions = query_sessions_around_criterion(criterion='biased', days_from_criterion=[0, 15])[0]
-sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
+sessions = query_sessions_around_criterion(criterion='biased', days_from_criterion=[0, 10])[0]
+sessions = (sessions * subject.Subject * subject.SubjectLab * reference.Lab
+            & 'task_protocol LIKE "%biased%"')
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'threshold', 'bias', 'reaction_time',

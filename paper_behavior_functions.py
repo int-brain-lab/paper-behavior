@@ -226,7 +226,6 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
             & ('training_day - day_of_crit between %d and %d'
                % (-days_from_criterion[0], days_from_criterion[1]))).proj(
                    'subject_uuid', 'subject_nickname', 'session_date')
-    # Use days before the 30th of Novemeber
 
     # Use dates to query sessions
     ses_query = (acquisition.Session).aggr(

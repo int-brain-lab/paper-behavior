@@ -20,7 +20,7 @@ def fit_psychfunc(df):
                                  parstart=np.array(
                                      [choicedat['signed_contrast'].mean(), 20., 0.05, 0.05]),
                                  parmin=np.array(
-                                     [choicedat['signed_contrast'].min(), 0., 0., 0.]),
+                                     [choicedat['signed_contrast'].min(), 5, 0., 0.]),
                                  parmax=np.array([choicedat['signed_contrast'].max(), 100., 1, 1]))
     df2 = {'bias': pars[0], 'threshold': pars[1],
            'lapselow': pars[2], 'lapsehigh': pars[3]}
@@ -58,10 +58,10 @@ def plot_psychometric(x, y, subj, **kwargs):
     pars, L = psy.mle_fit_psycho(df2.transpose().values,  # extract the data from the df
                                  P_model='erf_psycho_2gammas',
                                  parstart=np.array(
-                                     [df2['signed_contrast'].mean(), 15., 0.05, 0.05]),
+                                     [df2['signed_contrast'].mean(), 20., 0.05, 0.05]),
                                  parmin=np.array(
-                                     [df2['signed_contrast'].min(), 2.5, 0., 0.]),
-                                 parmax=np.array([df2['signed_contrast'].max(), 30., 0.5, 0.5]))
+                                     [df2['signed_contrast'].min(), 5, 0., 0.]),
+                                 parmax=np.array([df2['signed_contrast'].max(), 100., 1, 1]))
 
     # plot psychfunc
     g = sns.lineplot(np.arange(-29, 29),

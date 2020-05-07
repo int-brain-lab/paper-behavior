@@ -34,7 +34,7 @@ METRICS = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'laps
            'lapsehigh_l', 'lapsehigh_r']
 METRICS_CONTROL = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
                    'lapsehigh_l', 'lapsehigh_r', 'time_zone']
-PLOT_METRICS = False
+PLOT_METRICS = True
 SAVE_FIG = True
 
 
@@ -151,8 +151,41 @@ if PLOT_METRICS:
 
     plt.tight_layout(pad=2)
     seaborn_style()
-    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.pdf'), dpi=300)
-    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.png'), dpi=300)
+    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_error_biased.pdf'), dpi=300)
+    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_error_biased.png'), dpi=300)
+
+    f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16, 4))
+    lab_colors = group_colors()
+
+    ax1.plot([0, 30], [0, 30], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    sns.scatterplot(x='threshold_l', y='threshold_r', hue='lab', data=biased_fits,
+                    palette=lab_colors, legend=False, ax=ax1)
+    ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold',
+            ylim=[0, 30], xlim=[0, 30])
+
+    ax2.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    sns.scatterplot(x='lapselow_l', y='lapselow_r', hue='lab', data=biased_fits,
+                    palette=lab_colors, legend=False, ax=ax2)
+    ax2.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse left',
+            ylim=[0, 0.16], xlim=[0, 0.16])
+
+    ax3.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    sns.scatterplot(x='lapsehigh_l', y='lapsehigh_r', hue='lab', data=biased_fits,
+                    palette=lab_colors, legend=False, ax=ax3)
+    ax3.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse right',
+            ylim=[0, 0.16], xlim=[0, 0.16])
+
+    ax4.plot([0, 0], [-20, 20], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    ax4.plot([-20, 20], [0, 0], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    sns.scatterplot(x='bias_l', y='bias_r', hue='lab', data=biased_fits,
+                    palette=lab_colors, legend=False, ax=ax4)
+    ax4.set(xlabel='80:20 block', ylabel='20:80 block', title='Bias',
+            ylim=[-20, 20], xlim=[-20, 20])
+
+    plt.tight_layout(pad=2)
+    seaborn_style()
+    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_scatter_biased.pdf'), dpi=300)
+    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_scatter_biased.png'), dpi=300)
 
 # %% Do decoding
 

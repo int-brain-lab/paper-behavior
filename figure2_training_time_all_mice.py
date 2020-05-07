@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
 import seaborn as sns
+from ibl_pipeline import subject, reference, acquisition
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
                                       group_colors, figpath)
 from ibl_pipeline.analyses import behavior as behavior_analysis
@@ -23,7 +24,17 @@ from lifelines import KaplanMeierFitter
 fig_path = figpath()
 
 # Query sessions
-use_subjects = query_subjects()
+use_subjects = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+            & 'subject_project = "ibl_neuropixel_brainwide_01"')
+last_sessions = use_subjects.aggr(acquisition.Session
+                                  & 'task_protocol!="NULL"', 'task_protocol', 'subject_nickname',
+                                  session_start_time='max(session_start_time)')
+status = (last_sessions * behavior_analysis.SessionTrainingStatus).fetch(format='frame')
+behav = (use_subjects * behavior_analysis.BehavioralSummaryByDate).fetch(format='frame')
+
+
+
+
 ses = (use_subjects * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResults
        & 'training_status = "in_training" OR training_status = "untrainable"').proj(
                'subject_nickname', 'n_trials_stim', 'institution_short').fetch(format='frame')
@@ -97,23 +108,17 @@ training_time_all = training_time.append(training_time_all)
 
 f = plt.figure()
 grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
-sns.set_palette(lab_colors)
+sns.set_palette(use_palette)
 
 ax1 = plt.subplot(grid[0, :2])
-sns.boxplot(y='sessions', x='lab_number', color='white', data=training_time, ax=ax1)
-sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time, ax=ax1)
+sns.swarmplot(y='sessions', x='lab_number', data=training_time, ax=ax1)
 ax1.set(ylabel='Days to trained', xlabel='')
-ax1.get_legend().set_visible(False)
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
 ax2 = plt.subplot(grid[0, 2], sharey=ax1)
 sns.violinplot(y='sessions', x='lab_number',
-               data=training_time_all[training_time_all['lab_number'] == 'All'],
-               inner=None, color='gray', ax=ax2)
-sns.swarmplot(y='sessions', x='lab_number',
-              data=training_time_all[training_time_all['lab_number'] == 'All'],
-              color='white', edgecolor='gray', ax=ax2)
+               data=training_time_all[training_time_all['lab_number'] == 'All'], ax=ax2)
 ax2.set(ylabel='', xlabel='', ylim=[-1, 60])
 ax2.get_yaxis().set_visible(False)
 ax2.set_frame_on(False)
@@ -121,6 +126,7 @@ plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
 plt.tight_layout(pad=2)
 seaborn_style()
+sns.set_palette(use_palette)
 
 plt.savefig(join(fig_path, 'figure2d_training_time_days.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure2d_training_time_days.png'), dpi=300)
@@ -128,22 +134,17 @@ plt.savefig(join(fig_path, 'figure2d_training_time_days.png'), dpi=300)
 # Plot number of trials to trained per lab
 f = plt.figure()
 grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
-sns.set_palette(lab_colors)
+sns.set_palette(use_palette)
 
 ax1 = plt.subplot(grid[0, :2])
-sns.boxplot(y='trials', x='lab_number', color='white', data=training_time, ax=ax1)
-sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time, ax=ax1)
+sns.swarmplot(y='trials', x='lab_number', data=training_time, ax=ax1)
 ax1.set(ylabel='Trials to trained', xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
+[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
 ax2 = plt.subplot(grid[0, 2], sharey=ax1)
 sns.violinplot(y='trials', x='lab_number',
-               data=training_time_all[training_time_all['lab_number'] == 'All'],
-               inner=None, color='gray', ax=ax2)
-sns.swarmplot(y='trials', x='lab_number',
-              data=training_time_all[training_time_all['lab_number'] == 'All'],
-              color='white', edgecolor='gray', ax=ax2)
+               data=training_time_all[training_time_all['lab_number'] == 'All'], ax=ax2)
 ax2.set(ylabel='', xlabel='', ylim=[-500, 50000])
 ax2.get_yaxis().set_visible(False)
 ax2.set_frame_on(False)
@@ -151,6 +152,7 @@ plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
 plt.tight_layout(pad=2)
 seaborn_style()
+sns.set_palette(use_palette)
 
 plt.savefig(join(fig_path, 'figure2d_training_time_trials.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure2d_training_time_trials.png'), dpi=300)

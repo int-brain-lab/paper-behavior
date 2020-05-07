@@ -48,10 +48,8 @@ fig = sns.FacetGrid(behav,
                     sharex=True, sharey=True, aspect=1)
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_uuid")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
-fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsize=12,
-                arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')
-fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12,
-                arrowprops=dict(facecolor=cmap[2], shrink=0.05))
+fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=12)
+fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12)
 fig.despine(trim=True)
 fig.axes[0][0].set_title('Example mouse', fontweight='bold', color='k')
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_example.pdf"))
@@ -100,9 +98,9 @@ fig = sns.FacetGrid(behav,
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
-fig.ax.annotate('80/20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsize=12,
+fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsize=12,
                 arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')
-fig.ax.annotate('20/80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12,
+fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12,
                 arrowprops=dict(facecolor=cmap[2], shrink=0.05))
 fig.despine(trim=True)
 fig.axes[0][0].set_title('All mice: n = %d' % behav.subject_nickname.nunique(),

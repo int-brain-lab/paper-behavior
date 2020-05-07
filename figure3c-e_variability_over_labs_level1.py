@@ -116,6 +116,17 @@ for i, var in enumerate(['perf_easy', 'reaction_time', 'n_trials', 'threshold', 
     stats_tests.loc[i, 'test_type'] = test_type
     stats_tests.loc[i, 'p_value'] = test[1]
 
+if (stats.normaltest(test_df[ 'n_trials'])[1] < 0.05 or 
+    stats.normaltest(test_df[ 'reaction_time'])[1] < 0.05):
+    test_type = 'spearman'
+    correlation_coef, correlation_p = stats.spearmanr(test_df['reaction_time'], 
+                                                      test_df['n_trials'])
+if (stats.normaltest(test_df[ 'n_trials'])[1] > 0.05 and 
+    stats.normaltest(test_df[ 'reaction_time'])[1] > 0.05):
+    test_type = 'pearson'
+    correlation_coef, correlation_p = stats.pearsonr(test_df['reaction_time'], 
+                                                      test_df['n_trials'])   
+
 # Z-score data
 learned_zs = pd.DataFrame()
 learned_zs['lab'] = learned['lab']
@@ -150,7 +161,7 @@ sns.set_palette(use_palette)
 lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
-f, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(16, 4))
+f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(20, 4))
 sns.set_palette(use_palette)
 
 sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
@@ -169,7 +180,7 @@ ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
 
 sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax4)
-ax4.set(ylabel='Trial duration (ms)', ylim=[0, 1000], xlabel='')
+ax4.set(ylabel='Trial duration (ms)', ylim=[0, 2000], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
 
@@ -178,6 +189,36 @@ ax5.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
 [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
 plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
 
+correlation_coef, correlation_p
+sns.regplot(x='reaction_time', y='n_trials', data=learned_2, color = use_palette[-1],
+            ci=None, scatter=False, ax=ax6)
+sns.scatterplot(y='n_trials', x ='reaction_time', hue ='lab_number', data=learned, 
+                palette = lab_colors, ax=ax6)
+ax6.annotate('Coef =' + ' ' + str(round(correlation_coef,3)) + 
+             ' ' + '**** p < 0.0001', xy=[50,2000])
+
+ax6.set(ylabel='Number of trials', ylim=[0, 2000])
+ax6.set(xlabel='Reaction Time (ms)', xlim=[0, 2000])
+ax6.get_legend().remove()
+
+# statistical annotation
+for i, var in enumerate(['perf_easy', 'threshold', 
+                         'bias', 'reaction_time', 'n_trials']):
+    def num_star(pvalue):
+        if pvalue <0.05:
+            stars = '* p < 0.05'
+        if pvalue <0.01:
+            stars = '** p < 0.01'
+        if pvalue <0.001:
+            stars = '*** p < 0.001'
+        if pvalue <0.0001:
+            stars = '**** p < 0.0001'
+        return stars
+
+    pvalue = stats_tests.loc[stats_tests['variable'] == var, 'p_value']
+    if pvalue.to_numpy()[0] < 0.05:
+        axes = [ax1, ax2, ax3, ax4, ax5, ax6]
+        axes[i].annotate(num_star(pvalue.to_numpy()[0]), xy=[3,2000])
 plt.tight_layout(pad=2)
 seaborn_style()
 plt.savefig(join(fig_path, 'figure3c-e_metrics_per_lab_level1.pdf'), dpi=300)

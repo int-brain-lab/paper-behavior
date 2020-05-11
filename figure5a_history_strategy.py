@@ -1,8 +1,9 @@
 """
 History-dependent choice strategy across tasks
+See also https://elifesciences.org/articles/49834
 
 @author: Anne Urai
-15 January 2020
+10 May 2020
 """
 
 # import wrappers etc

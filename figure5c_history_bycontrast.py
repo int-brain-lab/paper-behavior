@@ -134,53 +134,50 @@ fig.savefig(os.path.join(figpath, "figure5d_history_prevcontrast_heatmap.pdf"))
 # DEPENDENCE ON PREVIOUS CONTRAST - SUMMARY
 # ============================================== #
 
-# instead of the bias in % contrast, take the choice shift at x = 0
-# now read these out at the presented levels of signed contrast
-def pars2shift(pars, choicevar, outcomevar, contrastvar):
-
-    pars2 = pd.DataFrame([])
-    xvec = behav.signed_contrast.unique()
-    for index, group in pars.groupby(['subj_idx', choicevar, outcomevar, contrastvar]):
-        # expand
-        yvec = psy.erf_psycho_2gammas([group.bias.item(),
+def pars2choicefract(group):
+    group['choicefract'] = psy.erf_psycho_2gammas([group.bias.item(),
                                        group.threshold.item(),
                                        group.lapselow.item(),
-                                       group.lapsehigh.item()], xvec)
-        group2 = group.loc[group.index.repeat(
-            len(yvec))].reset_index(drop=True).copy()
-        group2['signed_contrast'] = xvec
-        group2['response'] = 100 * yvec
-        # add this
-        pars2 = pars2.append(group2)
-
-    # only pick psychometric functions that were fit on a reasonable number of trials...
-    pars2 = pars2.loc[pars2.ntrials > 50, :]
-    pars2 = pars2[(pars2.signed_contrast == 0)]
-
-    # compute history-dependent bias shift
-    pars3 = pd.pivot_table(pars2, values='response',
-                           index=['subj_idx', outcomevar, contrastvar],
-                           columns=[choicevar]).reset_index()
-    pars3['biasshift'] = pars3[1.0] - pars3[0.0]
-    # move the 100% closer
-    pars3[contrastvar] = pars3.previous_contrast * 100
-    pars3.loc[pars3[contrastvar] == 100, contrastvar] = 40
-    return pars3
+                                       group.lapsehigh.item()], 0) * 100
+    return group
 
 print('fitting psychometric functions, NOW ALSO BASED ON PREVIOUS CONTRAST...')
 pars = behav.groupby(['subject_nickname', 'task', 'previous_choice', 'previous_outcome', 'previous_contrast']).apply(
     fit_psychfunc).reset_index()
-history_shift = pars2shift(pars, 'previous_choice_name', 'previous_outcome_name', 'previous_contrast_name')
+# convert to choice fraction
+pars2 = pars.groupby(['subject_nickname', 'task', 'previous_choice', 'previous_outcome', 'previous_contrast']).apply(
+    pars2choicefract).reset_index()
+# now compute the dependence on previous choice
+history_shift = pd.pivot_table(pars2, values='choicefract',
+                       index=['task', 'subject_nickname', 'previous_outcome', 'previous_contrast'],
+                       columns='previous_choice').reset_index()
+history_shift['history_shift'] = history_shift[1.] - history_shift[-1.]
+
+#history_shift = pars2shift(pars, 'previous_choice', 'previous_outcome', 'previous_contrast')
+# future_shift = history_shift.copy()
+# future_shift = future_shift.rename(columns={'history_shift':'future_shift'})
 
 print('fitting psychometric functions, NOW ALSO BASED ON FUTURE CONTRAST...')
 pars = behav.groupby(['subject_nickname', 'task', 'next_choice', 'next_outcome', 'next_contrast']).apply(
     fit_psychfunc).reset_index()
-future_shift = pars2shift(pars, 'next_choice_name', 'next_outcome_name', 'next_contrast_name')
+# convert to choice fraction
+pars2 = pars.groupby(['subject_nickname', 'task', 'next_choice', 'next_outcome', 'next_contrast']).apply(
+    pars2choicefract).reset_index()
+# now compute the dependence on previous choice
+future_shift = pd.pivot_table(pars2, values='choicefract',
+                       index=['task', 'subject_nickname', 'next_outcome', 'next_contrast'],
+                       columns='next_choice').reset_index()
+future_shift['future_shift'] = future_shift[1.] - future_shift[-1.]
 
+
+# ================================= #
 # merge and subtract the future shift from each history shift
+# ================================= #
+
 pars5 = pd.merge(history_shift, future_shift,
                  on=['subject_nickname', 'previous_outcome', 'previous_contrast', 'task'])
 pars5['history_shift_corrected'] = pars5['history_shift'] - pars5['future_shift']
+history_shift = pars5.copy()
 
 # ================================= #
 # PLOT PREVIOUS CONTRAST-DEPENDENCE
@@ -194,7 +191,7 @@ sns.lineplot(data=history_shift[(history_shift.task == 'traini')], x='previous_c
              palette=sns.color_palette(["firebrick", "forestgreen"]))
 ax[0,0].set(ylabel='$\Delta$ Rightward choice (%)',
           xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 40],
+          xticks=[0, 6, 12, 25, 100],
           xticklabels=['0', '6', '12', '25', '100'],
           title='Uncorrected, training')
 ax[0,0].axhline(color='grey')
@@ -206,7 +203,7 @@ sns.lineplot(data=history_shift[(history_shift.task == 'traini')], x='previous_c
 ax[0,1].axhline(color='grey')
 ax[0,1].set(ylabel='$\Delta$ Rightward choice (%)',
           xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 40],
+          xticks=[0, 6, 12, 25, 100],
           xticklabels=['0', '6', '12', '25', '100'],
           title='Corrected, training')
 
@@ -217,7 +214,7 @@ sns.lineplot(data=history_shift[(history_shift.task == 'biased')], x='previous_c
              palette=sns.color_palette(["firebrick", "forestgreen"]))
 ax[1,0].set(ylabel='$\Delta$ Rightward choice (%)',
           xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 40],
+          xticks=[0, 6, 12, 25, 100],
           xticklabels=['0', '6', '12', '25', '100'],
           title='Uncorrected, biased')
 ax[1,0].axhline(color='grey')
@@ -229,7 +226,7 @@ sns.lineplot(data=history_shift[(history_shift.task == 'traini')], x='previous_c
 ax[1,1].axhline(color='grey')
 ax[1,1].set(ylabel='$\Delta$ Rightward choice (%)',
           xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 40],
+          xticks=[0, 6, 12, 25, 100],
           xticklabels=['0', '6', '12', '25', '100'],
           title='Corrected, biased')
 

@@ -4,7 +4,7 @@ GLM incorporating psychometric features such lapses
 Based on code from Frund et al.2014 Journal of Vision
 Code is in python2.7 and integration with datajoint is therefore difficult.
 This section of the code will restructure the data so that is compatible
-with the Frund et al.2014 dataset: https://bitbucket.org/mackelab/serial_decision/src/master/
+with the Frund et al.2014 repo: https://bitbucket.org/mackelab/serial_decision/src/master/
 
 Author:  alejandro pan-vazquez
 """

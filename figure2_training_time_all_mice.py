@@ -13,59 +13,56 @@ import numpy as np
 from os.path import join
 import seaborn as sns
 from ibl_pipeline import subject, reference, acquisition
-from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
-                                      group_colors, figpath)
+from paper_behavior_functions import seaborn_style, institution_map, group_colors, figpath
 from ibl_pipeline.analyses import behavior as behavior_analysis
-from scipy import stats
-import scikit_posthocs as sp
 from lifelines import KaplanMeierFitter
 
 # Settings
 fig_path = figpath()
 
-# Query sessions
-use_subjects = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-            & 'subject_project = "ibl_neuropixel_brainwide_01"')
-last_sessions = use_subjects.aggr(acquisition.Session
-                                  & 'task_protocol!="NULL"', 'task_protocol', 'subject_nickname',
-                                  session_start_time='max(session_start_time)')
-status = (last_sessions * behavior_analysis.SessionTrainingStatus).fetch(format='frame')
-behav = (use_subjects * behavior_analysis.BehavioralSummaryByDate).fetch(format='frame')
+# Query all subjects, also the ones that did not reach trained
+subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+              & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
+                          acquisition.Session & 'task_protocol LIKE "%training%"',
+                          'subject_nickname', 'institution_short',
+                          last_session='max(session_start_time)')
 
+# Use only subjects that had their last training session before the date cut-off
+use_subjects = (subj_query & 'last_session <= "2020-03-23"')
 
-
-
-ses = (use_subjects * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResults
-       & 'training_status = "in_training" OR training_status = "untrainable"').proj(
-               'subject_nickname', 'n_trials_stim', 'institution_short').fetch(format='frame')
-ses = ses.reset_index()
+# Get training status and training time in number of sessions and trials
+ses = (use_subjects
+       * behavior_analysis.SessionTrainingStatus
+       * behavior_analysis.PsychResults).proj(
+               'subject_nickname', 'training_status', 'n_trials_stim', 'institution_short').fetch(
+                                                                   format='frame').reset_index()
 ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
 
-# Construct dataframe
-training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
-training_time['trials'] = ses.groupby('subject_nickname').sum()
-training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
+# Construct dataframe from query
+training_time = pd.DataFrame()
+for i, nickname in enumerate(ses['subject_nickname'].unique()):
+    training_time.loc[i, 'nickname'] = nickname
+    training_time.loc[i, 'lab'] = ses.loc[ses['subject_nickname'] == nickname,
+                                          'institution_short'].values[0]
+    training_time.loc[i, 'sessions'] = sum((ses['subject_nickname'] == nickname)
+                                           & ((ses['training_status'] == 'in_training')
+                                              | (ses['training_status'] == 'untrainable')))
+    training_time.loc[i, 'trials'] = ses.loc[((ses['subject_nickname'] == nickname)
+                                              & (ses['training_status'] == 'in_training')),
+                                             'n_trials'].sum()
+    training_time.loc[i, 'status'] = ses.loc[ses['subject_nickname'] == nickname,
+                                             'training_status'].values[-1]
 
-# Change lab name into lab number
+# Transform training status into boolean
+training_time['trained'] = np.nan
+training_time.loc[((training_time['status'] == 'untrainable')
+                   | (training_time['status'] == 'in_training')), 'trained'] = 0
+training_time.loc[((training_time['status'] != 'untrainable')
+                   & (training_time['status'] != 'in_training')), 'trained'] = 1
+
+# Add lab number
 training_time['lab_number'] = training_time.lab.map(institution_map()[0])
 training_time = training_time.sort_values('lab_number')
-
-#  statistics
-# Test normality
-_, normal = stats.normaltest(training_time['sessions'])
-if normal < 0.05:
-    kruskal = stats.kruskal(*[group['sessions'].values
-                              for name, group in training_time.groupby('lab')])
-    if kruskal[1] < 0.05:  # Proceed to posthocs
-        posthoc = sp.posthoc_dunn(training_time, val_col='sessions',
-                                  group_col='lab_number')
-else:
-    anova = stats.f_oneway(*[group['sessions'].values
-                             for name, group in training_time.groupby('lab')])
-    if anova[1] < 0.05:
-        posthoc = sp.posthoc_tukey(training_time, val_col='sessions',
-                                   group_col='lab_number')
-
 
 # %% PLOT
 
@@ -74,96 +71,26 @@ use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(training_time['lab']))
 use_palette = use_palette + [[1, 1, 0.2]]
 lab_colors = group_colors()
 
-# Plot cumulative proportion of trained mice over days
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
-for i, lab in enumerate(np.unique(training_time['lab_number'])):
-    y, binEdges = np.histogram(training_time.loc[training_time['lab_number'] == lab, 'sessions'],
-                               bins=20)
-    y = np.cumsum(y)
-    y = y / np.max(y)
-    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax1.plot(bincenters, y, '-o', color=lab_colors[i])
-ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Training day',
-        xlim=[0, 60], ylim=[0, 1.02])
-
 # Plot hazard rate survival analysis
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+
 kmf = KaplanMeierFitter()
 for i, lab in enumerate(np.unique(training_time['lab_number'])):
-    kmf.fit(training_time.loc[training_time['lab_number'] == lab, 'sessions'].values)
-    prob_trained = 1 - kmf.survival_function_
-    ax2.step(prob_trained.index.values, prob_trained.values, color=lab_colors[i], lw=2)
-ax2.set(ylabel='Probability of being trained', xlabel='Training day',
-        title='Inverse survival function', xlim=[0, 60], ylim=[0, 1.02])
+    kmf.fit(training_time.loc[training_time['lab_number'] == lab, 'sessions'].values,
+            event_observed=training_time.loc[training_time['lab_number'] == lab, 'trained'])
+    ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values,
+             color=lab_colors[i], lw=2)
+ax1.set(ylabel='Probability of trained', xlabel='Training day',
+        title='Per lab', xlim=[0, 60], ylim=[0, 1.02])
+
+kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
+kmf.plot_cumulative_density(ax=ax2)
+ax2.set(ylabel='Probability of trained', xlabel='Training day',
+        title='All labs', xlim=[0, 60], ylim=[0, 1.02])
+ax2.get_legend().set_visible(False)
 
 sns.despine(trim=True, offset=5)
 plt.tight_layout(pad=2)
 seaborn_style()
-plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.png'), dpi=300)
-
-# Plot number of sessions to trained per lab
-training_time_all = training_time.copy()
-training_time_all['lab_number'] = 'All'
-training_time_all = training_time.append(training_time_all)
-
-f = plt.figure()
-grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
-sns.set_palette(use_palette)
-
-ax1 = plt.subplot(grid[0, :2])
-sns.swarmplot(y='sessions', x='lab_number', data=training_time, ax=ax1)
-ax1.set(ylabel='Days to trained', xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-
-ax2 = plt.subplot(grid[0, 2], sharey=ax1)
-sns.violinplot(y='sessions', x='lab_number',
-               data=training_time_all[training_time_all['lab_number'] == 'All'], ax=ax2)
-ax2.set(ylabel='', xlabel='', ylim=[-1, 60])
-ax2.get_yaxis().set_visible(False)
-ax2.set_frame_on(False)
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
-
-plt.tight_layout(pad=2)
-seaborn_style()
-sns.set_palette(use_palette)
-
-plt.savefig(join(fig_path, 'figure2d_training_time_days.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2d_training_time_days.png'), dpi=300)
-
-# Plot number of trials to trained per lab
-f = plt.figure()
-grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
-sns.set_palette(use_palette)
-
-ax1 = plt.subplot(grid[0, :2])
-sns.swarmplot(y='trials', x='lab_number', data=training_time, ax=ax1)
-ax1.set(ylabel='Trials to trained', xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-
-ax2 = plt.subplot(grid[0, 2], sharey=ax1)
-sns.violinplot(y='trials', x='lab_number',
-               data=training_time_all[training_time_all['lab_number'] == 'All'], ax=ax2)
-ax2.set(ylabel='', xlabel='', ylim=[-500, 50000])
-ax2.get_yaxis().set_visible(False)
-ax2.set_frame_on(False)
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
-
-plt.tight_layout(pad=2)
-seaborn_style()
-sns.set_palette(use_palette)
-
-plt.savefig(join(fig_path, 'figure2d_training_time_trials.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2d_training_time_trials.png'), dpi=300)
-
-# Get stats in text
-# Interquartile range per lab
-iqtr = training_time.groupby(['lab'])[
-    'sessions'].quantile(0.75) - training_time.groupby(['lab'])[
-    'sessions'].quantile(0.25)
-# Training time as a whole
-m_train = training_time['sessions'].mean()
-s_train = training_time['sessions'].std()
-fastest = training_time['sessions'].max()
-slowest = training_time['sessions'].min()
+plt.savefig(join(fig_path, 'figure2c_probability_trained.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2c_probability_trained.png'), dpi=300)

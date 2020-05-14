@@ -101,6 +101,15 @@ update_training = pd.pivot_table(behav[(behav.task == 'traini') & (behav.previou
                           index=['signed_contrast'],
                           columns=['previous_signed_contrast'],
                           aggfunc='mean')
+future_training = pd.pivot_table(behav[(behav.task == 'traini') &
+                                       (behav.previous_outcome == 1)].groupby(['signed_contrast',
+                                          'next_signed_contrast',
+                                          'subject_nickname'])[
+                                     'choice'].mean().reset_index(),
+                          values='choice',
+                          index=['signed_contrast'],
+                          columns=['next_signed_contrast'],
+                          aggfunc='mean')
 
 update_biased = pd.pivot_table(behav[(behav.task == 'biased') & (behav.previous_outcome == 1)].
                                groupby(['signed_contrast',
@@ -111,7 +120,15 @@ update_biased = pd.pivot_table(behav[(behav.task == 'biased') & (behav.previous_
                                index=['signed_contrast'],
                                columns=['previous_signed_contrast'],
                                aggfunc='mean')
-
+future_biased = pd.pivot_table(behav[(behav.task == 'biased') & (behav.previous_outcome == 1)].
+                               groupby(['signed_contrast',
+                                        'next_signed_contrast',
+                                        'subject_nickname'])[
+                                     'choice'].mean().reset_index(),
+                               values='choice',
+                               index=['signed_contrast'],
+                               columns=['next_signed_contrast'],
+                               aggfunc='mean')
 # subtract the average psychfunc, so that current stimulus does not dominate!
 behav['dummy'] = 1
 avg_psychfunc = pd.pivot_table(behav.groupby(['subject_nickname',
@@ -126,13 +143,13 @@ kwargs = {'linewidths':0, 'cmap':"PuOr", 'square': True,
           'cbar_kws':{'label': 'Updating (%)', 'shrink': 0.8,
                       'ticks': [-0.2, 0, 0.2]},
             'vmin':-0.3, 'vmax':0.3}
-sns.heatmap(update_training.sub(avg_psychfunc.values, axis='rows'),
+sns.heatmap(update_training.sub(future_training.values, axis='rows'),
             ax=ax[0], cbar=False, **kwargs)
 ax[0].set(xlabel='Previous signed contrast (%)',
           ylabel='Current signed contrast (%)',
           title='Training task')
 
-sns.heatmap(update_biased.sub(avg_psychfunc.values, axis='rows'),
+sns.heatmap(update_biased.sub(future_biased.values),
             ax=ax[1], cbar=True, **kwargs)
 ax[1].set(xlabel='Previous signed contrast (%)', ylabel='',
           yticklabels=[], title='Biased task')

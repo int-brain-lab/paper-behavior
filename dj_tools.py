@@ -16,12 +16,16 @@ from ibl_pipeline.utils import psychofit as psy
 def fit_psychfunc(df):
     choicedat = df.groupby('signed_contrast').agg(
         {'choice': 'count', 'choice2': 'mean'}).reset_index()
-    pars, L = psy.mle_fit_psycho(choicedat.values.transpose(), P_model='erf_psycho_2gammas',
+    if len(choicedat) > 4: # need some minimum number of unique x-values
+        pars, L = psy.mle_fit_psycho(choicedat.values.transpose(), P_model='erf_psycho_2gammas',
                                  parstart=np.array(
                                      [choicedat['signed_contrast'].mean(), 20., 0.05, 0.05]),
                                  parmin=np.array(
                                      [choicedat['signed_contrast'].min(), 5, 0., 0.]),
                                  parmax=np.array([choicedat['signed_contrast'].max(), 100., 1, 1]))
+    else:
+        pars = [np.nan, np.nan, np.nan, np.nan]
+
     df2 = {'bias': pars[0], 'threshold': pars[1],
            'lapselow': pars[2], 'lapsehigh': pars[3]}
     df2 = pd.DataFrame(df2, index=[0])

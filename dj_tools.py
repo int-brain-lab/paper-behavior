@@ -206,7 +206,7 @@ def dj2pandas(behav):
 
     behav['signed_contrast'] = (
         behav['trial_stim_contrast_right'] - behav['trial_stim_contrast_left']) * 100
-    behav['signed_contrast'] = behav.signed_contrast.astype(int)
+    # behav['signed_contrast'] = behav.signed_contrast.astype(int)
 
     behav['trial'] = behav.trial_id  # for psychfuncfit
     val_map = {'CCW': 1, 'No Go': 0, 'CW': -1}

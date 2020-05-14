@@ -40,6 +40,12 @@ use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
      * behavior.TrialSet.Trial)
 
+# # temporary, to speed up computations
+# b = (use_sessions * subject.Subject \
+#      * (subject.SubjectLab & 'lab_name = "churchlandlab"') \
+#      * reference.Lab
+#      * behavior.TrialSet.Trial)
+
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
             'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
@@ -54,7 +60,7 @@ behav.loc[behav.next_choice == 0, 'next_choice'] = np.nan
 behav['next_outcome'] = behav.trial_feedback_type.shift(-1)
 behav.loc[behav.next_outcome == 0, 'next_outcome'] = np.nan
 behav['next_contrast'] = np.abs(behav.signed_contrast.shift(-1))
-behav['next_signed_contrast'] = behav.signed_contrast.shift(-1)
+behav['next_signed_contrast'] = behav['signed_contrast'].shift(-1)
 behav['previous_signed_contrast'] = behav.signed_contrast.shift(1)
 
 behav['next_choice_name'] = behav['next_choice'].map(
@@ -73,10 +79,11 @@ behav['next_name'] = behav.next_outcome_name + \
 behav['task'] = behav['task_protocol'].str[14:20]
 
 # remove weird contrast levels that have very few trials
-allowed_contrasts = [-100., -25., -12.5, -6, 0, 6, 12.5, 25., 100.]
-behav = behav[behav.signed_contrast.isin(allowed_contrasts)]
-behav = behav[behav.previous_signed_contrast.isin(allowed_contrasts)]
-
+allowed_contrasts = [-100., -25., -12.5, -6.25, 0, 6.25, 12.5, 25., 100.]
+behav = behav[behav['signed_contrast'].isin(allowed_contrasts)]
+behav = behav[behav['previous_signed_contrast'].isin(allowed_contrasts)]
+behav = behav[behav['next_signed_contrast'].isin(allowed_contrasts)]
+print(behav.groupby(['lab_name'])['signed_contrast', 'previous_signed_contrast', 'next_signed_contrast'].nunique())
 # choose: take only those trials where the objective probability is 0.5???
 # behav = behav.loc[behav.probabilityLeft == 50, :]
 
@@ -97,8 +104,8 @@ update_training = pd.pivot_table(behav[(behav.task == 'traini') & (behav.previou
 
 update_biased = pd.pivot_table(behav[(behav.task == 'biased') & (behav.previous_outcome == 1)].
                                groupby(['signed_contrast',
-                                          'previous_signed_contrast',
-                                          'subject_nickname'])[
+                                        'previous_signed_contrast',
+                                        'subject_nickname'])[
                                      'choice'].mean().reset_index(),
                                values='choice',
                                index=['signed_contrast'],
@@ -115,16 +122,16 @@ avg_psychfunc = pd.pivot_table(behav.groupby(['subject_nickname',
 
 plt.close('all')
 fig, ax = plt.subplots(1, 2, figsize=[8, 3.5])
+kwargs = {'linewidths':0, 'cmap':"PuOr", 'cbar':True, 'square':True,
+            'cbar_kws':{'label': 'Updating (%)', 'shrink': 0.8,
+                        'ticks': [-0.2, 0, 0.2]},
+            'vmin':-0.3, 'vmax':0.3}
 sns.heatmap(update_training.sub(avg_psychfunc.values, axis='rows'),
-            ax=ax[0], linewidths=0, cmap="PuOr", cbar=True, square=True,
-            cbar_kws={'label': 'Updating (%)', 'shrink': 0.8, 'ticks': np.arange(-0.2, 0.25, 0.1)},
-            vmin=-0.2, vmax=0.2)
+            ax=ax[0], **kwargs)
 ax[0].set(xlabel='Previous signed contrast (%)', ylabel='Current signed contrast (%)',
        title='Training task')
 sns.heatmap(update_biased.sub(avg_psychfunc.values, axis='rows'),
-            ax=ax[1], linewidths=0, cmap="PuOr", cbar=True, square=True,
-            cbar_kws={'label': 'Updating (%)', 'shrink': 0.8, 'ticks': np.arange(-0.3, 0.35, 0.1)},
-            vmin=-0.3, vmax=0.3)
+            ax=ax[1], **kwargs)
 ax[1].set(xlabel='Previous signed contrast (%)', ylabel='Current signed contrast (%)',
        title='Biased task')
 fig.tight_layout()
@@ -141,21 +148,6 @@ def pars2choicefract(group):
                                        group.lapsehigh.item()], 0) * 100
     return group
 
-print('fitting psychometric functions, NOW ALSO BASED ON PREVIOUS CONTRAST...')
-pars = behav.groupby(['subject_nickname', 'task', 'previous_choice', 'previous_outcome', 'previous_contrast']).apply(
-    fit_psychfunc).reset_index()
-# convert to choice fraction
-pars2 = pars.groupby(['subject_nickname', 'task', 'previous_choice', 'previous_outcome', 'previous_contrast']).apply(
-    pars2choicefract).reset_index()
-# now compute the dependence on previous choice
-history_shift = pd.pivot_table(pars2, values='choicefract',
-                       index=['task', 'subject_nickname', 'previous_outcome', 'previous_contrast'],
-                       columns='previous_choice').reset_index()
-history_shift['history_shift'] = history_shift[1.] - history_shift[-1.]
-
-#history_shift = pars2shift(pars, 'previous_choice', 'previous_outcome', 'previous_contrast')
-# future_shift = history_shift.copy()
-# future_shift = future_shift.rename(columns={'history_shift':'future_shift'})
 
 print('fitting psychometric functions, NOW ALSO BASED ON FUTURE CONTRAST...')
 pars = behav.groupby(['subject_nickname', 'task', 'next_choice', 'next_outcome', 'next_contrast']).apply(
@@ -168,7 +160,21 @@ future_shift = pd.pivot_table(pars2, values='choicefract',
                        index=['task', 'subject_nickname', 'next_outcome', 'next_contrast'],
                        columns='next_choice').reset_index()
 future_shift['future_shift'] = future_shift[1.] - future_shift[-1.]
+# rename, so that the columns can be matched with history shift
+future_shift = future_shift.rename(columns={'next_outcome': 'previous_outcome',
+                                            'next_contrast': 'previous_contrast'})
 
+print('fitting psychometric functions, NOW ALSO BASED ON PREVIOUS CONTRAST...')
+pars = behav.groupby(['subject_nickname', 'task', 'previous_choice', 'previous_outcome', 'previous_contrast']).apply(
+    fit_psychfunc).reset_index()
+# convert to choice fraction
+pars2 = pars.groupby(['subject_nickname', 'task', 'previous_choice', 'previous_outcome', 'previous_contrast']).apply(
+    pars2choicefract).reset_index()
+# now compute the dependence on previous choice
+history_shift = pd.pivot_table(pars2, values='choicefract',
+                       index=['task', 'subject_nickname', 'previous_outcome', 'previous_contrast'],
+                       columns='previous_choice').reset_index()
+history_shift['history_shift'] = history_shift[1.] - history_shift[-1.]
 
 # ================================= #
 # merge and subtract the future shift from each history shift
@@ -178,57 +184,26 @@ pars5 = pd.merge(history_shift, future_shift,
                  on=['subject_nickname', 'previous_outcome', 'previous_contrast', 'task'])
 pars5['history_shift_corrected'] = pars5['history_shift'] - pars5['future_shift']
 history_shift = pars5.copy()
+history_shift.previous_contrast.replace([100], [40], inplace=True)
 
 # ================================= #
 # PLOT PREVIOUS CONTRAST-DEPENDENCE
 # ================================= #
 
 plt.close('all')
-fig, ax = plt.subplots(2, 2, figsize=[6,6], sharex=True, sharey=True)
-sns.lineplot(data=history_shift[(history_shift.task == 'traini')], x='previous_contrast', y='history_shift',
-             hue='previous_outcome', ax=ax[0,0], legend=False, estimator=np.median,
-             err_style='bars', marker='o', hue_order=[-1., 1.],
-             palette=sns.color_palette(["firebrick", "forestgreen"]))
-ax[0,0].set(ylabel='$\Delta$ Rightward choice (%)',
-          xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 100],
-          xticklabels=['0', '6', '12', '25', '100'],
-          title='Uncorrected, training')
-ax[0,0].axhline(color='grey')
-
-sns.lineplot(data=history_shift[(history_shift.task == 'traini')], x='previous_contrast', y='history_shift_corrected',
-             hue='previous_outcome', ax=ax[0,1], legend=False, estimator=np.median,
-             err_style='bars', marker='o', hue_order=[-1., 1.],
-             palette=sns.color_palette(["firebrick", "forestgreen"]))
-ax[0,1].axhline(color='grey')
-ax[0,1].set(ylabel='$\Delta$ Rightward choice (%)',
-          xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 100],
-          xticklabels=['0', '6', '12', '25', '100'],
-          title='Corrected, training')
-
-## for the two tasks
-sns.lineplot(data=history_shift[(history_shift.task == 'biased')], x='previous_contrast', y='history_shift',
-             hue='previous_outcome', ax=ax[1,0], legend=False, estimator=np.median,
-             err_style='bars', marker='o', hue_order=[-1., 1.],
-             palette=sns.color_palette(["firebrick", "forestgreen"]))
-ax[1,0].set(ylabel='$\Delta$ Rightward choice (%)',
-          xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 100],
-          xticklabels=['0', '6', '12', '25', '100'],
-          title='Uncorrected, biased')
-ax[1,0].axhline(color='grey')
-
-sns.lineplot(data=history_shift[(history_shift.task == 'traini')], x='previous_contrast', y='history_shift_corrected',
-             hue='previous_outcome', ax=ax[1,1], legend=False, estimator=np.median,
-             err_style='bars', marker='o', hue_order=[-1., 1.],
-             palette=sns.color_palette(["firebrick", "forestgreen"]))
-ax[1,1].axhline(color='grey')
-ax[1,1].set(ylabel='$\Delta$ Rightward choice (%)',
-          xlabel='Previous contrast (%)',
-          xticks=[0, 6, 12, 25, 100],
-          xticklabels=['0', '6', '12', '25', '100'],
-          title='Corrected, biased')
+fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
+for task, taskname, ax in zip(['traini', 'biased'], ['Level 1', 'Level 2'], axes):
+    sns.lineplot(data=history_shift[(history_shift.task == task)],
+                 x='previous_contrast', y='history_shift_corrected',
+                 hue='previous_outcome', ax=ax, legend=False, estimator=np.median,
+                 err_style='bars', marker='o', hue_order=[-1., 1.],
+                 palette=sns.color_palette(["firebrick", "forestgreen"]))
+    ax.axhline(color='grey')
+    ax.set(ylabel='$\Delta$ Rightward choice (%)',
+              xlabel='Previous contrast (%)',
+              xticks=[0, 6, 12, 25, 40],
+              xticklabels=['0', '6', '12', '25', '100'],
+              title=taskname)
 
 sns.despine(trim=True)
 fig.tight_layout()

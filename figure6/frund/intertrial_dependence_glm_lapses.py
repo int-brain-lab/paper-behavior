@@ -80,7 +80,7 @@ def export(behav, path):
 
 #Set path for data
 """
-You will need to modify the paths below  if running this code in your own computer
+You will need to modify the paths below  if running this code on your own computer
 """
 
 path_training = '/Users/alex/Documents/Postdoc/GLM_behavior_paper/Data_by_animal/training/'

@@ -127,14 +127,10 @@ learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)
 
 # %%
-# Set color palette
-use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(learned['lab']))
-use_palette = use_palette + [[1, 1, 0.2]]
-sns.set_palette(use_palette)
-lab_colors = group_colors()
 
 # Plot behavioral metrics per lab
 f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(20, 4))
+lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
 sns.swarmplot(y='perf_easy', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax1)
@@ -193,7 +189,7 @@ for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
 ax5.get_legend().set_visible(False)
 
 correlation_coef, correlation_p
-sns.regplot(x='reaction_time', y='n_trials', data=learned_2, color=use_palette[-1],
+sns.regplot(x='reaction_time', y='n_trials', data=learned_2, color=[0.6, 0.6, 0.6],
             ci=None, scatter=False, ax=ax6)
 sns.scatterplot(y='n_trials', x='reaction_time', hue='lab_number', data=learned,
                 palette=lab_colors, ax=ax6)
@@ -221,7 +217,8 @@ for i, var in enumerate(['perf_easy', 'threshold',
     pvalue = stats_tests.loc[stats_tests['variable'] == var, 'p_value']
     if pvalue.to_numpy()[0] < 0.05:
         axes = [ax1, ax2, ax3, ax4, ax5, ax6]
-        axes[i].annotate(num_star(pvalue.to_numpy()[0]), xy=[3,2000])
+        axes[i].annotate(num_star(pvalue.to_numpy()[0]), xy=[3, 2000])
+
 plt.tight_layout(pad=2)
 seaborn_style()
 plt.savefig(join(fig_path, 'figure3c-e_metrics_per_lab_level1.pdf'), dpi=300)

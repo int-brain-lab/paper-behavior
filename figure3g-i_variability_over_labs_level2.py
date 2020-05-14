@@ -81,38 +81,39 @@ learned = learned.sort_values('lab_number')
 # Convert to float
 learned[['perf_easy', 'reaction_time', 'threshold', 'n_sessions',
          'bias', 'lapse_low', 'lapse_high', 'n_trials']] = learned[['perf_easy', 'reaction_time',
-                                                        'threshold', 'n_sessions', 'bias',
-                                                        'lapse_low', 'lapse_high', 'n_trials']].astype(float)
+                                                                    'threshold', 'n_sessions',
+                                                                    'bias', 'lapse_low',
+                                                                    'lapse_high',
+                                                                    'n_trials']].astype(float)
 
 # Add all mice to dataframe seperately for plotting
+learned_no_all = learned.copy()
+learned_no_all.loc[learned_no_all.shape[0] + 1, 'lab_number'] = 'All'
 learned_2 = learned.copy()
-learned_2['lab'] = 'All'
 learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)
 
 # Stats
 stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
 posthoc_tests = {}
-test_df = learned_2.loc[learned_2['lab_number'].isin(['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5',
-                                                      'Lab 6', 'Lab 7'])]
 
 for i, var in enumerate(['perf_easy', 'reaction_time', 'threshold', 'bias', 'n_trials']):
-    _, normal = stats.normaltest(test_df[var])
+    _, normal = stats.normaltest(learned[var])
 
     if normal < 0.05:
         test_type = 'kruskal'
         test = stats.kruskal(*[group[var].values
-                               for name, group in test_df.groupby('lab_number')])
+                               for name, group in learned.groupby('lab_number')])
         if test[1] < 0.05:  # Proceed to posthocs
-            posthoc = sp.posthoc_dunn(test_df, val_col=var, group_col='lab_number')
+            posthoc = sp.posthoc_dunn(learned, val_col=var, group_col='lab_number')
         else:
             posthoc = np.nan
     else:
         test_type = 'anova'
         test = stats.f_oneway(*[group[var].values
-                                for name, group in test_df.groupby('lab_number')])
+                                for name, group in learned.groupby('lab_number')])
         if test[1] < 0.05:
-            posthoc = sp.posthoc_tukey(test_df, val_col=var, group_col='lab_number')
+            posthoc = sp.posthoc_tukey(learned, val_col=var, group_col='lab_number')
         else:
             posthoc = np.nan
 
@@ -121,134 +122,120 @@ for i, var in enumerate(['perf_easy', 'reaction_time', 'threshold', 'bias', 'n_t
     stats_tests.loc[i, 'test_type'] = test_type
     stats_tests.loc[i, 'p_value'] = test[1]
 
-if (stats.normaltest(test_df[ 'n_trials'])[1] < 0.05 or 
-    stats.normaltest(test_df[ 'reaction_time'])[1] < 0.05):
+if (stats.normaltest(learned['n_trials'])[1] < 0.05 or
+        stats.normaltest(learned['reaction_time'])[1] < 0.05):
     test_type = 'spearman'
-    correlation_coef, correlation_p = stats.spearmanr(test_df['reaction_time'], 
-                                                      test_df['n_trials'])
-if (stats.normaltest(test_df[ 'n_trials'])[1] > 0.05 and 
-    stats.normaltest(test_df[ 'reaction_time'])[1] > 0.05):
+    correlation_coef, correlation_p = stats.spearmanr(learned['reaction_time'],
+                                                      learned['n_trials'])
+if (stats.normaltest(learned['n_trials'])[1] > 0.05 and
+        stats.normaltest(learned['reaction_time'])[1] > 0.05):
     test_type = 'pearson'
-    correlation_coef, correlation_p = stats.pearsonr(test_df['reaction_time'], 
-                                                      test_df['n_trials'])   
+    correlation_coef, correlation_p = stats.pearsonr(learned['reaction_time'],
+                                                     learned['n_trials'])
 
-# Z-score data
-learned_zs = pd.DataFrame()
-learned_zs['lab'] = learned['lab']
-learned_zs['lab_number'] = learned['lab_number']
-learned_zs['Performance'] = stats.zscore(learned['perf_easy'])
-learned_zs['Threshold'] = stats.zscore(learned['threshold'])
-learned_zs['Bias'] = stats.zscore(learned['bias'])
-learned_zs['Reaction time'] = stats.zscore(learned['reaction_time'])
+# %% Plot behavioral metrics per lab
 
-# Restructure pandas dataframe for plotting
-learned_zs_mean = learned_zs.groupby('lab_number').mean()
-learned_zs_new = pd.DataFrame({'zscore': learned_zs_mean['Performance'], 'metric': 'Performance',
-                               'lab': learned_zs_mean.index.values})
-learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Threshold'],
-                                                     'metric': 'Threshold',
-                                                     'lab': learned_zs_mean.index.values}))
-learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Bias'],
-                                                     'metric': 'Bias',
-                                                     'lab': learned_zs_mean.index.values}))
-learned_zs_new = learned_zs_new.append(pd.DataFrame({'zscore': learned_zs_mean['Reaction time'],
-                                                     'metric': 'Trial duration',
-                                                     'lab': learned_zs_mean.index.values}))
-
-# Set color palette
-use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(learned['lab']))
-use_palette = use_palette + [[1, 1, 0.2]]
-sns.set_palette(use_palette)
-lab_colors = group_colors()
-
-# Plot behavioral metrics per lab
 
 def num_star(pvalue):
-        if pvalue <0.05:
-            stars = '* p < 0.05'
-        if pvalue <0.01:
-            stars = '** p < 0.01'
-        if pvalue <0.001:
-            stars = '*** p < 0.001'
-        if pvalue <0.0001:
-            stars = '**** p < 0.0001'
-        if pvalue > 0.05:
-            stars = ''
-        return stars
+    if pvalue < 0.05:
+        stars = '* p < 0.05'
+    if pvalue < 0.01:
+        stars = '** p < 0.01'
+    if pvalue < 0.001:
+        stars = '*** p < 0.001'
+    if pvalue < 0.0001:
+        stars = '**** p < 0.0001'
+    if pvalue > 0.05:
+        stars = ''
+    return stars
 
-f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(30, 7))
-sns.set_palette(use_palette)
 
-sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, ax=ax1)
+# Create plot
+f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(20, 4))
+
+lab_colors = group_colors()
+sns.set_palette(lab_colors)
+
+sns.swarmplot(y='perf_easy', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax1)
+axbox = sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, color='white',
+                    showfliers=False, ax=ax1)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
 ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-ax1.text(5, 101, num_star(stats_tests.loc[stats_tests['variable'] == 'perf_easy', 
-                           'p_value'].to_numpy()[0]))
+ax1.get_legend().set_visible(False)
+ax1.text(5, 101, num_star(stats_tests.loc[stats_tests['variable'] == 'perf_easy',
+                                          'p_value'].to_numpy()[0]))
 
-sns.boxplot(y='threshold', x='lab_number', data=learned_2, ax=ax2)
+sns.swarmplot(y='threshold', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax2)
+axbox = sns.boxplot(y='threshold', x='lab_number', data=learned_2, color='white',
+                    showfliers=False, ax=ax2)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
 ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 40], xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
-ax2.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'threshold', 
-                             'p_value'].to_numpy()[0]), xy=[5,40])
+ax2.get_legend().set_visible(False)
+ax2.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'threshold',
+                                      'p_value'].to_numpy()[0]), xy=[5, 40])
 
-sns.boxplot(y='bias', x='lab_number', data=learned_2, ax=ax3)
-ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
+sns.swarmplot(y='bias', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax3)
+axbox = sns.boxplot(y='bias', x='lab_number', data=learned_2, color='white', showfliers=False,
+                    ax=ax3)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
-ax3.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'bias', 
-                             'p_value'].to_numpy()[0]), xy=[5,5])
+ax3.set(ylabel='Bias', ylim=[-30, 30], xlabel='')
+ax3.get_legend().set_visible(False)
+ax3.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'bias',
+                                      'p_value'].to_numpy()[0]), xy=[5, 5])
 
-sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, ax=ax4)
-ax4.set(ylabel='Trial duration (ms)', ylim=[0, 3500], xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
+sns.swarmplot(y='reaction_time', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax4)
+axbox = sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, color='white',
+                    showfliers=False, ax=ax4)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax4.get_legend().set_visible(False)
+ax4.set(ylabel='Trial duration (ms)', ylim=[100, 10000], xlabel='', yscale='log')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
 plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
-ax4.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'reaction_time', 
-                             'p_value'].to_numpy()[0]), xy=[5,3500])
+ax4.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'reaction_time',
+                                      'p_value'].to_numpy()[0]), xy=[5, 3500])
 
-sns.boxplot(y='n_trials', x='lab_number', data=learned_2, ax=ax5)
-ax5.set(ylabel='Number of trials', ylim=[0, 1200], xlabel='')
-[tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
+sns.swarmplot(y='n_trials', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax5)
+axbox = sns.boxplot(y='n_trials', x='lab_number', data=learned_2, color='white',
+                    showfliers=False, ax=ax5)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax5.get_legend().set_visible(False)
+ax5.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
 plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
-ax5.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'n_trials', 
-                             'p_value'].to_numpy()[0]), xy=[5,1200])
+ax5.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'n_trials',
+                                      'p_value'].to_numpy()[0]), xy=[5, 1200])
 
 correlation_coef, correlation_p
-sns.regplot(x='reaction_time', y='n_trials', data=learned_2, color = use_palette[-1],
+sns.regplot(x='reaction_time', y='n_trials', data=learned_2, color=[0.6, 0.6, 0.6],
             ci=None, scatter=False, ax=ax6)
-sns.scatterplot(y='n_trials', x ='reaction_time', hue ='lab_number', data=learned, 
-                palette = lab_colors, ax=ax6)
-ax6.annotate('Coef =' + ' ' + str(round(correlation_coef,3)) + 
-             ' ' + '**** p < 0.0001', xy=[300,2000])
+sns.scatterplot(y='n_trials', x='reaction_time', hue='lab_number', data=learned,
+                palette=lab_colors, ax=ax6)
+ax6.annotate('Coef =' + ' ' + str(round(correlation_coef, 3)) +
+             ' ' + '**** p < 0.0001', xy=[300, 2000])
 
 ax6.set(ylabel='Number of trials', ylim=[0, 2000])
 ax6.set(xlabel='Reaction Time (ms)', xlim=[0, 2000])
 ax6.get_legend().remove()
 
 # statistical annotation
-
 plt.tight_layout(pad=2)
 seaborn_style()
+
 plt.savefig(join(fig_path, 'figure3g-i_metrics_per_lab_level2.pdf'), dpi=300)
 plt.savefig(join(fig_path, 'figure3g-i_metrics_per_lab_level2.png'), dpi=300)
-
-"""
-f, ax1 = plt.subplots(1, 1, figsize=(4.5, 4.5))
-sns.swarmplot(x='metric', y='zscore', data=learned_zs_new, hue='lab', palette=group_colors(),
-              size=8, ax=ax1)
-ax1.plot([-1, 6], [0, 0], 'r--')
-ax1.set(ylim=[-1.5, 1.5], ylabel='Deviation from global average (z-score)', xlabel='')
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40, ha="right")
-# plt.setp(ax6.yaxis.get_majorticklabels(), rotation=40)
-# ax1.legend(loc=[0.34, 0.01], prop={'size': 9}, ncol=2).set_title('')
-# ax1.legend(loc=[0.01, 0.8], prop={'size': 9}, ncol=3).set_title('')
-ax1.get_legend().remove()
-ax1.yaxis.set_tick_params(labelbottom=True)
-
-plt.tight_layout(pad=2)
-seaborn_style()
-
-plt.savefig(join(fig_path, 'suppfig_deviation_level2.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'suppfig_deviation_level2.png'), dpi=300)
-"""

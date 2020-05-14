@@ -80,12 +80,12 @@ for i, lab in enumerate(np.unique(training_time['lab_number'])):
             event_observed=training_time.loc[training_time['lab_number'] == lab, 'trained'])
     ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values,
              color=lab_colors[i], lw=2)
-ax1.set(ylabel='Probability of trained', xlabel='Training day',
+ax1.set(ylabel='Cumulative probability of\nreaching trained criterion', xlabel='Training day',
         title='Per lab', xlim=[0, 60], ylim=[0, 1.02])
 
 kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
 kmf.plot_cumulative_density(ax=ax2)
-ax2.set(ylabel='Probability of trained', xlabel='Training day',
+ax2.set(ylabel='Cumulative probability of\nreaching trained criterion', xlabel='Training day',
         title='All labs', xlim=[0, 60], ylim=[0, 1.02])
 ax2.get_legend().set_visible(False)
 

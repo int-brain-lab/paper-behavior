@@ -100,8 +100,11 @@ grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
 sns.set_palette(lab_colors)
 
 ax1 = plt.subplot(grid[0, :2])
-sns.boxplot(y='sessions', x='lab_number', color='white', data=training_time, ax=ax1)
 sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time, ax=ax1)
+axbox = sns.boxplot(y='sessions', x='lab_number', data=training_time, showfliers=False, ax=ax1)
+for patch in axbox.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, 0))
 ax1.set(ylabel='Days to trained', xlabel='')
 ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
@@ -131,9 +134,13 @@ grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
 sns.set_palette(lab_colors)
 
 ax1 = plt.subplot(grid[0, :2])
-sns.boxplot(y='trials', x='lab_number', color='white', data=training_time, ax=ax1)
 sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time, ax=ax1)
+axbox = sns.boxplot(y='trials', x='lab_number', data=training_time, showfliers=False, ax=ax1)
+for patch in axbox.artists:
+    r, g, b, a = patch.get_facecolor()
+    patch.set_facecolor((r, g, b, 0))
 ax1.set(ylabel='Trials to trained', xlabel='')
+ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 

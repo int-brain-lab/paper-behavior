@@ -390,8 +390,12 @@ for i in tbehav['institution_code'].unique():
 
 figpath = figpath()
 
+# Set seed for simulation
+np.random.seed(1)
 
-fig, ax =  plt.subplots(2,2, figsize = [10,10])
+
+
+fig, ax =  plt.subplots(2,2, figsize = [10,10], sharey='row')
 plt.sca(ax[0,0])
 tsimulation = tbehav[tbehav['simulation_prob'].notnull()].copy()
 tsimulation['signed_contrast'] = tsimulation['signed_contrast'].replace(-100, -35)
@@ -452,4 +456,240 @@ ax[1,1].set_xticklabels(labels, rotation = 45, ha='right')
 ax[1,1].set_ylabel('GLM weight')
 ax[1,1].set_xlabel('')
 plt.tight_layout()
-plt.savefig(os.path.join(figpath, 'figure5_GLM.pdf'), fig)
+fig.savefig(os.path.join(figpath, 'figure5_GLM.pdf'), dpi=600)
+
+## Comparison of weights across labs
+
+# Reduce size to just sessions per lab level 1
+tbehav1 = tbehav.copy()
+tbehav1 = tbehav1.groupby('subject_nickname').mean()
+tbehav1['institution_code'] = \
+    np.concatenate(tbehav.groupby('subject_nickname')['institution_code'].unique()).ravel().tolist() 
+
+# Duplicate dataframe for all
+learned_no_all = tbehav1.copy()
+learned_no_all.loc[learned_no_all.shape[0] + 1, 'lab_number'] = 'All'
+learned_2 = tbehav1.copy()
+learned_2['institution_code'] = 'All'
+learned_2 = tbehav1.append(learned_2)
+
+# Set color palette
+use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(tbehav1['institution_code']))
+use_palette = use_palette + [[1, 1, 0.2]]
+sns.set_palette(use_palette)
+lab_colors = group_colors()
+
+# Plot behavioral metrics 
+f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7) = plt.subplots(1, 7, figsize=(20, 4))
+sns.set_palette(lab_colors)
+
+sns.swarmplot(y='100', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax1)
+axbox = sns.boxplot(y='100', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax1)
+ax1.set(ylabel='GLM weight: 100% contrast',  ylim=[-2, 5], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax1.get_legend().set_visible(False)
+
+sns.swarmplot(y='25', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax2)
+axbox = sns.boxplot(y='25', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax2)
+ax2.set(ylabel='GLM weight: 25% contrast', ylim=[-2, 5], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax2.get_legend().set_visible(False)
+
+sns.swarmplot(y='12', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax3)
+axbox = sns.boxplot(y='12', x='institution_code', data=learned_2, color='white', showfliers=False,
+                    ax=ax3)
+ax3.set(ylabel='GLM weight: 12% contrast', ylim=[-2, 5], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
+plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax3.get_legend().set_visible(False)
+
+sns.swarmplot(y='6', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax4)
+axbox = sns.boxplot(y='6', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax4)
+ax4.set(ylabel='GLM weight: 6% contrast', ylim=[-2, 5], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
+plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax4.get_legend().set_visible(False)
+
+sns.swarmplot(y='rchoice', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax5)
+axbox = sns.boxplot(y='rchoice', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax5)
+ax5.set(ylabel='GLM weight: Rewarded choice (t-1)',  ylim=[-2, 5], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
+plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax5.get_legend().set_visible(False)
+
+sns.swarmplot(y='uchoice', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax6)
+axbox = sns.boxplot(y='uchoice', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax6)
+ax6.set(ylabel='GLM weight: Unrewarded choice (t-1)', ylim=[-2, 5], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
+plt.setp(ax6.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax6.get_legend().set_visible(False)
+
+
+sns.swarmplot(y='intercept', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax7)
+axbox = sns.boxplot(y='intercept', x='institution_code', data=learned_2, color='white', showfliers=False,
+                    ax=ax7)
+ax7.set(ylabel='GLM weight: Intercept', ylim=[-2, 5], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
+plt.setp(ax7.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax7.get_legend().set_visible(False)
+plt.tight_layout()
+
+##########################################################################################################
+
+# Reduce size to just sessions per lab level 1
+tbehav1 = behav.copy()
+tbehav1 = tbehav1.groupby('subject_nickname').mean()
+tbehav1['institution_code'] = \
+    np.concatenate(behav.groupby('subject_nickname')['institution_code'].unique()).ravel().tolist() 
+
+# Duplicate dataframe for all
+learned_no_all = tbehav1.copy()
+learned_no_all.loc[learned_no_all.shape[0] + 1, 'lab_number'] = 'All'
+learned_2 = tbehav1.copy()
+learned_2['institution_code'] = 'All'
+learned_2 = tbehav1.append(learned_2)
+
+# Set color palette
+use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(tbehav1['institution_code']))
+use_palette = use_palette + [[1, 1, 0.2]]
+sns.set_palette(use_palette)
+lab_colors = group_colors()
+
+# Plot behavioral metrics 
+f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(1, 8, figsize=(20, 4))
+sns.set_palette(lab_colors)
+
+sns.swarmplot(y='100', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax1)
+axbox = sns.boxplot(y='100', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax1)
+ax1.set(ylabel='GLM weight: 100% contrast',  ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax1.get_legend().set_visible(False)
+
+sns.swarmplot(y='25', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax2)
+axbox = sns.boxplot(y='25', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax2)
+ax2.set(ylabel='GLM weight: 25% contrast', ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax2.get_legend().set_visible(False)
+
+sns.swarmplot(y='12', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax3)
+axbox = sns.boxplot(y='12', x='institution_code', data=learned_2, color='white', showfliers=False,
+                    ax=ax3)
+ax3.set(ylabel='GLM weight: 12% contrast', ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
+plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax3.get_legend().set_visible(False)
+
+sns.swarmplot(y='6', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax4)
+axbox = sns.boxplot(y='6', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax4)
+ax4.set(ylabel='GLM weight: 6% contrast', ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
+plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax4.get_legend().set_visible(False)
+
+sns.swarmplot(y='rchoice', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax5)
+axbox = sns.boxplot(y='rchoice', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax5)
+ax5.set(ylabel='GLM weight: Rewarded choice (t-1)',  ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
+plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax5.get_legend().set_visible(False)
+
+sns.swarmplot(y='uchoice', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax6)
+axbox = sns.boxplot(y='uchoice', x='institution_code', data=learned_2, color='white',
+                    showfliers=False, ax=ax6)
+ax6.set(ylabel='GLM weight: Unrewarded choice (t-1)', ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
+plt.setp(ax6.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax6.get_legend().set_visible(False)
+
+sns.swarmplot(y='block', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax7)
+axbox = sns.boxplot(y='block', x='institution_code', data=learned_2, color='white', showfliers=False,
+                    ax=ax7)
+ax7.set(ylabel='GLM weight: Block Bias', ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
+plt.setp(ax7.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax7.get_legend().set_visible(False)
+plt.tight_layout()
+
+sns.swarmplot(y='intercept', x='institution_code', data=learned_no_all, hue='institution_code', ax=ax8)
+axbox = sns.boxplot(y='intercept', x='institution_code', data=learned_2, color='white', showfliers=False,
+                    ax=ax8)
+ax8.set(ylabel='GLM weight: Intercept', ylim=[-2, 6], xlabel='')
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
+plt.setp(ax8.xaxis.get_majorticklabels(), rotation=40)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax8.get_legend().set_visible(False)
+plt.tight_layout()
+sns.despine()
+
+# Make common dataframe for Level 1 to level 2
+
+tbehav1 = tbehav.copy()
+tbehav1 = tbehav1.groupby('subject_nickname').mean()
+tbehav1['institution_code'] = \
+    np.concatenate(tbehav.groupby('subject_nickname')['institution_code'].unique()).ravel().tolist() 
+
+sbehav1 = behav.copy()
+sbehav1 = sbehav1.groupby('subject_nickname').mean()
+sbehav1['institution_code'] = \
+    np.concatenate(behav.groupby('subject_nickname')['institution_code'].unique()).ravel().tolist() 
+
+
+blab = behav.groupby('institution_code').mean()
+sns.scatterplot(data=tbehav1, x='rchoice', y='rchoice')

@@ -222,30 +222,32 @@ history_shift.previous_contrast.replace([100], [40], inplace=True)
 
 plt.close('all')
 fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
-for task, taskname, ax in zip(['traini', 'biased'], ['Level 1', 'Level 2'], axes):
-    # thin labels, per lab
-    sns.lineplot(data=history_shift[(history_shift.task == task)].groupby(['lab_name',
-                                                                           'previous_contrast',
-                                                                           'previous_outcome'
-                                                                           ]).mean().reset_index(),
-                 x='previous_contrast', y='history_shift_corrected',
-                 hue='previous_outcome', ax=ax, legend=False,
-                 ci=None, marker=None, hue_order=[-1., 1.],
-                 palette=sns.color_palette(["firebrick", "forestgreen"]),
-                 units='lab_name', estimator=None, zorder=0,
-                 linewidth=1, alpha=0.2)
+for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Biased task'], axes):
+    # # thin labels, per lab
+    # sns.lineplot(data=history_shift[(history_shift.task == task)].groupby(['lab_name',
+    #                                                                        'previous_contrast',
+    #                                                                        'previous_outcome'
+    #                                                                        ]).mean().reset_index(),
+    #              x='previous_contrast', y='history_shift_corrected',
+    #              hue='previous_outcome', ax=ax, legend=False,
+    #              ci=None, marker=None, hue_order=[-1., 1.],
+    #              palette=sns.color_palette(["firebrick", "forestgreen"]),
+    #              units='lab_name', estimator=None, zorder=0,
+    #              linewidth=1, alpha=0.2)
     # thick, across labs
     sns.lineplot(data=history_shift[(history_shift.task == task)],
                  x='previous_contrast', y='history_shift_corrected',
-                 hue='previous_outcome', ax=ax, legend=False, estimator=np.median,
+                 hue='previous_outcome', ax=ax, legend=False, estimator=np.mean,
                  err_style='bars', marker='o', hue_order=[-1., 1.],
-                 palette=sns.color_palette(["firebrick", "forestgreen"]), zorder=100)
+                 palette=sns.color_palette(["firebrick", "forestgreen"]),
+                 zorder=100, ci=95)
     ax.axhline(color='grey', linestyle=':', zorder=-100)
     ax.set(ylabel='Choice updating (%)\n($\Delta$ Rightward choice, corrected)',
               xlabel='Previous contrast (%)',
               xticks=[0, 6, 12, 25, 40],
               xticklabels=['0', '6', '12', '25', '100'],
-              title=taskname)
+              title=taskname,
+            ylim=[-20, 20])
 
 sns.despine(trim=True)
 fig.tight_layout()

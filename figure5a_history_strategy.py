@@ -188,7 +188,7 @@ for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Biased task'
                  data=history_shift[(history_shift.task == task)], marker='.',
                  ax=ax, legend=False, zorder=-100)
 
-    #### REPEATE BUT WITH CORRECTION
+    # one errorbar per lab
     for i, lab in enumerate(history_shift['institution_code'].unique()):
         ax.errorbar(history_shift[(history_shift['task'] == task)
                                   & (history_shift['institution_code'] == lab)]['post_correct_corr'].mean(),
@@ -199,6 +199,20 @@ for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Biased task'
                      yerr=history_shift[(history_shift['task'] == task)
                                   & (history_shift['institution_code'] == lab)]['post_error_corr'].mean(),
                      fmt='.', color=pal[i])
+
+    # SHOW ARROW BETWEEN TWO TASKS
+    ax.arrow(history_shift[(history_shift['task'] == 'traini')]['post_correct_corr'].mean(),
+             history_shift[(history_shift['task'] == 'traini')]['post_error_corr'].mean(),
+             history_shift[(history_shift['task'] == 'biased')]['post_correct_corr'].mean() -
+             history_shift[(history_shift['task'] == 'traini')]['post_correct_corr'].mean(),
+             history_shift[(history_shift['task'] == 'biased')]['post_error_corr'].mean() -
+             history_shift[(history_shift['task'] == 'traini')]['post_error_corr'].mean(),
+             color='k', zorder=500, head_width=1)
+
+    ax.plot(history_shift[(history_shift['task'] == 'traini')]['post_correct_corr'].mean(),
+             history_shift[(history_shift['task'] == 'traini')]['post_error_corr'].mean(),
+            marker='o', mec='k', markersize=2,
+             color='k', zorder=500)
 
     ax.set_xlabel("Choice updating (%) \nafter rewarded")
     ax.set_ylabel("Choice updating (%) \nafter unrewarded (%)")

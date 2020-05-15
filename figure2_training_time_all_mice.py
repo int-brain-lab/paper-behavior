@@ -20,15 +20,16 @@ from lifelines import KaplanMeierFitter
 # Settings
 fig_path = figpath()
 
-# Query all subjects, also the ones that did not reach trained
-subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-              & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-                          acquisition.Session & 'task_protocol LIKE "%training%"',
-                          'subject_nickname', 'institution_short',
-                          last_session='max(session_start_time)')
-
-# Use only subjects that had their last training session before the date cut-off
-use_subjects = (subj_query & 'last_session <= "2020-03-23"')
+# Query all mice
+all_mice = (subject.Subject * subject.SubjectLab * reference.Lab
+            * subject.SubjectProject() & 'subject_project = "ibl_neuropixel_brainwide_01"')
+mice_started_training = (all_mice & (acquisition.Session() & 'task_protocol LIKE "%training%"'))
+still_training = all_mice.aggr(behavior_analysis.SessionTrainingStatus,
+                               session_start_time='max(session_start_time)') \
+                                    * behavior_analysis.SessionTrainingStatus - subject.Death \
+                                    & 'training_status = "in_training"' \
+                                    & 'session_start_time > "2020-03-01"'
+use_subjects = mice_started_training - still_training
 
 # Get training status and training time in number of sessions and trials
 ses = (use_subjects
@@ -52,6 +53,8 @@ for i, nickname in enumerate(ses['subject_nickname'].unique()):
                                              'n_trials'].sum()
     training_time.loc[i, 'status'] = ses.loc[ses['subject_nickname'] == nickname,
                                              'training_status'].values[-1]
+    training_time.loc[i, 'date'] = ses.loc[ses['subject_nickname'] == nickname,
+                                           'session_start_time'].values[-1]
 
 # Transform training status into boolean
 training_time['trained'] = np.nan
@@ -80,8 +83,10 @@ for i, lab in enumerate(np.unique(training_time['lab_number'])):
             event_observed=training_time.loc[training_time['lab_number'] == lab, 'trained'])
     ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values,
              color=lab_colors[i], lw=2)
+kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
+ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values, color='black', lw=2)
 ax1.set(ylabel='Cumulative probability of\nreaching trained criterion', xlabel='Training day',
-        title='Per lab', xlim=[0, 60], ylim=[0, 1.02])
+        xlim=[0, 60], ylim=[0, 1.02])
 
 kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
 kmf.plot_cumulative_density(ax=ax2)

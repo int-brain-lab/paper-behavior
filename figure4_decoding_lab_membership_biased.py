@@ -139,8 +139,7 @@ if PLOT_METRICS:
                      fmt='s', color=lab_colors[i])
     ax3.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse right')
 
-    ax4.plot([0, 0], [-10, 10], linestyle='dashed', color=[0.6, 0.6, 0.6])
-    ax4.plot([-10, 10], [0, 0], linestyle='dashed', color=[0.6, 0.6, 0.6])
+    ax4.plot([-10, 10], [-10, 10], linestyle='dashed', color=[0.6, 0.6, 0.6])
     for i, lab in enumerate(biased_fits['lab'].unique()):
         ax4.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].mean(),
                      biased_fits.loc[biased_fits['lab'] == lab, 'bias_r'].mean(),

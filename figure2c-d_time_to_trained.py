@@ -17,7 +17,6 @@ from paper_behavior_functions import (query_subjects, seaborn_style, institution
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from scipy import stats
 import scikit_posthocs as sp
-from lifelines import KaplanMeierFitter
 
 # Settings
 fig_path = figpath()
@@ -63,104 +62,43 @@ use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(training_time['lab']))
 use_palette = use_palette + [[1, 1, 0.2]]
 lab_colors = group_colors()
 
-# Plot cumulative proportion of trained mice over days
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
-for i, lab in enumerate(np.unique(training_time['lab_number'])):
-    y, binEdges = np.histogram(training_time.loc[training_time['lab_number'] == lab, 'sessions'],
-                               bins=20)
-    y = np.cumsum(y)
-    y = y / np.max(y)
-    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax1.plot(bincenters, y, '-o', color=lab_colors[i])
-ax1.set(ylabel='Cumulative proportion of trained mice', xlabel='Training day',
-        xlim=[0, 60], ylim=[0, 1.02])
-
-# Plot hazard rate survival analysis
-kmf = KaplanMeierFitter()
-for i, lab in enumerate(np.unique(training_time['lab_number'])):
-    kmf.fit(training_time.loc[training_time['lab_number'] == lab, 'sessions'].values)
-    prob_trained = 1 - kmf.survival_function_
-    ax2.step(prob_trained.index.values, prob_trained.values, color=lab_colors[i], lw=2)
-ax2.set(ylabel='Probability of being trained', xlabel='Training day',
-        title='Inverse survival function', xlim=[0, 60], ylim=[0, 1.02])
-
-sns.despine(trim=True, offset=5)
-plt.tight_layout(pad=2)
-seaborn_style()
-plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2c_cumulative_proportion_trained.png'), dpi=300)
-
-# Plot number of sessions to trained per lab
+# Add all mice to dataframe seperately for plotting
+training_time_no_all = training_time.copy()
+training_time_no_all.loc[training_time_no_all.shape[0] + 1, 'lab_number'] = 'All'
 training_time_all = training_time.copy()
 training_time_all['lab_number'] = 'All'
 training_time_all = training_time.append(training_time_all)
 
-f = plt.figure()
-grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 sns.set_palette(lab_colors)
 
-ax1 = plt.subplot(grid[0, :2])
-sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time, ax=ax1)
-axbox = sns.boxplot(y='sessions', x='lab_number', data=training_time, showfliers=False, ax=ax1)
-for patch in axbox.artists:
-    r, g, b, a = patch.get_facecolor()
-    patch.set_facecolor((r, g, b, 0))
+sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time_no_all, ax=ax1)
+axbox = sns.boxplot(y='sessions', x='lab_number', data=training_time_all,
+                    color='white', showfliers=False, ax=ax1)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
 ax1.set(ylabel='Days to trained', xlabel='')
 ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
-ax2 = plt.subplot(grid[0, 2], sharey=ax1)
-sns.violinplot(y='sessions', x='lab_number',
-               data=training_time_all[training_time_all['lab_number'] == 'All'],
-               inner=None, color='gray', ax=ax2)
-sns.swarmplot(y='sessions', x='lab_number',
-              data=training_time_all[training_time_all['lab_number'] == 'All'],
-              color='white', edgecolor='gray', ax=ax2)
-ax2.set(ylabel='', xlabel='', ylim=[-1, 60])
-ax2.get_yaxis().set_visible(False)
-ax2.set_frame_on(False)
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
-
-plt.tight_layout(pad=2)
-seaborn_style()
-
-plt.savefig(join(fig_path, 'figure2d_training_time_days.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2d_training_time_days.png'), dpi=300)
-
-# Plot number of trials to trained per lab
-f = plt.figure()
-grid = plt.GridSpec(1, 3, wspace=0.4, hspace=0.3)
-sns.set_palette(lab_colors)
-
-ax1 = plt.subplot(grid[0, :2])
-sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time, ax=ax1)
-axbox = sns.boxplot(y='trials', x='lab_number', data=training_time, showfliers=False, ax=ax1)
-for patch in axbox.artists:
-    r, g, b, a = patch.get_facecolor()
-    patch.set_facecolor((r, g, b, 0))
-ax1.set(ylabel='Trials to trained', xlabel='')
-ax1.get_legend().set_visible(False)
+sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all, ax=ax2)
+axbox = sns.boxplot(y='trials', x='lab_number', data=training_time_all,
+                    color='white', showfliers=False, ax=ax2)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax2.set(ylabel='Trials to trained', xlabel='', ylim=[0, 50000])
+ax2.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-
-ax2 = plt.subplot(grid[0, 2], sharey=ax1)
-sns.violinplot(y='trials', x='lab_number',
-               data=training_time_all[training_time_all['lab_number'] == 'All'],
-               inner=None, color='gray', ax=ax2)
-sns.swarmplot(y='trials', x='lab_number',
-              data=training_time_all[training_time_all['lab_number'] == 'All'],
-              color='white', edgecolor='gray', ax=ax2)
-ax2.set(ylabel='', xlabel='', ylim=[-500, 50000])
-ax2.get_yaxis().set_visible(False)
-ax2.set_frame_on(False)
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
 plt.tight_layout(pad=2)
 seaborn_style()
 
-plt.savefig(join(fig_path, 'figure2d_training_time_trials.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure2d_training_time_trials.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2d_time_to_trained.pdf'), dpi=300)
+plt.savefig(join(fig_path, 'figure2d_time_to_trained.png'), dpi=300)
 
 # Get stats in text
 # Interquartile range per lab

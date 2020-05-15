@@ -38,6 +38,8 @@ behav = behav[behav['n_trials_date'] > 100]
 # convolve performance over 3 days
 for i, nickname in enumerate(behav['subject_nickname'].unique()):
     perf = behav.loc[behav['subject_nickname'] == nickname, 'performance_easy'].values
+    perf_conv = np.convolve(perf, np.ones((3,))/3, mode='valid')
+    # perf_conv = np.append(perf_conv, [np.nan, np.nan])
     perf_conv = medfilt(perf, kernel_size=3)
     behav.loc[behav['subject_nickname'] == nickname, 'performance_easy'] = perf_conv
 

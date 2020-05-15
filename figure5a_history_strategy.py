@@ -171,62 +171,42 @@ history_shift = history_shift.merge(future_shift, on=['subject_nickname', 'insti
 history_shift['post_correct_corr'] = history_shift['post_correct'] - history_shift['pre_correct']
 history_shift['post_error_corr'] = history_shift['post_error'] - history_shift['pre_error']
 
+# markers; only for those subjects with all 4 conditions
+num_dp = history_shift.groupby(['subject_nickname'])['post_error'].count().reset_index()
+sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
+
 # ================================= #
 # STRATEGY SPACE
 # ================================= #
 
 plt.close('all')
-fig, ax = plt.subplots(1, 2, figsize=[8, 3.5])
-sns.lineplot(x='post_correct', y='post_error',
-             units='subject_nickname', estimator=None, hue='institution_code', alpha=0.3,
-             palette=pal, data=history_shift, ax=ax[0], legend=False)
-# markers; only for those subjects with all 4 conditions
-num_dp = history_shift.groupby(['subject_nickname'])['post_error'].count().reset_index()
-sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
-sns.lineplot(x='post_correct', y='post_error',
-             units='subject_nickname', estimator=None, hue='institution_code', palette=pal,
-             alpha=0.5, legend=False, data=history_shift[history_shift['subject_nickname'].isin(sjs)],
-             ax=ax[0], style='task', markers={'traini': 'o', 'biased': '^'}, markersize=4)
-# add black line for the group
-sns.lineplot(x='post_correct', y='post_error', legend=False, color='k', ci=None,
-             data=history_shift[history_shift['subject_nickname'].isin(sjs)].groupby(
-                 ['task']).mean().reset_index(), ax=ax[0])
-sns.lineplot(x='post_correct', y='post_error', legend=False, color='k', ci=None,
-             data=history_shift[history_shift['subject_nickname'].isin(sjs)].groupby(
-                 ['task']).mean().reset_index(),
-             ax=ax[0], style='task', markers={'traini': 'o', 'biased': '^'}, markersize=6)
-ax[0].set_xlabel("\u0394 Rightward choices \nafter correct (%)")
-ax[0].set_ylabel("\u0394 Rightward choices \nafter error (%)")
+fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
+for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Biased task'], axes):
 
-ax[0].set_title('Uncorrected')
-ax[0].set(xticks=[-20, 0, 20, 40, 60], yticks=[-20, 0, 20, 40, 60])
-ax[0].axhline(linestyle=':', color='darkgrey')
-ax[0].axvline(linestyle=':', color='darkgrey')
+    sns.lineplot(x='post_correct_corr', y='post_error_corr',
+                 units='subject_nickname', estimator=None, color='grey', alpha=0.3,
+                 data=history_shift[(history_shift.task == task)], marker='.',
+                 ax=ax, legend=False, zorder=-100)
 
+    #### REPEATE BUT WITH CORRECTION
+    for i, lab in enumerate(history_shift['institution_code'].unique()):
+        ax.errorbar(history_shift[(history_shift['task'] == task)
+                                  & (history_shift['institution_code'] == lab)]['post_correct_corr'].mean(),
+                    history_shift[(history_shift['task'] == task)
+                                  & (history_shift['institution_code'] == lab)]['post_error_corr'].mean(),
+                     xerr=history_shift[(history_shift['task'] == task)
+                                  & (history_shift['institution_code'] == lab)]['post_correct_corr'].sem(),
+                     yerr=history_shift[(history_shift['task'] == task)
+                                  & (history_shift['institution_code'] == lab)]['post_error_corr'].mean(),
+                     fmt='.', color=pal[i])
 
-#### REPEATE BUT WITH CORRECTION
-sns.lineplot(x='post_correct_corr', y='post_error_corr',
-             units='subject_nickname', estimator=None, hue='institution_code', alpha=0.3,
-             palette=pal, data=history_shift, ax=ax[1], legend=False)
-sns.lineplot(x='post_correct_corr', y='post_error_corr',
-             units='subject_nickname', estimator=None, hue='institution_code', palette=pal,
-             alpha=0.5, legend=False, data=history_shift[history_shift['subject_nickname'].isin(sjs)],
-             ax=ax[1], style='task', markers={'traini': 'o', 'biased': '^'}, markersize=4)
-# add black line for the group
-sns.lineplot(x='post_correct_corr', y='post_error_corr', legend=False, color='k', ci=None,
-             data=history_shift[history_shift['subject_nickname'].isin(sjs)].groupby(
-                 ['task']).mean().reset_index(), ax=ax[1])
-sns.lineplot(x='post_correct_corr', y='post_error_corr', legend=False, color='k', ci=None,
-             data=history_shift[history_shift['subject_nickname'].isin(sjs)].groupby(
-                 ['task']).mean().reset_index(),
-             ax=ax[1], style='task', markers={'traini': 'o', 'biased': '^'}, markersize=6)
-ax[1].set_xlabel("\u0394 Rightward choices \nafter correct (%)")
-ax[1].set_ylabel("\u0394 Rightward choices \nafter error (%)")
-
-ax[1].set_title('Corrected')
-ax[1].set(xticks=[-20, 0, 20, 40, 60], yticks=[-20, 0, 20, 40, 60])
-ax[1].axhline(linestyle=':', color='darkgrey')
-ax[1].axvline(linestyle=':', color='darkgrey')
+    ax.set_xlabel("Choice updating (%) \nafter rewarded")
+    ax.set_ylabel("Choice updating (%) \nafter unrewarded (%)")
+    ax.set(xticks=[-20, 0, 20], yticks=[-20, 0, 20],
+           #xlim=[-21, 20], ylim=[-21, 20],
+           title=taskname)
+    ax.axhline(linestyle=':', color='darkgrey')
+    ax.axvline(linestyle=':', color='darkgrey')
 
 sns.despine(trim=True)
 fig.tight_layout()
@@ -234,7 +214,7 @@ fig.savefig(os.path.join(figpath, "figure5b_history_strategy.pdf"))
 fig.savefig(os.path.join(figpath, "figure5b_history_strategy.png"), dpi=600)
 plt.close("all")
 
-# ================================= #
+# %% =================================
 # do stats on this
 # ================================= #
 

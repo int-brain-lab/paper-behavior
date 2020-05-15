@@ -16,12 +16,16 @@ from ibl_pipeline.utils import psychofit as psy
 def fit_psychfunc(df):
     choicedat = df.groupby('signed_contrast').agg(
         {'choice': 'count', 'choice2': 'mean'}).reset_index()
-    pars, L = psy.mle_fit_psycho(choicedat.values.transpose(), P_model='erf_psycho_2gammas',
+    if len(choicedat) > 4: # need some minimum number of unique x-values
+        pars, L = psy.mle_fit_psycho(choicedat.values.transpose(), P_model='erf_psycho_2gammas',
                                  parstart=np.array(
                                      [choicedat['signed_contrast'].mean(), 20., 0.05, 0.05]),
                                  parmin=np.array(
                                      [choicedat['signed_contrast'].min(), 5, 0., 0.]),
                                  parmax=np.array([choicedat['signed_contrast'].max(), 100., 1, 1]))
+    else:
+        pars = [np.nan, np.nan, np.nan, np.nan]
+
     df2 = {'bias': pars[0], 'threshold': pars[1],
            'lapselow': pars[2], 'lapsehigh': pars[3]}
     df2 = pd.DataFrame(df2, index=[0])
@@ -206,7 +210,7 @@ def dj2pandas(behav):
 
     behav['signed_contrast'] = (
         behav['trial_stim_contrast_right'] - behav['trial_stim_contrast_left']) * 100
-    behav['signed_contrast'] = behav.signed_contrast.astype(int)
+    # behav['signed_contrast'] = behav.signed_contrast.astype(int)
 
     behav['trial'] = behav.trial_id  # for psychfuncfit
     val_map = {'CCW': 1, 'No Go': 0, 'CW': -1}

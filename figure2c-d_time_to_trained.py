@@ -72,7 +72,8 @@ training_time_all = training_time.append(training_time_all)
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 sns.set_palette(lab_colors)
 
-sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time_no_all, ax=ax1)
+sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time_no_all,
+              palette=lab_colors, ax=ax1)
 axbox = sns.boxplot(y='sessions', x='lab_number', data=training_time_all,
                     color='white', showfliers=False, ax=ax1)
 axbox.artists[-1].set_edgecolor('black')
@@ -83,7 +84,8 @@ ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
-sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all, ax=ax2)
+sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all,
+              palette=lab_colors, ax=ax2)
 axbox = sns.boxplot(y='trials', x='lab_number', data=training_time_all,
                     color='white', showfliers=False, ax=ax2)
 axbox.artists[-1].set_edgecolor('black')

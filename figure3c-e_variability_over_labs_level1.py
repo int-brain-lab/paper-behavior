@@ -133,7 +133,8 @@ f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(20, 4))
 lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
-sns.swarmplot(y='perf_easy', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax1)
+sns.swarmplot(y='perf_easy', x='lab_number', data=learned_no_all, hue='lab_number',
+              palette=lab_colors, ax=ax1)
 axbox = sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, color='white',
                     showfliers=False, ax=ax1)
 ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
@@ -144,7 +145,8 @@ for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
     axbox.lines[j].set_color('black')
 ax1.get_legend().set_visible(False)
 
-sns.swarmplot(y='threshold', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax2)
+sns.swarmplot(y='threshold', x='lab_number', data=learned_no_all, hue='lab_number',
+              palette=lab_colors, ax=ax2)
 axbox = sns.boxplot(y='threshold', x='lab_number', data=learned_2, color='white',
                     showfliers=False, ax=ax2)
 ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 40], xlabel='')
@@ -155,7 +157,8 @@ for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
     axbox.lines[j].set_color('black')
 ax2.get_legend().set_visible(False)
 
-sns.swarmplot(y='bias', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax3)
+sns.swarmplot(y='bias', x='lab_number', data=learned_no_all, hue='lab_number',
+              palette=lab_colors, ax=ax3)
 axbox = sns.boxplot(y='bias', x='lab_number', data=learned_2, color='white', showfliers=False,
                     ax=ax3)
 ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
@@ -166,7 +169,8 @@ for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
     axbox.lines[j].set_color('black')
 ax3.get_legend().set_visible(False)
 
-sns.swarmplot(y='reaction_time', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax4)
+sns.swarmplot(y='reaction_time', x='lab_number', data=learned_no_all, hue='lab_number',
+              palette=lab_colors, ax=ax4)
 axbox = sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, color='white',
                     showfliers=False, ax=ax4)
 ax4.set(ylabel='Trial duration (ms)', ylim=[100, 10000], xlabel='', yscale='log')
@@ -177,7 +181,8 @@ for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
     axbox.lines[j].set_color('black')
 ax4.get_legend().set_visible(False)
 
-sns.swarmplot(y='n_trials', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax5)
+sns.swarmplot(y='n_trials', x='lab_number', data=learned_no_all, hue='lab_number',
+              palette=lab_colors, ax=ax5)
 axbox = sns.boxplot(y='n_trials', x='lab_number', data=learned_2, color='white',
                     showfliers=False, ax=ax5)
 ax5.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')

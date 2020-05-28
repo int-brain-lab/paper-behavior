@@ -215,7 +215,7 @@ plot_psychometric(rsimulation['signed_contrast'],
 ax[0].lines[0].set_color("w")
 ax[0].lines[1].set_color("w")
 ax[0].lines[2].set_color("w")
-
+   
 
 plot_psychometric(tsimulation['signed_contrast'], 
                       tsimulation['choice_right'], 'k', point = True, mark = 'o', al = 0.5)  

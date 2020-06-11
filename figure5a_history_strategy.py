@@ -180,9 +180,9 @@ sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
 # ================================= #
 
 
-which_plots = [['post_correct', 'post_error', 'History, uncorrected'],
+which_plots = [['post_correct', 'post_error', 'History strategy, uncorrected'],
                ['pre_correct', 'pre_error', 'Future, uncorrected'],
-               ['post_correct_corr', 'post_error_corr', 'History, corrected']]
+               ['post_correct_corr', 'post_error_corr', 'History strategy, corrected']]
 
 for wi, w in enumerate(which_plots):
     plt.close('all')

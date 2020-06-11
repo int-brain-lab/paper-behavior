@@ -179,54 +179,73 @@ sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
 # STRATEGY SPACE
 # ================================= #
 
-plt.close('all')
-fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
-for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Biased task'], axes):
 
-    sns.lineplot(x='post_correct_corr', y='post_error_corr',
-                 units='subject_nickname', estimator=None, color='grey', alpha=0.3,
-                 data=history_shift[(history_shift.task == task)], marker='.',
-                 ax=ax, legend=False, zorder=-100)
+which_plots = [['post_correct', 'post_error', 'History, uncorrected'],
+               ['pre_correct', 'pre_error', 'Future, uncorrected'],
+               ['post_correct_corr', 'post_error_corr', 'History, corrected']]
 
-    # one errorbar per lab
-    for i, lab in enumerate(history_shift['institution_code'].unique()):
-        ax.errorbar(history_shift[(history_shift['task'] == task)
-                                  & (history_shift['institution_code'] == lab)]['post_correct_corr'].mean(),
-                    history_shift[(history_shift['task'] == task)
-                                  & (history_shift['institution_code'] == lab)]['post_error_corr'].mean(),
-                     xerr=history_shift[(history_shift['task'] == task)
-                                  & (history_shift['institution_code'] == lab)]['post_correct_corr'].sem(),
-                     yerr=history_shift[(history_shift['task'] == task)
-                                  & (history_shift['institution_code'] == lab)]['post_error_corr'].mean(),
-                     fmt='.', color=pal[i])
+for wi, w in enumerate(which_plots):
+    plt.close('all')
+    fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
+    for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Full task'], axes):
 
-    # SHOW ARROW BETWEEN TWO TASKS
-    ax.arrow(history_shift[(history_shift['task'] == 'traini')]['post_correct_corr'].mean(),
-             history_shift[(history_shift['task'] == 'traini')]['post_error_corr'].mean(),
-             history_shift[(history_shift['task'] == 'biased')]['post_correct_corr'].mean() -
-             history_shift[(history_shift['task'] == 'traini')]['post_correct_corr'].mean(),
-             history_shift[(history_shift['task'] == 'biased')]['post_error_corr'].mean() -
-             history_shift[(history_shift['task'] == 'traini')]['post_error_corr'].mean(),
-             color='k', zorder=500, head_width=1)
+        # bivariate KDE
+        sns.kdeplot(data=history_shift[(history_shift.task == task)].dropna(subset=[w[0], w[1]])[w[0]],
+                    data2=history_shift[(history_shift.task == task)].dropna(subset=[w[0], w[1]])[w[1]],
+                    shade=True, shade_lowest=False, cmap='Greys',
+                    ax=ax)
 
-    ax.plot(history_shift[(history_shift['task'] == 'traini')]['post_correct_corr'].mean(),
-             history_shift[(history_shift['task'] == 'traini')]['post_error_corr'].mean(),
-            marker='o', mec='k', markersize=2,
-             color='k', zorder=500)
+        # individual points
+        sns.lineplot(x=w[0], y=w[1],
+                     units='subject_nickname', estimator=None, color='black', alpha=0.3,
+                     data=history_shift[(history_shift.task == task)], marker='o',
+                     ax=ax, legend=False, markersize=2)
 
-    ax.set_xlabel("Choice updating (%) \nafter rewarded")
-    ax.set_ylabel("Choice updating (%) \nafter unrewarded (%)")
-    ax.set(xticks=[-20, 0, 20], yticks=[-20, 0, 20],
-           #xlim=[-21, 20], ylim=[-21, 20],
-           title=taskname)
-    ax.axhline(linestyle=':', color='darkgrey')
-    ax.axvline(linestyle=':', color='darkgrey')
+        # one bigger dot per lab (in color)
+        mean_perlab = history_shift.drop('subject_nickname', 1).\
+            groupby(['task', 'institution_code']).mean().reset_index()
+        sns.lineplot(x=w[0], y=w[1],
+                     units='institution_code', estimator=None,  markersize=3, alpha=0.6,
+                     data=mean_perlab[(mean_perlab.task == task)], marker='o', palette=pal,
+                     hue_order=col_names[:-1], hue='institution_code',
+                     ax=ax, legend=False)
 
-sns.despine(trim=True)
-fig.tight_layout()
-fig.savefig(os.path.join(figpath, "figure5b_history_strategy.pdf"))
-fig.savefig(os.path.join(figpath, "figure5b_history_strategy.png"), dpi=600)
-plt.close("all")
+        # SHOW ARROW BETWEEN TWO TASKS
+        ax.arrow(history_shift[(history_shift['task'] == 'traini')][w[0]].mean(),
+                 history_shift[(history_shift['task'] == 'traini')][w[1]].mean(),
+                 history_shift[(history_shift['task'] == 'biased')][w[0]].mean() -
+                 history_shift[(history_shift['task'] == 'traini')][w[0]].mean(),
+                 history_shift[(history_shift['task'] == 'biased')][w[1]].mean() -
+                 history_shift[(history_shift['task'] == 'traini')][w[1]].mean(),
+                 color='crimson', zorder=500, head_width=2)
+
+        ax.plot(history_shift[(history_shift['task'] == 'traini')][w[0]].mean(),
+                 history_shift[(history_shift['task'] == 'traini')][w[1]].mean(),
+                 marker='o', mec='crimson', markersize=2,
+                 color='crimson', zorder=500)
+
+        ax.set_xlabel("Choice updating (%) \nafter rewarded")
+        ax.set_ylabel("Choice updating (%) \nafter unrewarded")
+
+        ax.axhline(linestyle='-', color='black', linewidth=0.5, zorder=-100)
+        ax.axvline(linestyle='-', color='black', linewidth=0.5, zorder=-100)
+        ax.set_title(taskname)
+        ax.set_aspect('equal', 'box')
+        ax.set_xticks(ax.get_yticks())
+
+        # set the limits to be tight
+        ax_min = min([min(history_shift[w[0]]), min(history_shift[w[1]])]) - 2
+        ax_max = max([max(history_shift[w[0]]), max(history_shift[w[1]])]) + 2
+        ax.set(xlim=[ax_min, ax_max], ylim=[ax_min, ax_max])
+
+    sns.despine(trim=True)
+    fig.suptitle(w[2] + '\n')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    fig.savefig(os.path.join(figpath, "figure5b_history_strategy_%d.pdf" % wi))
+    fig.savefig(os.path.join(figpath, "figure5b_history_strategy_%d.png" % wi), dpi=600)
+    plt.close("all")
+    print("figure5b_history_strategy_%d.pdf" % wi)
+
 
 # %% =================================
 # do stats on this

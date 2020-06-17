@@ -13,7 +13,8 @@ import numpy as np
 from os.path import join
 import seaborn as sns
 from ibl_pipeline import subject, reference, acquisition
-from paper_behavior_functions import seaborn_style, institution_map, group_colors, figpath
+from paper_behavior_functions import (seaborn_style, institution_map,
+                                      group_colors, figpath, CUTOFF_DATE)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from lifelines import KaplanMeierFitter
 
@@ -28,7 +29,7 @@ still_training = all_mice.aggr(behavior_analysis.SessionTrainingStatus,
                                session_start_time='max(session_start_time)') \
                                     * behavior_analysis.SessionTrainingStatus - subject.Death \
                                     & 'training_status = "in_training"' \
-                                    & 'session_start_time > "2020-03-01"'
+                                    & 'session_start_time > "%s"' % CUTOFF_DATE
 use_subjects = mice_started_training - still_training
 
 # Get training status and training time in number of sessions and trials

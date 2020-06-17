@@ -45,7 +45,7 @@ def get_weights(mousename, labname):
 def get_water(mousename, labname):
 
     wei = (action.WaterAdministration * subject.Subject * subject.SubjectLab &
-           'subject_nickname="%s"'%mousename & 'lab_name="%s"'%labname).fetch(as_dict=True)
+           'subject_nickname="%s"' % mousename & 'lab_name="%s"' % labname).fetch(as_dict=True)
     wei = pd.DataFrame(wei)
     if not wei.empty:
         wei.rename(columns={'administration_time': 'date_time', 'watertype_name': 'water_type'}, inplace=True)

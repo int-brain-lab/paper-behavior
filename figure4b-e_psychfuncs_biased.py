@@ -14,7 +14,7 @@ import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
-                                      query_sessions_around_criterion)
+                                      query_sessions_around_criterion, EXAMPLE_MOUSE)
 # import wrappers etc
 from ibl_pipeline import reference, subject, acquisition, behavior
 from ibl_pipeline.utils import psychofit as psy
@@ -36,7 +36,7 @@ institution_map, col_names = institution_map()
 # ================================= #
 
 b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
-     & 'subject_nickname="KS014"' & 'task_protocol LIKE "%biased%"')
+     & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
 
 bdat = b.fetch(order_by='session_start_time, trial_id',
                format='frame').reset_index()
@@ -158,7 +158,7 @@ for axidx, ax in enumerate(fig.axes.flat[0:-1]):
                  color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
-tmpdat = behav3[behav3['subject_nickname'].str.contains('KS014')]
+tmpdat = behav3[behav3['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_chronometric(tmpdat.signed_contrast, tmpdat.biasshift, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
 

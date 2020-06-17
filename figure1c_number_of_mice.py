@@ -24,7 +24,7 @@ print('1. Total # of mice in brainwide project: %d' % len(all_mice))
 # ==================================================
 
 still_training = all_mice * subject.Subject.aggr(behavior_analysis.SessionTrainingStatus,
-                                        session_start_time='max(session_start_time)')\
+                                        session_start_time='max(session_start_time)') \
                    * behavior_analysis.SessionTrainingStatus - subject.Death \
                     & 'training_status = "in_training"' & 'session_start_time > "%s"' % CUTOFF_DATE
 

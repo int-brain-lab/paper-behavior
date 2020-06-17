@@ -13,7 +13,7 @@ import numpy as np
 from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath)
+                                      institution_map, group_colors, figpath, EXAMPLE_MOUSE)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference, acquisition
 import statsmodels.api as sm
@@ -28,7 +28,6 @@ from scipy import stats
 ##############################################################################
 
 # Set properties of the analysis '2019-09-20 10:15:34'
-example= 'KS014'
 bsession= '2019-08-31 11:59:37'
 tsession= '2019-08-23 11:00:32'
 correction = False
@@ -86,7 +85,7 @@ behav_merged['task'] = behav_merged['task_protocol'].str[14:20].copy()
 behav = behav_merged.loc[behav_merged['task']=='biased'].copy() 
 behav = behav.reset_index()
 
-behav, example_model = run_glm(behav, example, correction = correction, 
+behav, example_model = run_glm(behav, EXAMPLE_MOUSE, correction = correction,
                                bias = True, cross_validation  = False)
 
         
@@ -100,7 +99,7 @@ tbehav.drop(tbehav['probabilityLeft'][~tbehav['probabilityLeft'].isin([50])].ind
         inplace=True)
 tbehav = tbehav.reset_index()
 
-tbehav , example_model_t = run_glm(tbehav, example, correction = correction, 
+tbehav , example_model_t = run_glm(tbehav, EXAMPLE_MOUSE, correction = correction,
                                    bias = False, cross_validation  = False)
 
 
@@ -155,14 +154,14 @@ cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 # Data for bias session
 
 b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
-     & 'subject_nickname="KS014"' & 'task_protocol LIKE "%biased%"')
+     & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
 
 bdat = b.fetch(order_by='session_start_time, trial_id',
                format='frame').reset_index()
 
 ebehav = dj2pandas(bdat)
 ebehav = ebehav.reset_index()
-bebehav = ebehav.loc[ebehav['subject_nickname'] ==  example]
+bebehav = ebehav.loc[ebehav['subject_nickname'] ==  EXAMPLE_MOUSE]
 bebehav_model_data, index = data_2_X_test (bebehav, correction = correction, bias = True)
 bebehav.loc[bebehav['index'].isin(index) ,'simulation_prob'] = \
     example_model.predict(bebehav_model_data).to_numpy()# Run simulation
@@ -186,7 +185,7 @@ bdat1 = b2.fetch(order_by='institution_short, subject_nickname, session_start_ti
 
 tbehav = dj2pandas(bdat1)
 tbehav = tbehav.reset_index()
-tebehav = tbehav.loc[tbehav['subject_nickname'] ==  example]
+tebehav = tbehav.loc[tbehav['subject_nickname'] ==  EXAMPLE_MOUSE]
 tebehav_model_data, index = data_2_X_test (tebehav, correction = correction, bias = False)
 tebehav.loc[tebehav['index'].isin(index) ,'simulation_prob'] = \
     example_model_t.predict(tebehav_model_data).to_numpy()# Run simulation
@@ -196,12 +195,12 @@ tebehav.loc[tebehav['index'].isin(index) ,'simulation_prob'] = \
 # Run simulation
 simulation_size = 1000
 tsimulation = tebehav[tebehav['simulation_prob'].notnull()].copy()
-tsimulation = tsimulation[tsimulation['subject_nickname'] == example].copy()
+tsimulation = tsimulation[tsimulation['subject_nickname'] == EXAMPLE_MOUSE].copy()
 
 rsimulation = pd.concat([tsimulation]*simulation_size)
 rsimulation['simulation_run'] = np.random.binomial(1, p = rsimulation['simulation_prob'])
 bsimulation = bebehav[bebehav['simulation_prob'].notnull()].copy()
-bsimulation = bsimulation[bsimulation['subject_nickname'] == example].copy()
+bsimulation = bsimulation[bsimulation['subject_nickname'] == EXAMPLE_MOUSE].copy()
 brsimulation = pd.concat([bsimulation]*simulation_size)
 brsimulation['simulation_run'] = np.random.binomial(1, p = brsimulation['simulation_prob'])
 

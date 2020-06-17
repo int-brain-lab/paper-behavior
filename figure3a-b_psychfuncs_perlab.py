@@ -7,7 +7,7 @@ Psychometric functions of training mice, within and across labs
 import seaborn as sns
 import os
 import matplotlib.pyplot as plt
-from paper_behavior_functions import (figpath, seaborn_style, group_colors,
+from paper_behavior_functions import (figpath, seaborn_style, group_colors, EXAMPLE_MOUSE
                                       query_sessions_around_criterion, institution_map)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
@@ -63,7 +63,7 @@ for axidx, ax in enumerate(fig.axes.flat):
                  color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
-tmpdat = behav[behav['subject_nickname'].str.contains('KS014')]
+tmpdat = behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_psychometric(tmpdat.signed_contrast, tmpdat.choice_right, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
 fig.despine(trim=True)

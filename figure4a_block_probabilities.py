@@ -10,7 +10,7 @@ import pandas as pd
 import os
 import seaborn as sns
 import numpy as np
-from paper_behavior_functions import seaborn_style, figpath
+from paper_behavior_functions import seaborn_style, figpath, EXAMPLE_MOUSE
 from dj_tools import dj2pandas
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -50,7 +50,7 @@ plt.close('all')
 # EXAMPLE SESSION TIMECOURSE
 # ================================= #
 
-b = ((subject.Subject & 'subject_nickname="KS014"')
+b = ((subject.Subject & 'subject_nickname="%s"' % EXAMPLE_MOUSE)
      * behavior.TrialSet.Trial
      * (acquisition.Session & 'task_protocol LIKE "%biased%"'
         & 'session_start_time BETWEEN "2019-08-30" and "2019-08-31"'))

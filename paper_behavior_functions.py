@@ -16,6 +16,7 @@ from ibl_pipeline.analyses import behavior as behavior_analysis
 # from IPython import embed as shell  # for debugging
 
 # Some constants
+EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
 CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
 STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
 

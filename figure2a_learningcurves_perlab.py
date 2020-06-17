@@ -11,8 +11,8 @@ from scipy.signal import medfilt
 import os
 import seaborn as sns
 import matplotlib.pyplot as plt
-from paper_behavior_functions import (query_subjects, seaborn_style, figpath,
-                                      group_colors, institution_map, seaborn_style)
+from paper_behavior_functions import (query_subjects, figpath, group_colors,
+                                      institution_map, seaborn_style, EXAMPLE_MOUSE)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 
 # INITIALIZE A FEW THINGS
@@ -86,7 +86,7 @@ for axidx, ax in enumerate(fig.axes.flat):
 
 # overlay the example mouse
 sns.lineplot(ax=fig.axes[0], x='training_day', y='performance_easy', color='black',
-             data=behav[behav['subject_nickname'].str.contains('KS014')], legend=False)
+             data=behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)], legend=False)
 
 fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
 fig.despine(trim=True)

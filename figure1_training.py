@@ -15,6 +15,7 @@ import os
 import matplotlib as mpl
 
 # import wrappers etc
+from paper_behavior_functions import EXAMPLE_MOUSE
 from ibl_pipeline import subject, behavior, acquisition
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 endcriteria = dj.create_virtual_module(
@@ -41,11 +42,11 @@ figpath = figpath()   # noqa
 plt.close('all')
 
 # ================================= #
-# pick an example mouse
+# Get lab name of example mouse
 # ================================= #
 
-mouse = 'KS014'
-lab = 'cortexlab'
+lab = (subject.SubjectLab * subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) \
+      .fetch1('lab_name')
 
 # ==================================================
 # CONTRAST HEATMAP
@@ -54,7 +55,7 @@ lab = 'cortexlab'
 plt.close('all')
 xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
 fig, ax = plt.subplots(1, 2, figsize=(7, 2.5))
-behavior_plots.plot_contrast_heatmap(mouse, lab, ax[0], xlims)
+behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[1].axis('off')
 ax[0].set_ylabel('Signed contrast (%)')
 ax[0].set_xlabel('Training days')
@@ -68,7 +69,7 @@ fig.savefig(os.path.join(
 # PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
 # ================================================================== #
 
-b = ((subject.Subject & 'subject_nickname = "%s"' % mouse)
+b = ((subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE)
      * (subject.SubjectLab & 'lab_name="%s"' % lab)
      * behavioral_analyses.BehavioralSummaryByDate)
 behav = b.fetch(format='frame').reset_index()
@@ -82,7 +83,7 @@ for didx, day in enumerate(days):
     print(day)
     thisdate = behav[behav.training_day ==
                      day]['session_date'].dt.strftime('%Y-%m-%d').item()
-    b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
+    b = (subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) \
         * (subject.SubjectLab & 'lab_name="%s"' % lab) \
         * (acquisition.Session.proj(session_date='date(session_start_time)') &
            'session_date = "%s"' % thisdate) \

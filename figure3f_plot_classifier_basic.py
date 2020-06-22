@@ -51,8 +51,8 @@ plt.tight_layout()
 sns.despine(trim=True)
 
 if DECODER == 'forest':
-    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_basic.pdf' % DECODER))
-    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_basic.png' % DECODER), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3f_decoding_%s_basic.pdf' % DECODER))
+    plt.savefig(join(FIG_PATH, 'figure3f_decoding_%s_basic.png' % DECODER), dpi=300)
 else:
     plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_basic.pdf' % DECODER))
     plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_basic.png' % DECODER), dpi=300)

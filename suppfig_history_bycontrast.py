@@ -222,7 +222,7 @@ history_shift.previous_contrast.replace([100], [40], inplace=True)
 
 plt.close('all')
 fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
-for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Biased task'], axes):
+for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Full task'], axes):
     # # thin labels, per lab
     # sns.lineplot(data=history_shift[(history_shift.task == task)].groupby(['lab_name',
     #                                                                        'previous_contrast',
@@ -242,10 +242,10 @@ for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Biased task'
                  palette=sns.color_palette(["firebrick", "forestgreen"]),
                  zorder=100, ci=95)
     ax.axhline(color='grey', linestyle=':', zorder=-100)
-    ax.set(ylabel='Choice updating (%)\n($\Delta$ Rightward choice, corrected)',
+    ax.set(ylabel='Choice updating (%)',
               xlabel='Previous contrast (%)',
-              xticks=[0, 6, 12, 25, 40],
-              xticklabels=['0', '6', '12', '25', '100'],
+              xticks=[0, 6, 12.5, 25, 40],
+              xticklabels=['0', '6', '12.5', '25', '100'],
               title=taskname,
             ylim=[-20, 20])
 

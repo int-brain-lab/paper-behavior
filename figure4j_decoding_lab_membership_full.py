@@ -17,20 +17,16 @@ ITERATIONS:         Number of times to split the dataset in test and train and d
 METRICS:            List of strings indicating which behavioral metrics to include
                     during decoding of lab membership
 METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
-FIG_PATH:           String containing a path where to save the output figure
 
 Guido Meijer
 16 Jan 2020
 """
 
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
-import seaborn as sns
 from datetime import timedelta
-from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style, figpath,
-                                      institution_map)
+from paper_behavior_functions import query_sessions_around_criterion, institution_map
 from ibl_pipeline import subject, reference
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior
@@ -41,18 +37,16 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-DECODER = 'forest'           # forest, bayes or regression
+DECODER = 'regression'           # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
 METRICS = ['perf_easy', 'threshold', 'bias']
 METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'time_zone']
-FIG_PATH = figpath()
-SAVE_FIG = True
 
 
 # Decoding function with n-fold cross validation
-def decoding(resp, labels, clf, NUM_SPLITS):
-    kf = KFold(n_splits=NUM_SPLITS, shuffle=True)
+def decoding(resp, labels, clf, NUM_SPLITS, random_state):
+    kf = KFold(n_splits=NUM_SPLITS, shuffle=True, random_state=random_state)
     y_pred = np.array([])
     y_true = np.array([])
     for train_index, test_index in kf.split(resp):
@@ -127,13 +121,17 @@ learned = learned.sort_values('lab_number')
 # Initialize decoders
 print('\nDecoding of lab membership..')
 if DECODER == 'forest':
-    clf = RandomForestClassifier(n_estimators=100)
+    clf = RandomForestClassifier(n_estimators=100, random_state=424242)
 elif DECODER == 'bayes':
     clf = GaussianNB()
 elif DECODER == 'regression':
     clf = LogisticRegression(solver='liblinear', multi_class='auto')
 else:
     raise Exception('DECODER must be forest, bayes or regression')
+
+# Generate random states for each iteration with a fixed seed
+np.random.seed(424242)
+random_states = np.random.randint(10000, 99999, ITERATIONS)
 
 # Perform decoding of lab membership
 decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
@@ -146,85 +144,22 @@ for i in range(ITERATIONS):
         print('Iteration %d of %d' % (i+1, ITERATIONS))
     # Original dataset
     decoding_result.loc[i, 'original'], conf_matrix = decoding(
-            decoding_set, list(decod['lab_number']), clf, NUM_SPLITS)
+            decoding_set, list(decod['lab_number']), clf, NUM_SPLITS, random_states[i])
     decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
                                                   / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
                                                            list(
                                                               decod['lab_number'].sample(frac=1)),
-                                                           clf, NUM_SPLITS)[0]
+                                                           clf, NUM_SPLITS, random_states[i])[0]
     # Positive control dataset
     decoding_result.loc[i, 'control'], conf_matrix = decoding(
-            control_set, list(decod['lab_number']), clf, NUM_SPLITS)
+            control_set, list(decod['lab_number']), clf, NUM_SPLITS, random_states[i])
     decoding_result.loc[i, 'control_cm'] = (conf_matrix
                                             / conf_matrix.sum(axis=1)[:, np.newaxis])
     decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
                                                           list(decod['lab_number'].sample(frac=1)),
-                                                          clf, NUM_SPLITS)[0]
+                                                          clf, NUM_SPLITS, random_states[i])[0]
 
-# Calculate if decoder performs above chance
-chance_level = decoding_result['original_shuffled'].mean()
-significance = np.percentile(decoding_result['original'], 2.5)
-sig_control = np.percentile(decoding_result['control'], 0.001)
-if chance_level > significance:
-    print('Classification performance not significanlty above chance')
-else:
-    print('Above chance classification performance!')
-
-# Plot decoding results
-f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
-sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control']], axis=1),
-               color=[0.6, 0.6, 0.6], ax=ax1)
-ax1.plot([-1, 2], [np.mean(decoding_result['original_shuffled']),
-                   np.mean(decoding_result['original_shuffled'])], 'r--')
-ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
-        xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(incl. timezone)'])
-# ax1.text(0, 0.65, 'n.s.', fontsize=12, ha='center')
-# ax1.text(1, 0.65, '***', fontsize=15, ha='center', va='center')
-plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.04, 'Chance level', color='r')
-# plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.tight_layout(pad=2)
-seaborn_style()
-
-if (DECODER == 'forest') & (SAVE_FIG is True):
-    plt.savefig(join(FIG_PATH, 'fig3_decoding_%s_level2.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'fig3_decoding_%s_level2.png' % DECODER), dpi=300)
-elif SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_level2.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_level2.png' % DECODER), dpi=300)
-
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
-sns.heatmap(data=decoding_result['confusion_matrix'].mean())
-ax1.plot([0, 7], [0, 7], '--w')
-ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        ylim=[0, len(np.unique(list(decod['lab'])))],
-        xlim=[0, len(np.unique(list(decod['lab'])))],
-        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab')
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
-plt.gca().invert_yaxis()
-plt.tight_layout(pad=2)
-
-if SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_level2.png' % DECODER), dpi=300)
-
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
-sns.heatmap(data=decoding_result['control_cm'].mean())
-ax1.plot([0, 7], [0, 7], '--w')
-ax1.set(xticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        yticklabels=np.arange(1, len(np.unique(list(decod['lab'])))+1),
-        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab',
-        ylim=[0, len(np.unique(list(decod['lab'])))],
-        xlim=[0, len(np.unique(list(decod['lab'])))])
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
-plt.gca().invert_yaxis()
-plt.tight_layout(pad=2)
-
-if SAVE_FIG is True:
-    plt.savefig(join(FIG_PATH,
-                     'suppfig3_control_confusion_matrix_%s_level2.pdf' % DECODER), dpi=300)
-    plt.savefig(join(FIG_PATH,
-                     'suppfig3_control_confusion_matrix_%s_level2.png' % DECODER), dpi=300)
+# Save to csv
+decoding_result.to_pickle(join('classification_results',
+                               'classification_results_full_%s.pkl' % DECODER))

@@ -15,6 +15,14 @@ import datajoint as dj
 from ibl_pipeline.analyses import behavior as behavior_analysis
 # from IPython import embed as shell  # for debugging
 
+# Some constants
+EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
+CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
+STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
+
+# LAYOUT
+FIGURE_HEIGHT = 2 # inch
+FIGURE_WIDTH = 8 # inch
 
 def group_colors():
     return sns.color_palette("Dark2", 7)
@@ -32,7 +40,18 @@ def seaborn_style():
     """
     Set seaborn style for plotting figures
     """
-    sns.set(style="ticks", context="paper", font_scale=1.4)
+    sns.set(style="ticks", context="paper",
+            font="Helvetica",
+            rc={"font.size": 9,
+                "axes.titlesize": 9,
+                "axes.labelsize": 9,
+                "lines.linewidth": 1,
+                "xtick.labelsize": 7,
+                "ytick.labelsize": 7,
+                "savefig.transparent":True,
+                "xtick.major.size":2.5,
+                "ytick.major.size":2.5,
+                })
     sns.despine(trim=True)
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42
@@ -93,21 +112,18 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
         ids = np.load('uuids_trained1.npy', allow_pickle=True)
         subj_query = subj_query & [{'subject_uuid': u_id} for u_id in ids]
 
-    # Select subjects that reached trained_1a criterium before November 30th
+    # Select subjects that reached trained_1a criterion before cutoff date
     if as_dataframe is True:
-        # subjects = (
-        #     subj_query & 'date_trained < "2019-11-30"').fetch(format='frame')
         subjects = (
-            subj_query & 'date_trained <= "2020-03-23"').fetch(format='frame')
+            subj_query & 'date_trained <= "%s"' % CUTOFF_DATE).fetch(format='frame')
         subjects = subjects.sort_values(by=['lab_name']).reset_index()
     else:
-        # subjects = (subj_query & 'date_trained < "2019-11-30"')
-        subjects = (subj_query & 'date_trained <= "2020-03-23"')
+        subjects = (subj_query & 'date_trained <= "%s"' % CUTOFF_DATE)
     return subjects
 
 
 def query_sessions(task='all', stable=False, as_dataframe=False,
-                   force_30nov=False, criterion='biased'):
+                   force_cutoff=False, criterion='biased'):
     """
     Query all sessions for analysis of behavioral data
 
@@ -116,14 +132,14 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
     task:            string indicating sessions of which task to return, can be trianing or biased
                      default is all
     stable:          boolean if True only return sessions with stable hardware, which means
-                     sessions after July 10, 2019 (default is False)
+                     sessions after particular date (default is False)
     as_dataframe:    boolean if True returns a pandas dataframe (default is False)
-    force_30nov:     whether the animal had to reach the criterion by the 30th of Nov. Only
+    force_cutoff:    whether the animal had to reach the criterion by the 30th of Nov. Only
                      applies to biased and ready for ephys criterion
     """
 
     # Query sessions
-    if force_30nov is True:
+    if force_cutoff is True:
         use_subjects = query_subjects(criterion=criterion).proj('subject_uuid')
     else:
         use_subjects = query_subjects().proj('subject_uuid')
@@ -151,11 +167,11 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
         raise Exception('task must be all, training or biased')
 
     # Only use sessions up until the end of December
-    sessions = sessions & 'date(session_start_time) <= "2020-03-23"'
+    sessions = sessions & 'date(session_start_time) <= "%s"' % CUTOFF_DATE
 
     # If required only output sessions with stable hardware
     if stable is True:
-        sessions = sessions & 'date(session_start_time) > "2019-06-10"'
+        sessions = sessions & 'date(session_start_time) > "%s"' % STABLE_HW_DATE
 
     # Transform into pandas Dataframe if requested
     if as_dataframe is True:
@@ -167,7 +183,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
 
 
 def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0],
-                                    as_dataframe=False, force_30nov=False):
+                                    as_dataframe=False, force_cutoff=False):
     """
     Query all sessions for analysis of behavioral data
 
@@ -187,12 +203,12 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     days:                   The training days around the criterion day. Can be used in conjunction
                             with tables that have session_date as primary key (such as
                             behavior_analysis.BehavioralSummaryByDate)
-    force_30nov:            whether the animal had to reach the criterion by the 30th of Nov. Only
+    force_cutoff:           whether the animal had to reach the criterion by the 30th of Nov. Only
                             applies to biased and ready for ephys criterion
     """
 
     # Query all included subjects
-    if force_30nov is True:
+    if force_cutoff is True:
         use_subjects = query_subjects(criterion=criterion).proj('subject_uuid')
     else:
         use_subjects = query_subjects().proj('subject_uuid')

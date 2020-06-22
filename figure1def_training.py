@@ -15,6 +15,7 @@ import os
 import matplotlib as mpl
 
 # import wrappers etc
+from paper_behavior_functions import EXAMPLE_MOUSE
 from ibl_pipeline import subject, behavior, acquisition
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 endcriteria = dj.create_virtual_module(
@@ -30,7 +31,8 @@ endcriteria = dj.create_virtual_module(
 # this only works if conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/ has been added to iblenv
 import load_mouse_data_datajoint, behavior_plots
 import dj_tools
-from paper_behavior_functions import seaborn_style, figpath
+from paper_behavior_functions import seaborn_style, figpath, \
+    FIGURE_HEIGHT, FIGURE_WIDTH
 
 # ================================= #
 # INITIALIZE A FEW THINGS
@@ -38,14 +40,15 @@ from paper_behavior_functions import seaborn_style, figpath
 
 seaborn_style()   # noqa
 figpath = figpath()   # noqa
-plt.close('all')
+plt.close('all' )
+# FIGURE_WIDTH = 6 # make narrower
 
 # ================================= #
-# pick an example mouse
+# Get lab name of example mouse
 # ================================= #
 
-mouse = 'KS014'
-lab = 'cortexlab'
+lab = (subject.SubjectLab * subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) \
+      .fetch1('lab_name')
 
 # ==================================================
 # CONTRAST HEATMAP
@@ -53,8 +56,8 @@ lab = 'cortexlab'
 
 plt.close('all')
 xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
-fig, ax = plt.subplots(1, 2, figsize=(7, 2.5))
-behavior_plots.plot_contrast_heatmap(mouse, lab, ax[0], xlims)
+fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/2, FIGURE_HEIGHT))
+behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[1].axis('off')
 ax[0].set_ylabel('Signed contrast (%)')
 ax[0].set_xlabel('Training days')
@@ -68,7 +71,7 @@ fig.savefig(os.path.join(
 # PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
 # ================================================================== #
 
-b = ((subject.Subject & 'subject_nickname = "%s"' % mouse)
+b = ((subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE)
      * (subject.SubjectLab & 'lab_name="%s"' % lab)
      * behavioral_analyses.BehavioralSummaryByDate)
 behav = b.fetch(format='frame').reset_index()
@@ -82,7 +85,7 @@ for didx, day in enumerate(days):
     print(day)
     thisdate = behav[behav.training_day ==
                      day]['session_date'].dt.strftime('%Y-%m-%d').item()
-    b = (subject.Subject & 'subject_nickname = "%s"' % mouse) \
+    b = (subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) \
         * (subject.SubjectLab & 'lab_name="%s"' % lab) \
         * (acquisition.Session.proj(session_date='date(session_start_time)') &
            'session_date = "%s"' % thisdate) \
@@ -96,10 +99,12 @@ for didx, day in enumerate(days):
         continue
 
     # PSYCHOMETRIC FUNCTIONS
-    fig, ax = plt.subplots(1, 1, figsize=(2.5, 2.5))
-    behavior_plots.plot_psychometric(behavtmp.rename(
-        columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
-    ax.set(xlabel="Signed contrast (%)", ylim=[0, 1])
+    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
+    dj_tools.plot_psychometric(behavtmp.signed_contrast,
+                               behavtmp.choice_right,
+                               behavtmp.trial_id,
+                               ax=ax, color='k')
+    ax.set(xlabel="Signed contrast (%)")
 
     if didx == 0:
         ax.set(ylabel="Rightward choices (%)")
@@ -119,7 +124,7 @@ for didx, day in enumerate(days):
     # ================================================================== #
 
     plt.close('all')
-    fig, ax = plt.subplots(1, 1, figsize=(3, 2.5))
+    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3.5, FIGURE_HEIGHT))
 
     # running median overlaid
     sns.lineplot(x='trial_start_time', y='rt', color='black', ci=None,

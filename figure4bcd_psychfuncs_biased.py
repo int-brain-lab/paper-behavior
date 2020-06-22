@@ -14,7 +14,8 @@ import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
-                                      query_sessions_around_criterion, EXAMPLE_MOUSE)
+                                      query_sessions_around_criterion, EXAMPLE_MOUSE,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH)
 # import wrappers etc
 from ibl_pipeline import reference, subject, acquisition, behavior
 from ibl_pipeline.utils import psychofit as psy
@@ -22,8 +23,6 @@ from ibl_pipeline.utils import psychofit as psy
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
-# sns.set(style="ticks", context="paper", font_scale=1.2)
-
 figpath = figpath()
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 sns.set_palette(cmap)  # palette for water types
@@ -45,11 +44,12 @@ assert not behav.empty
 
 fig = sns.FacetGrid(behav,
                     hue="probabilityLeft", palette=cmap,
-                    sharex=True, sharey=True, aspect=1)
+                    sharex=True, sharey=True,
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_uuid")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
-fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=12)
-fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12)
+fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
+fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=8)
 fig.despine(trim=True)
 fig.axes[0][0].set_title('Example mouse', fontweight='bold', color='k')
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_example.pdf"))
@@ -85,7 +85,7 @@ print(behav.describe())
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)
 behav['institution_name'] = behav.institution_code + \
-    ': ' + behav.n_mice.apply(str) + ' mice'
+    '\n' + behav.n_mice.apply(str) + ' mice'
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
@@ -94,17 +94,17 @@ behav['institution_name'] = behav.institution_code + \
 
 fig = sns.FacetGrid(behav,
                     hue="probabilityLeft", palette=cmap,
-                    sharex=True, sharey=True, aspect=1)
+                    sharex=True, sharey=True,
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname")
-fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
-fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-15, 0.8), color=cmap[0], fontsize=12,
-                arrowprops=dict(facecolor=cmap[0], shrink=0.05), ha='right')
-fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=12,
-                arrowprops=dict(facecolor=cmap[2], shrink=0.05))
+fig.set_axis_labels('Signed contrast (%)', ' ')
+fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
+fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=8)
 fig.despine(trim=True)
 fig.axes[0][0].set_title('All mice: n = %d' % behav.subject_nickname.nunique(),
                          fontweight='bold', color='k')
+fig.axes[0][0].set(yticklabels=" ")
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased.png"), dpi=600)
@@ -146,35 +146,45 @@ behav3['biasshift'] = behav3[20] - behav3[80]
 # %% PLOT
 
 # plot one curve for each animal, one panel per lab
+plt.close('all')
 fig = sns.FacetGrid(behav3,
-                    col="institution_code", col_wrap=4, col_order=col_names,
-                    sharex=True, sharey=True, aspect=1, hue="subject_nickname")
+                    col="institution_code", col_wrap=7, col_order=col_names[0:-1],
+                    sharex=True, sharey=True, hue="subject_nickname",
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/7)/FIGURE_HEIGHT)
 fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)
-fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choices (%)')
+fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choice (%)')
 fig.set_titles("{col_name}")
-for axidx, ax in enumerate(fig.axes.flat[0:-1]):
+for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(sorted(behav.institution_name.unique())[axidx],
-                 color=pal[axidx], fontweight='bold')
+                 color=pal[axidx])
 
 # overlay the example mouse
 tmpdat = behav3[behav3['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_chronometric(tmpdat.signed_contrast, tmpdat.biasshift, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
+fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choices (%)')
+fig.despine(trim=True)
+plt.tight_layout(w_pad=-5)
+fig.savefig(os.path.join(figpath, "figure4d_biasshift.pdf"))
+fig.savefig(os.path.join(figpath, "figure4d_biasshift.png"), dpi=300)
+plt.close('all')
 
-# ADD THE GROUP TO THE FIRST AXIS
-ax_group = fig.axes[-1]  # overwrite this empty plot
+
+# %% PLOT
+
+fig, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
 for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav3[behav3['institution_code'].str.contains(inst)]
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
-                      tmp_behav.subject_nickname, ax=ax_group, legend=False, color=pal[i])
-ax_group.set_title('All labs: %d mice' % behav.subject_nickname.nunique(),
-                   color='k', fontweight='bold')
-fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choices (%)')
-fig.despine(trim=True)
-fig.savefig(os.path.join(figpath, "figure4c-d_biasshift.pdf"))
-fig.savefig(os.path.join(figpath, "figure4c-d_biasshift.png"), dpi=300)
-plt.close('all')
+                      tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
+#ax1.set_title('All labs', color='k', fontweight='bold')
+ax1.set(xlabel='Signed contrast (%)', ylabel='\u0394 Rightward choice (%)',
+        yticks=[0, 10, 20, 30, 40])
+sns.despine(trim=True)
+plt.tight_layout()
+fig.savefig(os.path.join(figpath, "figure4c_biasshift_all_labs.pdf"))
+fig.savefig(os.path.join(figpath, "figure4c_biasshift_all_labs.png"), dpi=300)
 
 # ================================================================== #
 # Plot behavioral metrics per lab
@@ -212,5 +222,5 @@ ax1.set(ylabel='\u0394 Rightward choices (%)\n at 0% contrast',
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 seaborn_style()
-plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.pdf'))
-plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.png'), dpi=300)
+#plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.pdf'))
+#plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.png'), dpi=300)

@@ -31,7 +31,8 @@ endcriteria = dj.create_virtual_module(
 # this only works if conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/ has been added to iblenv
 import load_mouse_data_datajoint, behavior_plots
 import dj_tools
-from paper_behavior_functions import seaborn_style, figpath
+from paper_behavior_functions import seaborn_style, figpath, \
+    FIGURE_HEIGHT, FIGURE_WIDTH
 
 # ================================= #
 # INITIALIZE A FEW THINGS
@@ -39,7 +40,8 @@ from paper_behavior_functions import seaborn_style, figpath
 
 seaborn_style()   # noqa
 figpath = figpath()   # noqa
-plt.close('all')
+plt.close('all' )
+# FIGURE_WIDTH = 6 # make narrower
 
 # ================================= #
 # Get lab name of example mouse
@@ -54,7 +56,7 @@ lab = (subject.SubjectLab * subject.Subject & 'subject_nickname = "%s"' % EXAMPL
 
 plt.close('all')
 xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
-fig, ax = plt.subplots(1, 2, figsize=(7, 2.5))
+fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/2, FIGURE_HEIGHT))
 behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[1].axis('off')
 ax[0].set_ylabel('Signed contrast (%)')
@@ -97,10 +99,12 @@ for didx, day in enumerate(days):
         continue
 
     # PSYCHOMETRIC FUNCTIONS
-    fig, ax = plt.subplots(1, 1, figsize=(2.5, 2.5))
-    behavior_plots.plot_psychometric(behavtmp.rename(
-        columns={'signed_contrast': 'signedContrast'}), ax=ax, color='k')
-    ax.set(xlabel="Signed contrast (%)", ylim=[0, 1])
+    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
+    dj_tools.plot_psychometric(behavtmp.signed_contrast,
+                               behavtmp.choice_right,
+                               behavtmp.trial_id,
+                               ax=ax, color='k')
+    ax.set(xlabel="Signed contrast (%)")
 
     if didx == 0:
         ax.set(ylabel="Rightward choices (%)")
@@ -120,7 +124,7 @@ for didx, day in enumerate(days):
     # ================================================================== #
 
     plt.close('all')
-    fig, ax = plt.subplots(1, 1, figsize=(3, 2.5))
+    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3.5, FIGURE_HEIGHT))
 
     # running median overlaid
     sns.lineplot(x='trial_start_time', y='rt', color='black', ci=None,

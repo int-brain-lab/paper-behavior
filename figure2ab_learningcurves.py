@@ -12,7 +12,8 @@ import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (query_subjects, figpath, group_colors,
-                                      institution_map, seaborn_style, EXAMPLE_MOUSE)
+                                      institution_map, seaborn_style, EXAMPLE_MOUSE,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 
 # INITIALIZE A FEW THINGS
@@ -46,7 +47,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)
-behav['institution_name'] = behav.institution_code + ': ' + behav.n_mice.apply(str) + ' mice'
+behav['institution_name'] = behav.institution_code + '\n ' + behav.n_mice.apply(str) + ' mice'
 
 # make sure each mouse starts at 0
 for index, group in behav.groupby(['lab_name', 'subject_nickname']):
@@ -73,7 +74,8 @@ behav['performance_easy_trained'] = behav.performance_easy_trained * 100
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col="institution_code", col_wrap=7, col_order=col_names,
-                    sharex=True, sharey=True, aspect=0.7, hue="subject_uuid", xlim=[-1, 40])
+                    sharex=True, sharey=True, hue="subject_uuid", xlim=[-1, 40],
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/7)/FIGURE_HEIGHT)
 fig.map(sns.lineplot, "training_day",
         "performance_easy", color='gray', alpha=0.3)
 fig.map(sns.lineplot, "training_day",
@@ -88,22 +90,23 @@ for axidx, ax in enumerate(fig.axes.flat):
 sns.lineplot(ax=fig.axes[0], x='training_day', y='performance_easy', color='black',
              data=behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)], legend=False)
 
-fig.set_axis_labels('Training day', 'Performance (%) on easy trials')
+fig.set_axis_labels('Training day', 'Performance (%)\n on easy trials')
 fig.despine(trim=True)
+plt.tight_layout(w_pad=-1.8)
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.pdf"))
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=300)
 
 # Plot all labs
-fig, ax1 = plt.subplots(1, 1, figsize=(4, 4))
+fig, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal,
              ax=ax1, legend=False, data=behav, ci=None)
-ax1.set_title('All labs', color='k', fontweight='bold')
+ax1.set_title('Per lab')
 ax1.set(xlabel='Training day',
-        ylabel='Performance (%) on easy trials', xlim=[-1, 40])
-ax1.set(xticks=[0, 20, 40])
+        ylabel='Performance (%)\non easy trials', xlim=[-1, 40])
+ax1.set(xticks=[0, 10, 20, 30, 40])
 
 seaborn_style()
-plt.tight_layout(pad=2)
+plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure2b_learningcurves_all_labs.png"), dpi=300)

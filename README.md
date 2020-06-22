@@ -13,6 +13,9 @@ In an Anaconda prompt window:
 
 `pip install scikit_posthocs`
 
+`pip install lifelines`
+
+
 `conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/`
 
 ### Obtain a DataJoint account through IBL JupyterHub

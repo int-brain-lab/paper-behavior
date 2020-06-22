@@ -20,6 +20,9 @@ EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
 CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
 STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
 
+# LAYOUT
+FIGURE_HEIGHT = 2 # inch
+FIGURE_WIDTH = 8 # inch
 
 def group_colors():
     return sns.color_palette("Dark2", 7)
@@ -37,7 +40,18 @@ def seaborn_style():
     """
     Set seaborn style for plotting figures
     """
-    sns.set(style="ticks", context="paper", font_scale=1.4)
+    sns.set(style="ticks", context="paper",
+            font="Helvetica",
+            rc={"font.size": 9,
+                "axes.titlesize": 9,
+                "axes.labelsize": 9,
+                "lines.linewidth": 1,
+                "xtick.labelsize": 7,
+                "ytick.labelsize": 7,
+                "savefig.transparent":True,
+                "xtick.major.size":2.5,
+                "ytick.major.size":2.5,
+                })
     sns.despine(trim=True)
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42

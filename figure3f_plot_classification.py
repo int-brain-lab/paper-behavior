@@ -13,12 +13,13 @@ import numpy as np
 import seaborn as sns
 from os.path import join
 import matplotlib.pyplot as plt
-from paper_behavior_functions import seaborn_style, figpath
+from paper_behavior_functions import seaborn_style, figpath, FIGURE_WIDTH, FIGURE_HEIGHT
 
 # Which decoder to plot
 DECODER = 'regression'  # forest, bayes or regression
-TASK = 'full'  # full or basic
+TASK = 'basic'  # full or basic
 FIG_PATH = figpath()
+seaborn_style()
 
 # Load in results from csv file
 decoding_result = pd.read_pickle(join('classification_results',
@@ -33,28 +34,32 @@ if chance_level > significance:
 else:
     print('Above chance classification performance!')
 
+# %%
+
 # Plot
-f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
+f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
 sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control']], axis=1),
                color=[0.6, 0.6, 0.6], ax=ax1)
-ax1.plot([-1, 2], [chance_level, chance_level], 'r--')
-ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
-        xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(w. time zone)'])
+ax1.plot([-1, 2], [chance_level, chance_level], 'r--', zorder=-10)
+ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
+        xticklabels=['Decoding   \nof lab   ', '   Positive\n   control\n   (w. time zone)'])
 # ax1.text(0, 0.6, 'n.s.', fontsize=12, ha='center')
 # ax1.text(1, 0.6, '***', fontsize=15, ha='center', va='center')
-plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.04, 'Chance level', color='r')
+plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.1,
+         'Chance\nlevel', color='r', fontsize=6)
 # plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.tight_layout(pad=2)
-seaborn_style()
+plt.tight_layout()
+sns.despine(trim=True)
 
 if DECODER == 'forest':
-    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_%s.pdf' % (DECODER, TASK)), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_%s.pdf' % (DECODER, TASK)))
     plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_%s.png' % (DECODER, TASK)), dpi=300)
 else:
-    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_%s.pdf' % (DECODER, TASK)), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_%s.pdf' % (DECODER, TASK)))
     plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_%s.png' % (DECODER, TASK)), dpi=300)
 
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
+# %%
+f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
 n_labs = decoding_result['confusion_matrix'][0].shape[0]
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
 ax1.plot([0, 7], [0, 7], '--w')
@@ -64,12 +69,12 @@ ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
-plt.tight_layout(pad=2)
+plt.tight_layout()
 
-plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_%s.pdf' % (DECODER, TASK)), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_%s.pdf' % (DECODER, TASK)))
 plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_%s.png' % (DECODER, TASK)), dpi=300)
 
-f, ax1 = plt.subplots(1, 1, figsize=(4.25, 4))
+f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
 sns.heatmap(data=decoding_result['control_cm'].mean())
 ax1.plot([0, 7], [0, 7], '--w')
 ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
@@ -78,9 +83,7 @@ ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
-plt.tight_layout(pad=2)
-
-plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_%s.pdf' % (DECODER, TASK)),
-            dpi=300)
+plt.tight_layout()
+plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_%s.pdf' % (DECODER, TASK)))
 plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_%s.png' % (DECODER, TASK)),
             dpi=300)

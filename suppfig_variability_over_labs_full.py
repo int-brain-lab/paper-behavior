@@ -15,13 +15,15 @@ from scipy import stats
 from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath)
+                                      institution_map, group_colors, figpath,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
 import scikit_posthocs as sp
 
 # Settings
 fig_path = figpath()
+seaborn_style()
 
 # Query sessions
 sessions = query_sessions_around_criterion(criterion='biased', days_from_criterion=[0, 10])[0]

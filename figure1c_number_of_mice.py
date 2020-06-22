@@ -11,6 +11,7 @@ from ibl_pipeline import subject, acquisition, reference, behavior
 from ibl_pipeline.analyses import behavior as behavior_analysis
 import pandas as pd
 
+
 # =========================
 # 1. Query all mice on brainwide map project
 # =========================

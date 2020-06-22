@@ -10,7 +10,8 @@ import numpy as np
 from os.path import join
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors,
-                                      query_sessions_around_criterion, institution_map)
+                                      query_sessions_around_criterion, institution_map,
+                                      FIGURE_WIDTH, FIGURE_HEIGHT)
 from ibl_pipeline import reference, subject, behavior
 from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
@@ -23,6 +24,7 @@ from sklearn.metrics import f1_score, confusion_matrix
 # Initialize
 fig_path = figpath()
 pal = group_colors()
+seaborn_style()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 

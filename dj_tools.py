@@ -58,6 +58,13 @@ def plot_psychometric(x, y, subj, **kwargs):
     df2 = df2.groupby(['signed_contrast']).mean().reset_index()
     df2 = df2[['signed_contrast', 'ntrials', 'fraction']]
 
+    # only 'break' the x-axis and remove 50% contrast when 0% is present
+    # print(df2.signed_contrast.unique())
+    if 0. in df2.signed_contrast.values:
+        brokenXaxis = True
+    else:
+        brokenXaxis = False
+
     # fit psychfunc
     pars, L = psy.mle_fit_psycho(df2.transpose().values,  # extract the data from the df
                                  P_model='erf_psycho_2gammas',
@@ -67,21 +74,28 @@ def plot_psychometric(x, y, subj, **kwargs):
                                      [df2['signed_contrast'].min(), 5, 0., 0.]),
                                  parmax=np.array([df2['signed_contrast'].max(), 100., 1, 1]))
 
-    # plot psychfunc
-    g = sns.lineplot(np.arange(-29, 29),
-                     psy.erf_psycho_2gammas(pars, np.arange(-29, 29)), **kwargs)
+    if brokenXaxis:
+        # plot psychfunc
+        g = sns.lineplot(np.arange(-29, 29),
+                         psy.erf_psycho_2gammas(pars, np.arange(-29, 29)), **kwargs)
 
-    # plot psychfunc: -100, +100
-    sns.lineplot(np.arange(-37, -32),
-                 psy.erf_psycho_2gammas(pars, np.arange(-103, -98)), **kwargs)
-    sns.lineplot(np.arange(32, 37),
-                 psy.erf_psycho_2gammas(pars, np.arange(98, 103)), **kwargs)
+        # plot psychfunc: -100, +100
+        sns.lineplot(np.arange(-37, -32),
+                     psy.erf_psycho_2gammas(pars, np.arange(-103, -98)), **kwargs)
+        sns.lineplot(np.arange(32, 37),
+                     psy.erf_psycho_2gammas(pars, np.arange(98, 103)), **kwargs)
 
-    # now break the x-axis
-    # if 100 in df.signed_contrast.values and not 50 in
-    # df.signed_contrast.values:
-    df['signed_contrast'] = df['signed_contrast'].replace(-100, -35)
-    df['signed_contrast'] = df['signed_contrast'].replace(100, 35)
+        # now break the x-axis
+        # if 100 in df.signed_contrast.values and not 50 in
+        # df.signed_contrast.values:
+        df['signed_contrast'] = df['signed_contrast'].replace(-100, -35)
+        df['signed_contrast'] = df['signed_contrast'].replace(100, 35)
+
+    else:
+        # plot psychfunc
+        g = sns.lineplot(np.arange(-103, 103),
+                         psy.erf_psycho_2gammas(pars, np.arange(-103, 103)), **kwargs)
+
 
     df3 = df.groupby(['signed_contrast', 'subject_nickname']).agg(
         {'choice2': 'count', 'choice': 'mean'}).reset_index()
@@ -92,49 +106,18 @@ def plot_psychometric(x, y, subj, **kwargs):
                      linewidth=0, linestyle='None', mew=0.5,
                      marker='o', ci=68, **kwargs)
 
-    # # ADD TEXT WITH THE PSYCHOMETRIC FUNCTION PARAMETERS
-    # if len(df['subject_nickname'].unique()) == 1:
+    if brokenXaxis:
+        g.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
+        g.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
+                          size='small', rotation=60)
+        g.set_xlim([-40, 40])
+    else:
+        g.set_xticks([-100, -50, 0, 50, 100])
+        g.set_xticklabels(['-100', '-50', '0', '50', '100'],
+                          size='small', rotation=60)
+        g.set_xlim([-110, 110])
 
-    # 	try:
-    # 		# add text with parameters into the plot
-    # 		if kwargs['label'] == '50':
-    # 			ypos = 0.5
-    # 			# ADD PSYCHOMETRIC FUNCTION PARAMS
-    # 			plt.text(-35, ypos, r'$\mu\/ %.2f,\/ \sigma\/ %.2f,$'%(pars[0], pars[1]) + '\n' + r'$\gamma \/%.2f,\/ \lambda\/ %.2f$'%(pars[2], pars[3]),
-    # 			fontweight='normal', fontsize=5, color=kwargs['color'])
-
-    # 		elif kwargs['label'] == '20':
-    # 			ypos = 0.3
-    # 			# ADD PSYCHOMETRIC FUNCTION PARAMS
-    # 			plt.text(-35, ypos, r'$\mu\/ %.2f,\/ \sigma\/ %.2f,$'%(pars[0], pars[1]) + '\n' + r'$\gamma \/%.2f,\/ \lambda\/ %.2f$'%(pars[2], pars[3]),
-    # 			fontweight='normal', fontsize=5, color=kwargs['color'])
-
-    # 		elif kwargs['label'] == '80':
-    # 			ypos = 0.7
-    # 			# ADD PSYCHOMETRIC FUNCTION PARAMS
-    # 			plt.text(-35, ypos, r'$\mu\/ %.2f,\/ \sigma\/ %.2f,$'%(pars[0], pars[1]) + '\n' + r'$\gamma \/%.2f,\/ \lambda\/ %.2f$'%(pars[2], pars[3]),
-    # 			fontweight='normal', fontsize=5, color=kwargs['color'])
-    # 	except: # when there is no label
-    # 		# pass
-    # 		ypos = 0.5
-    # 		# ADD PSYCHOMETRIC FUNCTION PARAMS
-    # 		plt.text(-35, ypos, r'$\mu\/ %.2f,\/ \sigma\/ %.2f,$'%(pars[0], pars[1]) + '\n' + r'$\gamma \/%.2f,\/ \lambda\/ %.2f$'%(pars[2], pars[3]),
-    # 		fontweight='normal', fontsize=8, color=kwargs['color'])
-    # 		# plt.text(12, 0.1, '1 mouse', fontsize=10, color='k')
-
-    # # print the number of mice
-    # if df['subject_nickname'].nunique() == 1:
-    # 	# plt.text(12, 0.1, '1 mouse', fontsize=10, color='k')
-    #     pass
-    # else:
-    # 	plt.text(12, 0.1, '%d mice'%(df['subject_nickname'].nunique()), fontsize=10, color='k')
-
-    # if brokenXaxis:
-    g.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
-    g.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
-                      size='small', rotation=45)
-    g.set_xlim([-40, 40])
-    g.set_ylim([0, 1])
+    g.set_ylim([0, 1.02])
     g.set_yticks([0, 0.25, 0.5, 0.75, 1])
     g.set_yticklabels(['0', '25', '50', '75', '100'])
 
@@ -181,6 +164,7 @@ def plot_chronometric(x, y, subj, **kwargs):
         ax.set_xticks([0, 6, 12.5, 25, 35])
         ax.set_xticklabels(['0', '6.25', '12.5', '25', '100'],
                            size='small', rotation=45)
+
 
 
 def add_n(x, y, sj, **kwargs):

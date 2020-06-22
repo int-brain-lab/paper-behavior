@@ -13,13 +13,15 @@ import numpy as np
 from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
-                                      group_colors, figpath, EXAMPLE_MOUSE)
+                                      group_colors, figpath, EXAMPLE_MOUSE,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from scipy import stats
 import scikit_posthocs as sp
 
 # Settings
 fig_path = figpath()
+seaborn_style()
 
 # Query sessions
 use_subjects = query_subjects()
@@ -39,7 +41,10 @@ training_time['lab_number'] = training_time.lab.map(institution_map()[0])
 training_time = training_time.sort_values('lab_number')
 
 # Number of sessions to trained for example mouse
-example_training_time = training_time.ix[EXAMPLE_MOUSE]['sessions']
+example_training_time = \
+    training_time.reset_index()[training_time.reset_index()[
+        'subject_nickname'].str.match(EXAMPLE_MOUSE)]['sessions']
+# example_training_time = training_time.ix[EXAMPLE_MOUSE]['sessions']
 
 #  statistics
 # Test normality
@@ -72,11 +77,10 @@ training_time_all = training_time.copy()
 training_time_all['lab_number'] = 'All'
 training_time_all = training_time.append(training_time_all)
 
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+f, (ax1) = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.set_palette(lab_colors)
-
 sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time_no_all,
-              palette=lab_colors, ax=ax1)
+              palette=lab_colors, ax=ax1, marker='.')
 axbox = sns.boxplot(y='sessions', x='lab_number', data=training_time_all,
                     color='white', showfliers=False, ax=ax1)
 axbox.artists[-1].set_edgecolor('black')
@@ -87,22 +91,21 @@ ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 
-sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all,
-              palette=lab_colors, ax=ax2)
-axbox = sns.boxplot(y='trials', x='lab_number', data=training_time_all,
-                    color='white', showfliers=False, ax=ax2)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax2.set(ylabel='Trials to trained', xlabel='', ylim=[0, 50000])
-ax2.get_legend().set_visible(False)
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
+# sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all,
+#               palette=lab_colors, ax=ax2)
+# axbox = sns.boxplot(y='trials', x='lab_number', data=training_time_all,
+#                     color='white', showfliers=False, ax=ax2)
+# axbox.artists[-1].set_edgecolor('black')
+# for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+#     axbox.lines[j].set_color('black')
+# ax2.set(ylabel='Trials to trained', xlabel='', ylim=[0, 50000])
+# ax2.get_legend().set_visible(False)
+# # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
+# plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
 
-plt.tight_layout(pad=2)
-seaborn_style()
-
-plt.savefig(join(fig_path, 'figure2d_time_to_trained.pdf'), dpi=300)
+sns.despine(trim=True)
+plt.tight_layout()
+plt.savefig(join(fig_path, 'figure2d_time_to_trained.pdf'))
 plt.savefig(join(fig_path, 'figure2d_time_to_trained.png'), dpi=300)
 
 # Get stats in text

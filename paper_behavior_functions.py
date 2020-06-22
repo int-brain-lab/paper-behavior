@@ -6,13 +6,11 @@ General functions and queries for the analysis of behavioral data
 16 Jan 2020
 """
 
-from ibl_pipeline import subject, acquisition, reference
 import seaborn as sns
 import matplotlib
 import os
 import numpy as np
 import datajoint as dj
-from ibl_pipeline.analyses import behavior as behavior_analysis
 # from IPython import embed as shell  # for debugging
 
 # Some constants
@@ -82,6 +80,9 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
     a and b), biased, ready4ephysrig
     """
 
+    from ibl_pipeline import subject, acquisition, reference
+    from ibl_pipeline.analyses import behavior as behavior_analysis
+
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they were flagged as trained_1a
     if criterion == 'trained':
@@ -137,6 +138,9 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
     force_cutoff:    whether the animal had to reach the criterion by the 30th of Nov. Only
                      applies to biased and ready for ephys criterion
     """
+
+    from ibl_pipeline import subject, acquisition, reference
+    from ibl_pipeline.analyses import behavior as behavior_analysis
 
     # Query sessions
     if force_cutoff is True:
@@ -206,6 +210,9 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     force_cutoff:           whether the animal had to reach the criterion by the 30th of Nov. Only
                             applies to biased and ready for ephys criterion
     """
+
+    from ibl_pipeline import subject, acquisition, reference
+    from ibl_pipeline.analyses import behavior as behavior_analysis
 
     # Query all included subjects
     if force_cutoff is True:

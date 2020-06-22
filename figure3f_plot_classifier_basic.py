@@ -17,13 +17,12 @@ from paper_behavior_functions import seaborn_style, figpath, FIGURE_WIDTH, FIGUR
 
 # Which decoder to plot
 DECODER = 'regression'  # forest, bayes or regression
-TASK = 'basic'  # full or basic
 FIG_PATH = figpath()
 seaborn_style()
 
 # Load in results from csv file
 decoding_result = pd.read_pickle(join('classification_results',
-                                      'classification_results_%s_%s.pkl' % (TASK, DECODER)))
+                                      'classification_results_basic_%s.pkl' % DECODER))
 
 # Calculate if decoder performs above chance
 chance_level = decoding_result['original_shuffled'].mean()
@@ -52,11 +51,11 @@ plt.tight_layout()
 sns.despine(trim=True)
 
 if DECODER == 'forest':
-    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_%s.pdf' % (DECODER, TASK)))
-    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_%s.png' % (DECODER, TASK)), dpi=300)
+    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_basic.pdf' % DECODER))
+    plt.savefig(join(FIG_PATH, 'figure3_decoding_%s_basic.png' % DECODER), dpi=300)
 else:
-    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_%s.pdf' % (DECODER, TASK)))
-    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_%s.png' % (DECODER, TASK)), dpi=300)
+    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_basic.pdf' % DECODER))
+    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_basic.png' % DECODER), dpi=300)
 
 # %%
 f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
@@ -71,8 +70,8 @@ plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout()
 
-plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_%s.pdf' % (DECODER, TASK)))
-plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_%s.png' % (DECODER, TASK)), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_basic.pdf' % DECODER))
+plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_basic.png' % DECODER), dpi=300)
 
 f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
 sns.heatmap(data=decoding_result['control_cm'].mean())
@@ -84,6 +83,5 @@ plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout()
-plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_%s.pdf' % (DECODER, TASK)))
-plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_%s.png' % (DECODER, TASK)),
-            dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_basic.pdf' % DECODER))
+plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_basic.png' % DECODER), dpi=300)

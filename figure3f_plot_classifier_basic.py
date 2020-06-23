@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from paper_behavior_functions import seaborn_style, figpath, FIGURE_WIDTH, FIGURE_HEIGHT
 
 # Which decoder to plot
-DECODER = 'regression'  # forest, bayes or regression
+DECODER = 'forest'  # forest, bayes or regression
 FIG_PATH = figpath()
 seaborn_style()
 

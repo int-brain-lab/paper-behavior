@@ -73,7 +73,7 @@ plot_psychometric(tmpdat.signed_contrast, tmpdat.choice_right, tmpdat.subject_ni
                   color='black', ax=fig.axes[0], legend=False)
 fig.despine(trim=True)
 fig.set_axis_labels("Signed contrast (%)", 'Rightward choice (%)')
-plt.tight_layout(w_pad=-1.8)
+plt.tight_layout(w_pad=-5)
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.png"), dpi=300)
 print('done')

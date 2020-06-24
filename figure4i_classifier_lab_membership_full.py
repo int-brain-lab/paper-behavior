@@ -1,17 +1,30 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Decoding of lab membership based on biased psychometrics
+Decode in which lab a mouse was trained based on its behavioral metrics during the three sessions
+of the full task variant in which the mouse was determined to be ready for ephys.
 
-@author: Guido Meijer
-6 May 2020
+As a positive control, the time zone in which the mouse was trained is included in the dataset
+since the timezone provides geographical information. Decoding is performed using cross-validated
+classification. Chance level is determined by shuffling the lab labels and decoding again.
+
+--------------
+Parameters
+DECODER:            Which decoder to use: 'bayes', 'forest', or 'regression'
+NUM_SPLITS:         The N in N-fold cross validation
+ITERATIONS:         Number of times to split the dataset in test and train and decode
+METRICS:            List of strings indicating which behavioral metrics to include
+                    during decoding of lab membership
+METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
+
+Guido Meijer
+June 22, 2020
 """
 
-import seaborn as sns
 import numpy as np
 from os.path import join
-import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors,
-                                      query_sessions_around_criterion, institution_map,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT)
+                                      query_sessions_around_criterion, institution_map)
 from ibl_pipeline import reference, subject, behavior
 from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
@@ -21,13 +34,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
-# Initialize
-fig_path = figpath()
-pal = group_colors()
-seaborn_style()
-institution_map, col_names = institution_map()
-col_names = col_names[:-1]
-
 # Settings
 DECODER = 'forest'          # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
@@ -36,13 +42,11 @@ METRICS = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'laps
            'lapsehigh_l', 'lapsehigh_r']
 METRICS_CONTROL = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
                    'lapsehigh_l', 'lapsehigh_r', 'time_zone']
-PLOT_METRICS = True
-SAVE_FIG = True
 
 
 # Decoding function with n-fold cross validation
-def decoding(resp, labels, clf, NUM_SPLITS):
-    kf = KFold(n_splits=NUM_SPLITS, shuffle=True)
+def decoding(resp, labels, clf, NUM_SPLITS, random_state):
+    kf = KFold(n_splits=NUM_SPLITS, shuffle=True, random_state=random_state)
     y_pred = np.array([])
     y_true = np.array([])
     for train_index, test_index in kf.split(resp):
@@ -108,65 +112,23 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'nickname': nickname, 'lab': lab, 'time_zone': time_zone_number})
     biased_fits = biased_fits.append(fits, sort=False)
 
-# %% Plot metrics
-
-if PLOT_METRICS:
-    f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16, 4))
-    lab_colors = group_colors()
-
-    ax1.plot([10, 20], [10, 20], linestyle='dashed', color=[0.6, 0.6, 0.6])
-    for i, lab in enumerate(biased_fits['lab'].unique()):
-        ax1.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].mean(),
-                     biased_fits.loc[biased_fits['lab'] == lab, 'threshold_r'].mean(),
-                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
-                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
-                     fmt='s', color=lab_colors[i])
-    ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold')
-
-    ax2.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
-    for i, lab in enumerate(biased_fits['lab'].unique()):
-        ax2.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].mean(),
-                     biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].mean(),
-                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].sem(),
-                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].sem(),
-                     fmt='s', color=lab_colors[i])
-    ax2.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse left')
-
-    ax3.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
-    for i, lab in enumerate(biased_fits['lab'].unique()):
-        ax3.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].mean(),
-                     biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_r'].mean(),
-                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
-                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
-                     fmt='s', color=lab_colors[i])
-    ax3.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse right')
-
-    ax4.plot([-10, 10], [-10, 10], linestyle='dashed', color=[0.6, 0.6, 0.6])
-    for i, lab in enumerate(biased_fits['lab'].unique()):
-        ax4.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].mean(),
-                     biased_fits.loc[biased_fits['lab'] == lab, 'bias_r'].mean(),
-                     xerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
-                     yerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
-                     fmt='s', color=lab_colors[i])
-    ax4.set(xlabel='80:20 block', ylabel='20:80 block', title='Bias')
-
-    plt.tight_layout(pad=2)
-    seaborn_style()
-    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.pdf'), dpi=300)
-    plt.savefig(join(fig_path, 'figure4_metrics_per_lab_biased.png'), dpi=300)
 
 # %% Do decoding
 
 # Initialize decoders
 print('\nDecoding of lab membership..')
 if DECODER == 'forest':
-    clf = RandomForestClassifier(n_estimators=100)
+    clf = RandomForestClassifier(n_estimators=100, random_state=424242)
 elif DECODER == 'bayes':
     clf = GaussianNB()
 elif DECODER == 'regression':
     clf = LogisticRegression(solver='liblinear', multi_class='auto')
 else:
     raise Exception('DECODER must be forest, bayes or regression')
+
+# Generate random states for each iteration with a fixed seed
+np.random.seed(424242)
+random_states = np.random.randint(10000, 99999, ITERATIONS)
 
 # Perform decoding of lab membership
 result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
@@ -180,45 +142,17 @@ for i in range(ITERATIONS):
 
     # Original dataset
     result.loc[i, 'original'], conf_matrix = decoding(decoding_set, list(decod['lab']),
-                                                      clf, NUM_SPLITS)
+                                                      clf, NUM_SPLITS, random_states[i])
     result.loc[i, 'confusion_matrix'] = conf_matrix / conf_matrix.sum(axis=1)[:, np.newaxis]
     result.loc[i, 'original_shuffled'] = decoding(decoding_set, list(decod['lab'].sample(frac=1)),
-                                                  clf, NUM_SPLITS)[0]
+                                                  clf, NUM_SPLITS, random_states[i])[0]
 
     # Positive control dataset
     result.loc[i, 'control'], conf_matrix = decoding(control_set, list(decod['lab']),
-                                                     clf, NUM_SPLITS)
+                                                     clf, NUM_SPLITS, random_states[i])
     result.loc[i, 'control_cm'] = conf_matrix / conf_matrix.sum(axis=1)[:, np.newaxis]
     result.loc[i, 'control_shuffled'] = decoding(control_set, list(decod['lab'].sample(frac=1)),
-                                                 clf, NUM_SPLITS)[0]
-
-# %%
-# Calculate if decoder performs above chance
-chance_level = result['original_shuffled'].mean()
-significance = np.percentile(result['original'], 2.5)
-sig_control = np.percentile(result['control'], 0.001)
-if chance_level > significance:
-    print('Classification performance not significanlty above chance')
-else:
-    print('Above chance classification performance!')
-
-# Plot decoding results
-f, ax1 = plt.subplots(1, 1, figsize=(4, 4))
-sns.violinplot(data=pd.concat([result['original'], result['control']], axis=1),
-               color=[0.6, 0.6, 0.6], ax=ax1)
-ax1.plot([-1, 2], [chance_level, chance_level], 'r--')
-ax1.set(ylabel='Decoding performance (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
-        xticklabels=['Decoding of\nlab membership', 'Positive\ncontrol\n(w. time zone)'])
-# ax1.text(0, 0.6, 'n.s.', fontsize=12, ha='center')
-# ax1.text(1, 0.6, '***', fontsize=15, ha='center', va='center')
-plt.text(0.7, np.mean(result['original_shuffled'])-0.04, 'Chance level', color='r')
-# plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.tight_layout(pad=2)
-seaborn_style()
-
-if (DECODER == 'forest') & (SAVE_FIG is True):
-    plt.savefig(join(fig_path, 'figure4_decoding_%s_biased.pdf' % DECODER), dpi=300)
-    plt.savefig(join(fig_path, 'figure4_decoding_%s_biased.png' % DECODER), dpi=300)
-elif SAVE_FIG is True:
-    plt.savefig(join(fig_path, 'suppfig4_decoding_%s_biased.pdf' % DECODER), dpi=300)
-    plt.savefig(join(fig_path, 'suppfig4_decoding_%s_biased.png' % DECODER), dpi=300)
+                                                 clf, NUM_SPLITS, random_states[i])[0]
+# Save to csv
+result.to_pickle(join('classification_results',
+                      'classification_results_full_%s.pkl' % DECODER))

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Decode in which lab a mouse was trained based on its behavioral metrics during the three sessions
-of level 1 training in which the mouse was determined to be trained.
+of the basic task variant in which the mouse was determined to be trained.
 
 As a positive control, the time zone in which the mouse was trained is included in the dataset
 since the timezone provides geographical information. Decoding is performed using cross-validated
@@ -160,15 +160,6 @@ for i in range(ITERATIONS):
     decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
                                                           list(decod['lab_number'].sample(frac=1)),
                                                           clf, NUM_SPLITS, random_states[i])[0]
-
-# Calculate if decoder performs above chance
-chance_level = decoding_result['original_shuffled'].mean()
-significance = np.percentile(decoding_result['original'], 2.5)
-sig_control = np.percentile(decoding_result['control'], 0.001)
-if chance_level > significance:
-    print('Classification performance not significanlty above chance')
-else:
-    print('Above chance classification performance!')
 
 # Save to csv
 decoding_result.to_pickle(join('classification_results',

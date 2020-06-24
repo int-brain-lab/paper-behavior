@@ -69,7 +69,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
 
 # %% Plot metrics
 
-f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16, 4))
+f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(FIGURE_WIDTH*0.8, FIGURE_HEIGHT))
 lab_colors = group_colors()
 
 ax1.plot([10, 20], [10, 20], linestyle='dashed', color=[0.6, 0.6, 0.6])
@@ -78,8 +78,9 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
                  biased_fits.loc[biased_fits['lab'] == lab, 'threshold_r'].mean(),
                  xerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
                  yerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold')
+                 fmt='.', color=lab_colors[i])
+ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold',
+        yticks=ax1.get_xticks(), ylim=ax1.get_xlim())
 
 ax2.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
@@ -87,8 +88,9 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
                  biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].mean(),
                  xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].sem(),
                  yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax2.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse left')
+                 fmt='.', color=lab_colors[i])
+ax2.set(xlabel='80:20 block', ylabel='', title='Lapse left',
+        yticks=ax2.get_xticks(), ylim=ax2.get_xlim())
 
 ax3.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
@@ -96,8 +98,9 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
                  biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_r'].mean(),
                  xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
                  yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax3.set(xlabel='80:20 block', ylabel='20:80 block', title='Lapse right')
+                 fmt='.', color=lab_colors[i])
+ax3.set(xlabel='80:20 block', ylabel='', title='Lapse right',
+        yticks=ax3.get_xticks(), ylim=ax3.get_xlim())
 
 ax4.plot([-10, 10], [-10, 10], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
@@ -105,10 +108,11 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
                  biased_fits.loc[biased_fits['lab'] == lab, 'bias_r'].mean(),
                  xerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
                  yerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
-                 fmt='s', color=lab_colors[i])
-ax4.set(xlabel='80:20 block', ylabel='20:80 block', title='Bias')
+                 fmt='.', color=lab_colors[i])
+ax4.set(xlabel='80:20 block', ylabel='', title='Bias',
+        yticks=ax4.get_xticks(), ylim=ax4.get_xlim())
 
-plt.tight_layout(pad=2)
-seaborn_style()
-plt.savefig(join(fig_path, 'figure4e-h_metrics_per_lab_full.pdf'), dpi=300)
+sns.despine(trim=True)
+plt.tight_layout(w_pad=-0.1)
+plt.savefig(join(fig_path, 'figure4e-h_metrics_per_lab_full.pdf'))
 plt.savefig(join(fig_path, 'figure4e-h_metrics_per_lab_full.png'), dpi=300)

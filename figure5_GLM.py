@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
 import seaborn as sns
-from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
+from paper_behavior_functions import (seaborn_style, query_sessions_around_criterion, seaborn_style,
                                       institution_map, group_colors, figpath, EXAMPLE_MOUSE)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference, acquisition
@@ -23,413 +23,10 @@ import os
 from ibl_pipeline.utils import psychofit as psy
 from scipy import stats
 
-##############################################################################
-#*******************************Biased Task**********************************#
-##############################################################################
-
-# Set properties of the analysis '2019-09-20 10:15:34'
-bsession= '2019-08-31 11:59:37'
-tsession= '2019-08-23 11:00:32'
-correction = False
-
-# Query sessions biased data 
-use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[
-                                                             2, 3],
-                                                         as_dataframe=False)
-institution_map, col_names = institution_map()
-
-# restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
-
-# reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
-            'trial_feedback_type')
-bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-behav_merged = dj2pandas(bdat)
-
-behav_merged['institution_code'] = behav_merged.institution_short.map(institution_map)
-
-# Variable to store model parameters
-behav_merged['rchoice'] = np.nan
-behav_merged['uchoice'] = np.nan
-behav_merged['6'] = np.nan
-behav_merged['12'] = np.nan
-behav_merged['25'] = np.nan
-behav_merged['100'] = np.nan
-behav_merged['block'] = np.nan
-behav_merged['intercept'] = np.nan
-behav_merged['simulation_prob'] = np.nan
-
-if correction == True:
-    behav_merged['rchoice+1'] = np.nan
-    behav_merged['uchoice+1'] = np.nan
-    behav_merged['choice+1'] = np.nan
-
-
-# Drop trials with weird contrasts
-behav_merged.drop(behav_merged['probabilityLeft']
-                  [~behav_merged['probabilityLeft'].isin([50,20,80])].index,
-        inplace=True)
-behav_merged.drop(behav_merged['probabilityLeft']
-                  [~behav_merged['signed_contrast'].isin(
-                      [100,25,12.5,6.25,0,-6.25,-12.5,-25,-100])].index, inplace=True)
-
-# split the two types of task protocols (remove the pybpod version number
-behav_merged['task'] = behav_merged['task_protocol'].str[14:20].copy()
-
-behav = behav_merged.loc[behav_merged['task']=='biased'].copy() 
-behav = behav.reset_index()
-
-behav, example_model = run_glm(behav, EXAMPLE_MOUSE, correction = correction,
-                               bias = True, cross_validation  = False)
-
-        
-##############################################################################
-#*****************************Unbiased Task**********************************#
-##############################################################################    
-
-# Query sessions traning data 
-tbehav = behav_merged.loc[behav_merged['task']=='traini'].copy()
-tbehav.drop(tbehav['probabilityLeft'][~tbehav['probabilityLeft'].isin([50])].index,
-        inplace=True)
-tbehav = tbehav.reset_index()
-
-tbehav , example_model_t = run_glm(tbehav, EXAMPLE_MOUSE, correction = correction,
-                                   bias = False, cross_validation  = False)
-
-
-# Plot curve of predictors
-summary_curves = pd.DataFrame()
-
-if correction == True:
-    feature_list =['100', '25', '12', '6', 'rchoice', 'rchoice+1', 'uchoice', 'uchoice+1',
-                    'block', 'intercept']
-else:
-    feature_list =['100', '25', '12', '6', 'rchoice', 'uchoice', 
-                    'block', 'intercept']
-
-
-cat = ['institution', 'weight', 'parameter']
-for i in behav['institution_code'].unique():
-    behav_temp = behav.loc[behav['institution_code'] == i]
-    sum_temp = pd.DataFrame(0, index=np.arange(len(feature_list)), columns=cat)
-    sum_temp['institution'] = i 
-    sum_temp['parameter'] = feature_list
-    for t in feature_list:
-        sum_temp.loc[sum_temp['parameter'] == t, 'weight'] = behav_temp[t].mean()
-    summary_curves = pd.concat([summary_curves, sum_temp])
-    
-    
-# Plot curve of predictors
-tsummary_curves = pd.DataFrame()
-tfeature_list =['100', '25', '12', '6', 'rchoice', 'uchoice',
-                 'intercept']
-cat = ['institution', 'weight', 'parameter']
-for i in tbehav['institution_code'].unique():
-    tbehav_temp = tbehav.loc[tbehav['institution_code'] == i]
-    tsum_temp = pd.DataFrame(0, index=np.arange(len(tfeature_list)), columns=cat)
-    tsum_temp['institution'] = i 
-    tsum_temp['parameter'] = tfeature_list
-    for t in tfeature_list:
-        tsum_temp.loc[tsum_temp['parameter'] == t, 'weight'] = tbehav_temp[t].mean()
-    tsummary_curves = pd.concat([tsummary_curves, tsum_temp])
 
 ##############################################################################
-#******************************* Plotting ***********************************#
+#******************************* Functions **********************************#
 ##############################################################################
-
-pal = group_colors()
-
-# Visualization
-
-figpath = figpath()
-
-# Set seed for simulation
-np.random.seed(1)
-
-# Line colors
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
-
-# Get data from example session (TODO make inot specific query)
-
-
-# Data for bias session
-
-b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
-     & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
-
-bdat = b.fetch(order_by='session_start_time, trial_id',
-               format='frame').reset_index()
-
-ebehav = dj2pandas(bdat)
-ebehav = ebehav.reset_index()
-bebehav = ebehav.loc[ebehav['subject_nickname'] ==  EXAMPLE_MOUSE]
-bebehav_model_data, index = data_2_X_test (bebehav, correction = correction, bias = True)
-bebehav.loc[bebehav['index'].isin(index) ,'simulation_prob'] = \
-    example_model.predict(bebehav_model_data).to_numpy()# Run simulation
-
-
-
-# Data for examples
-use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
-                                                         days_from_criterion=[
-                                                            2, 0],
-                                                         as_dataframe=False)
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
-
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
-            'trial_feedback_type')
-bdat1 = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-
-tbehav = dj2pandas(bdat1)
-tbehav = tbehav.reset_index()
-tebehav = tbehav.loc[tbehav['subject_nickname'] ==  EXAMPLE_MOUSE]
-tebehav_model_data, index = data_2_X_test (tebehav, correction = correction, bias = False)
-tebehav.loc[tebehav['index'].isin(index) ,'simulation_prob'] = \
-    example_model_t.predict(tebehav_model_data).to_numpy()# Run simulation
-
-
-
-# Run simulation
-simulation_size = 1
-tsimulation = tebehav[tebehav['simulation_prob'].notnull()].copy()
-tsimulation = tsimulation[tsimulation['subject_nickname'] == EXAMPLE_MOUSE].copy()
-
-rsimulation = pd.concat([tsimulation]*simulation_size)
-rsimulation['simulation_run'] = np.random.binomial(1, p = rsimulation['simulation_prob'])
-bsimulation = bebehav[bebehav['simulation_prob'].notnull()].copy()
-bsimulation = bsimulation[bsimulation['subject_nickname'] == EXAMPLE_MOUSE].copy()
-brsimulation = pd.concat([bsimulation]*simulation_size)
-brsimulation['simulation_run'] = np.random.binomial(1, p = brsimulation['simulation_prob'])
-
-
-# Figure of single session
-
-fig, ax =  plt.subplots(1,2, figsize = [10,5], sharey='row')
-plt.sca(ax[0])
-
-# Drop 50s, they are only a temporary step
-rsimulation = rsimulation[abs(rsimulation['signed_contrast'])!= 50]
-tsimulation = tsimulation[abs(tsimulation['signed_contrast'])!= 50]
-
-# Plot
-sns.lineplot(rsimulation['signed_contrast'], rsimulation['simulation_run'], 
-             color = 'k', ci = 95, linewidth = 0)
-#plot_psychometric(rsimulation['signed_contrast'], 
-#                      rsimulation['simulation_run'], 'k', point = True,  mark = '^')
-
-  
-plot_psychometric(tsimulation['signed_contrast'], 
-                      tsimulation['choice_right'], 'k', point = True, mark = 'o', al = 0.5)
-ax[0].lines[1].set_alpha(0)
-ax[0].lines[2].set_alpha(0)
-ax[0].lines[3].set_alpha(0)
-ax[0].set_ylabel('Fraction of choices')
-ax[0].set_ylim(0,1)
-ax[0].set_xlabel('Signed contrast %')
-ax[0].set_title('Unbiased - Example mouse')
-plt.sca(ax[1])
-for c, i  in enumerate([20, 50, 80]):
-    subset = brsimulation.loc[brsimulation['probabilityLeft'] == i]
-    subset1 = bsimulation.loc[bsimulation['probabilityLeft'] == i]
-    sns.lineplot(subset['signed_contrast'], subset['simulation_run'], ci = 95,
-                 color =cmap[c], linewidth = 0)
-    #plot_psychometric(subset['signed_contrast'], 
-    #                  subset['simulation_run'], col = cmap[c] ,  point = True,  mark = '^')
-    plot_psychometric(subset1['signed_contrast'], 
-                      subset1['choice_right'], cmap[c] , point = True,  mark = 'o', al = 0.5)
-
-ax[1].lines[0].set_alpha(0)
-ax[1].lines[1].set_alpha(0)
-ax[1].lines[3].set_alpha(0)
-ax[1].lines[7].set_alpha(0)
-ax[1].lines[8].set_alpha(0)
-ax[1].lines[9].set_alpha(0)
-ax[1].lines[11].set_alpha(0)
-ax[1].lines[12].set_alpha(0)
-ax[1].lines[13].set_alpha(0)
-
-    
-ax[1].set_ylabel('Fraction of choices')
-ax[1].set_ylim(0,1)
-ax[1].set_xlabel('Signed contrast %')
-ax[1].set_title('Biased - Example mouse')
-sns.despine()
-plt.tight_layout()
-fig.savefig(os.path.join(figpath, 'figure5_GLM.pdf'), dpi=600)
-
-
-# Biased Weights
-
-fig, ax  = plt.subplots(1,3, figsize = [10,5])
-plt.sca(ax[0])
-bsensory = summary_curves[summary_curves['parameter'].isin(['6','25','12', '100'])]
-sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['6','12','25','100'], size = 7)
-sns.barplot(data = bsensory, x = 'parameter', y= 'weight', fill=False, 
-            order=['6','12','25','100'], linewidth =2, ci = 68, color = 'k')
-ax[0].get_legend().set_visible(False)
-ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
-ax[0].set_ylabel('Weight')
-ax[0].set_ylim(0,5)
-plt.sca(ax[1])
-breward= summary_curves[summary_curves['parameter'].isin(['rchoice','uchoice'])]
-sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['rchoice','uchoice'], size = 7)
-sns.barplot(data = breward, x = 'parameter', y= 'weight', fill=False, 
-            order=['rchoice','uchoice'], linewidth =2, ci = 68)
-ax[1].get_legend().set_visible(False)
-ax[1].set_xlabel(' ')
-if correction == True:
-    ax[1].set_xticklabels(['Corrected Rewarded Choice (t-1)', 
-                           'Corrected Unrewarded Choice (t-1)'], rotation = 45, ha='right')
-else:
-    ax[1].set_xticklabels(['Rewarded \n Choice (t-1)', 'Unrewarded \n Choice (t-1)'],
-                          ha='center')
-ax[1].set_ylabel('Weight')
-ax[1].set_ylim(0,1)
-plt.sca(ax[2])
-bbias= summary_curves[summary_curves['parameter'].isin(['block', 'intercept'])]
-sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['block', 'intercept'], size = 7)
-sns.barplot(data = bbias, x = 'parameter', y= 'weight', fill=False, 
-            order=['block', 'intercept'], linewidth =2, ci = 68)
-ax[2].get_legend().set_visible(False)
-ax[2].set_xlabel(' ')
-ax[2].set_xticklabels(['Block Bias', 'Bias'], rotation = 45, ha='right')
-ax[2].set_ylabel('Weight')
-ax[2].set_ylim(-1,1)
-
-plt.tight_layout()
-sns.despine()
-
-
-# Unbiased Weights
-fig, ax  = plt.subplots(1,3, figsize = [10,5])
-plt.sca(ax[0])
-bsensory = tsummary_curves[tsummary_curves['parameter'].isin(['6','25','12', '100'])]
-sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['6','12','25','100'], size = 7)
-sns.barplot(data = bsensory, x = 'parameter', y= 'weight', fill=False, 
-            order=['6','12','25','100'], linewidth =2, ci = 68)
-ax[0].get_legend().set_visible(False)
-ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
-ax[0].set_ylabel('Weight')
-ax[0].set_ylim(0,5)
-
-plt.sca(ax[1])
-breward= tsummary_curves[tsummary_curves['parameter'].isin(['rchoice','uchoice'])]
-sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['rchoice','uchoice', 'rchoice+1','uchoice+1'], size = 7)
-sns.barplot(data = breward, x = 'parameter', y= 'weight', fill=False, 
-            order=['rchoice','uchoice'], linewidth =2, ci = 68)
-ax[1].get_legend().set_visible(False)
-ax[1].set_xlabel(' ')
-ax[1].set_ylim(0,1)
-
-if correction == True:
-    ax[1].set_xticklabels(['Corrected Rewarded \n Choice (t-1)', 
-                           'Corrected Unrewarded \n Choice (t-1)'], 
-                           ha='right')
-else:
-     ax[1].set_xticklabels(['Rewarded \n Choice (t-1)', 
-                            'Unrewarded \n Choice (t-1)'], 
-                           ha='center')
-ax[1].set_ylabel('Weight')
-plt.sca(ax[2])
-bbias= tsummary_curves[tsummary_curves['parameter'].isin(['block', 'intercept'])]
-sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['intercept'], size = 7)
-sns.barplot(data = bbias, x = 'parameter', y= 'weight', fill=False, 
-            order=['intercept'], linewidth =2, ci = 68)
-ax[2].get_legend().set_visible(False)
-ax[2].set_xlabel('     ')
-ax[2].set_xticklabels(['Bias'], ha='center')
-ax[2].set_ylabel('Weight')
-ax[2].set_ylim(-1,1)
-plt.tight_layout()
-sns.despine()
-
-
-# Accuracy
-behav_merge = pd.concat([behav, tbehav]).copy()
-behav_merge = behav_merge[~np.isnan(behav_merge['simulation_prob'])]
-behav_merge['accu'] = behav_merge['simulation_prob'].round().to_numpy()
-behav_merge.loc[behav_merge['accu'] == 0, 'accu']  = -1
-behav_merge['accu'] =  (behav_merge['accu'] == behav_merge['choice'])
-behav_merge1 =  behav_merge.copy()
-behav_merge1['institution_code'] = 'All'
-behav_merge = pd.concat([behav_merge, behav_merge1])
-
-grouped = behav_merge.groupby(['subject_nickname',
-                         'institution_code'])['accu'].mean().reset_index()
-pal.append((1,1,0))
-
-fig, ax  = plt.subplots()
-plt.sca(ax)
-sns.boxplot(data = grouped, x = 'institution_code', y =grouped['accu']*100, palette= pal, 
-            order= ['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
-                    'All'], linewidth = 2)
-sns.swarmplot(data=grouped, x = 'institution_code', y =grouped['accu']*100,color = 'k', 
-              order=['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
-                    'All'])
-ax.set_xlabel('Laboratory')
-ax.set_ylabel('Model Accuracy %')
-sns.despine()
-
-## Individual diferences
-fig, ax = plt.subplots(figsize = (5,5))
-selection = behav[behav['subject_nickname'].isin(tbehav['subject_nickname'])]
-selection =  selection.groupby(['subject_nickname']).mean()
-selection['institution'] = [behav.loc[behav['subject_nickname'] == mouse, 
-            'institution_code'].unique()[0]for mouse in selection.index]
-selection_t = tbehav.groupby(['subject_nickname']).mean()
-sns.regplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
-            color = 'k', scatter=False)
-sns.scatterplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
-                hue =selection['institution'], palette = group_colors())
-ax.set_ylabel('$\Delta$ Bias Right  - Bias Left')
-ax.get_legend().set_visible(False)
-ax.set_xlabel('Sensory threshold during training')
-dbias = pd.DataFrame()
-dbias['bias'] = selection['bias_r']-selection['bias_l']
-dbias['t_threshold']  = selection_t['threshold']
-dbias.dropna(inplace=True)
-stats.spearmanr(dbias['t_threshold'], dbias['bias']) 
-stats.pearsonr(dbias['t_threshold'], dbias['bias'])
-sns.despine()
-
-## Updating from model
-fig, ax = plt.subplots(figsize = (5,5))
-selection = behav[behav['subject_nickname'].isin(tbehav['subject_nickname'])]
-selection =  selection.groupby(['subject_nickname']).mean()
-selection['institution'] = [behav.loc[behav['subject_nickname'] == mouse, 
-            'institution_code'].unique()[0]for mouse in selection.index]
-selection_t = tbehav.groupby(['subject_nickname']).mean()
-sns.regplot( selection_t['6'], selection['rchoice']-selection['rchoice+1'],
-            color = 'k', scatter=False)
-sns.scatterplot( selection_t['6'], selection['rchoice']-selection['rchoice+1'],
-                hue =selection['institution'], palette = group_colors())
-ax.set_ylabel('Block Bias Weight')
-ax.get_legend().set_visible(False)
-ax.set_xlabel('Sensory threshold during training')
-dbias = pd.DataFrame()
-dbias['c_reward'] = selection['bias_r']-selection['bias_l']
-dbias['t_6']  = selection_t['6']
-dbias.dropna(inplace=True)
-stats.spearmanr(dbias['t_threshold'], dbias['bias']) 
-stats.pearsonr(dbias['t_threshold'], dbias['bias'])
-sns.despine()
-
 
 
 def model_psychometric_history(behav):
@@ -448,8 +45,6 @@ def model_psychometric_history(behav):
     sns.lineplot(data = select_50, hue = 't-1', x = select_50['signed_contrast'],
                      y = select_50['simulation_prob'], palette = ['red', 'green'], ci = 68)
 
-
-## Functions
 
 def run_glm(behav, example, correction = True,  bias = False, cross_validation = True):
     for i, nickname in enumerate(np.unique(behav['subject_nickname'])):
@@ -770,45 +365,389 @@ def plot_psychometric(x, y, col, point = False, mark = 'o', al =1):
     g.set_ylim([0, 1])
     g.set_yticks([0, 0.25, 0.5, 0.75, 1])
     g.set_yticklabels(['0', '25', '50', '75', '100'])
+
+##############################################################################
+#*******************************Biased Task**********************************#
+##############################################################################
+
+# Set properties of the analysis '2019-09-20 10:15:34'
+bsession= '2019-08-31 11:59:37'
+tsession= '2019-08-23 11:00:32'
+correction = False
+
+# Query sessions biased data 
+use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
+                                                         days_from_criterion=[
+                                                             2, 3],
+                                                         as_dataframe=False)
+institution_map, col_names = institution_map()
+
+# restrict by list of dicts with uuids for these sessions
+b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+     * behavior.TrialSet.Trial)
+
+# reduce the size of the fetch
+b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
+            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+            'trial_feedback_type')
+bdat = b2.fetch(order_by=
+        'institution_short, subject_nickname, session_start_time, trial_id',
+                format='frame').reset_index()
+behav_merged = dj2pandas(bdat)
+
+behav_merged['institution_code'] = \
+    behav_merged.institution_short.map(institution_map)
+
+# Variable to store model parameters
+behav_merged['rchoice'] = np.nan
+behav_merged['uchoice'] = np.nan
+behav_merged['6'] = np.nan
+behav_merged['12'] = np.nan
+behav_merged['25'] = np.nan
+behav_merged['100'] = np.nan
+behav_merged['block'] = np.nan
+behav_merged['intercept'] = np.nan
+behav_merged['simulation_prob'] = np.nan
+
+if correction == True:
+    behav_merged['rchoice+1'] = np.nan
+    behav_merged['uchoice+1'] = np.nan
+    behav_merged['choice+1'] = np.nan
+
+
+# Drop trials with weird contrasts
+behav_merged.drop(behav_merged['probabilityLeft']
+                  [~behav_merged['probabilityLeft'].isin([50,20,80])].index,
+        inplace=True)
+behav_merged.drop(behav_merged['probabilityLeft']
+                  [~behav_merged['signed_contrast'].isin(
+                      [100,25,12.5,6.25,0,-6.25,-12.5,-25,-100])].index, 
+                          inplace=True)
+
+# split the two types of task protocols (remove the pybpod version number
+behav_merged['task'] = behav_merged['task_protocol'].str[14:20].copy()
+
+behav = behav_merged.loc[behav_merged['task']=='biased'].copy() 
+behav = behav.reset_index()
+
+behav, example_model = run_glm(behav, EXAMPLE_MOUSE, correction = correction,
+                               bias = True, cross_validation  = False)
+
+        
+##############################################################################
+#*****************************Unbiased Task**********************************#
+##############################################################################    
+
+# Query sessions traning data 
+tbehav = behav_merged.loc[behav_merged['task']=='traini'].copy()
+tbehav.drop(tbehav['probabilityLeft'][~tbehav['probabilityLeft'].isin([50])].index,
+        inplace=True)
+tbehav = tbehav.reset_index()
+
+tbehav , example_model_t = run_glm(tbehav, EXAMPLE_MOUSE, correction = correction,
+                                   bias = False, cross_validation  = False)
+
+
+
+##############################################################################
+#*****************************Summary information****************************#
+##############################################################################    
+
+
+# Plot curve of predictors
+summary_curves = pd.DataFrame()
+
+if correction == True:
+    feature_list =['100', '25', '12', '6', 'rchoice', 'rchoice+1', 'uchoice',
+                   'uchoice+1', 'block', 'intercept']
+else:
+    feature_list =['100', '25', '12', '6', 'rchoice', 'uchoice', 
+                    'block', 'intercept']
+
+
+cat = ['institution', 'weight', 'parameter']
+for i in behav['institution_code'].unique():
+    behav_temp = behav.loc[behav['institution_code'] == i]
+    sum_temp = pd.DataFrame(0, index=np.arange(len(feature_list)), columns=cat)
+    sum_temp['institution'] = i 
+    sum_temp['parameter'] = feature_list
+    for t in feature_list:
+        sum_temp.loc[sum_temp['parameter'] == t, 'weight'] = \
+            behav_temp[t].mean()
+    summary_curves = pd.concat([summary_curves, sum_temp])
     
-
-
-behav_no_bias, example_model = run_glm(behav, example, correction = correction, 
-                               bias = False, cross_validation  = False)
-
-
-# FUNCTION UNDER DEVELOPMENT
-def updating:
-    select =  behav.copy()
-    select['signed_contrast-1'] =  select['signed_contrast'].shift(periods=1).to_numpy()
-    select['signed_contrast+1'] =  select['signed_contrast'].shift(periods=-1).to_numpy()
-    select['t-1'] = select['trial_feedback_type'].shift(periods=1).to_numpy()
-    select['t+1'] = select['trial_feedback_type'].shift(periods=-1).to_numpy()
-    select = select.iloc[1:-1,:] # First and last trial will have nan for history
-    select['t-1']  = select['t-1'].astype(int)
-    select['simulation_prob'] = select['simulation_prob']*100
-    #select = select.loc[select['signed_contrast-1'] >= 0]
-    for mouse in select['subject_nickname'].unique():
-        for c in select['signed_contrast-1'].unique():
-            for r in select['t-1'].unique():
-                sub_select = select.loc[(select['signed_contrast-1'] == c) &
-                     (select['t-1'] == r) & (select['subject_nickname'] == mouse)]
-                
-                fit_result = fit_psychfunc(sub_select)
-                select.loc[select['subject_nickname'] == nickname, 'updating'] = \
-                fit_result['bias'][0]
-        for c in select['signed_contrast+1'].unique():
-            for r in select['t+1'].unique():
-                sub_select = select.loc[(select['signed_contrast+1'] == c) &
-                     (select['t+1'] == r) & (select['subject_nickname'] == mouse)]             
-                fit_result = fit_psychfunc(sub_select)
-                select.loc[select['subject_nickname'] == nickname, 'updating_correction'] = \
-                fit_result['bias'][0]
-
-    sns.lineplot(data = select, hue = 't-1', x = select['signed_contrast-1'],
-                 y = select['simulation_prob'], ci = 68)
     
-    sns.lineplot(data = select, hue = 't-1', x = select['signed_contrast-1'],
-                 y = select[select['probabilityLeft'] == 80],'choice'] - 
-                 select.loc[select['probabilityLeft'] == 20 ,'choice'])
-                
+# Plot curve of predictors
+tsummary_curves = pd.DataFrame()
+tfeature_list =['100', '25', '12', '6', 'rchoice', 'uchoice',
+                 'intercept']
+cat = ['institution', 'weight', 'parameter']
+for i in tbehav['institution_code'].unique():
+    tbehav_temp = tbehav.loc[tbehav['institution_code'] == i]
+    tsum_temp = pd.DataFrame(0, index=np.arange(len(tfeature_list)), 
+                             columns=cat)
+    tsum_temp['institution'] = i 
+    tsum_temp['parameter'] = tfeature_list
+    for t in tfeature_list:
+        tsum_temp.loc[tsum_temp['parameter'] == t, 'weight'] = \
+            tbehav_temp[t].mean()
+    tsummary_curves = pd.concat([tsummary_curves, tsum_temp])
+
+##############################################################################
+#******************************* Plotting ***********************************#
+##############################################################################
+
+pal = group_colors()
+
+# Visualization
+
+figpath = figpath()
+
+# Set seed for simulation
+np.random.seed(1)
+
+# Line colors
+cmap = sns.diverging_palette(20, 220, n=3, center="dark")
+
+# Get data from example session (TODO make inot specific query)
+
+
+# Data for bias session
+
+b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
+  & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
+
+bdat = b.fetch(order_by='session_start_time, trial_id',
+               format='frame').reset_index()
+
+ebehav = dj2pandas(bdat)
+ebehav = ebehav.reset_index()
+bebehav = ebehav.loc[ebehav['subject_nickname'] ==  EXAMPLE_MOUSE]
+bebehav_model_data, index = data_2_X_test (bebehav, correction = \
+                                           correction, bias = True)
+bebehav.loc[bebehav['index'].isin(index) ,'simulation_prob'] = \
+    example_model.predict(bebehav_model_data).to_numpy()# Run simulation
+
+
+
+# Data for examples
+use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
+                                                         days_from_criterion=[
+                                                            2, 0],
+                                                         as_dataframe=False)
+b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+     * behavior.TrialSet.Trial)
+
+b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
+            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+            'trial_feedback_type')
+bdat1 = b2.fetch(order_by=
+        'institution_short, subject_nickname, session_start_time, trial_id',
+                format='frame').reset_index()
+
+tbehav = dj2pandas(bdat1)
+tbehav = tbehav.reset_index()
+tebehav = tbehav.loc[tbehav['subject_nickname'] ==  EXAMPLE_MOUSE]
+tebehav_model_data, index = data_2_X_test (tebehav, correction = correction,
+                                           bias = False)
+tebehav.loc[tebehav['index'].isin(index) ,'simulation_prob'] = \
+    example_model_t.predict(tebehav_model_data).to_numpy()# Run simulation
+
+
+
+# Run simulation
+simulation_size = 1
+tsimulation = tebehav[tebehav['simulation_prob'].notnull()].copy()
+tsimulation = tsimulation[tsimulation['subject_nickname'] == EXAMPLE_MOUSE].copy()
+
+rsimulation = pd.concat([tsimulation]*simulation_size)
+rsimulation['simulation_run'] = \
+    np.random.binomial(1, p = rsimulation['simulation_prob'])
+bsimulation = bebehav[bebehav['simulation_prob'].notnull()].copy()
+bsimulation = \
+    bsimulation[bsimulation['subject_nickname'] == EXAMPLE_MOUSE].copy()
+brsimulation = pd.concat([bsimulation]*simulation_size)
+brsimulation['simulation_run'] = \
+    np.random.binomial(1, p = brsimulation['simulation_prob'])
+
+
+# Figure of single session
+
+fig, ax =  plt.subplots(1,2, figsize = [10,5], sharey='row')
+plt.sca(ax[0])
+
+# Drop 50s, they are only a temporary step
+rsimulation = rsimulation[abs(rsimulation['signed_contrast'])!= 50]
+tsimulation = tsimulation[abs(tsimulation['signed_contrast'])!= 50]
+
+# Plot
+seaborn_style()
+
+sns.lineplot(rsimulation['signed_contrast'], rsimulation['simulation_run'], 
+             color = 'k', ci = 95, linewidth = 0)
+  
+plot_psychometric(tsimulation['signed_contrast'], 
+  tsimulation['choice_right'], 'k', point = True, mark = 'o', al = 0.5)
+ax[0].lines[1].set_alpha(0)
+ax[0].lines[2].set_alpha(0)
+ax[0].lines[3].set_alpha(0)
+ax[0].set_ylabel('Fraction of choices')
+ax[0].set_ylim(0,1)
+ax[0].set_xlabel('Signed contrast %')
+ax[0].set_title('Unbiased - Example mouse')
+plt.sca(ax[1])
+for c, i  in enumerate([20, 50, 80]):
+    subset = brsimulation.loc[brsimulation['probabilityLeft'] == i]
+    subset1 = bsimulation.loc[bsimulation['probabilityLeft'] == i]
+    sns.lineplot(subset['signed_contrast'], subset['simulation_run'], ci = 95,
+                 color =cmap[c], linewidth = 0)
+    #plot_psychometric(subset['signed_contrast'], 
+    #                  subset['simulation_run'], col = cmap[c] ,  point = True,  mark = '^')
+    plot_psychometric(subset1['signed_contrast'], 
+                      subset1['choice_right'], cmap[c] , point = True,  mark = 'o', al = 0.5)
+
+ax[1].lines[0].set_alpha(0)
+ax[1].lines[1].set_alpha(0)
+ax[1].lines[3].set_alpha(0)
+ax[1].lines[7].set_alpha(0)
+ax[1].lines[8].set_alpha(0)
+ax[1].lines[9].set_alpha(0)
+ax[1].lines[11].set_alpha(0)
+ax[1].lines[12].set_alpha(0)
+ax[1].lines[13].set_alpha(0)
+
+    
+ax[1].set_ylabel('Fraction of choices')
+ax[1].set_ylim(0,1)
+ax[1].set_xlabel('Signed contrast %')
+ax[1].set_title('Biased - Example mouse')
+sns.despine(trim=True)
+plt.tight_layout()
+fig.savefig(os.path.join(figpath, 'figure5_GLM.pdf'), dpi=600)
+
+
+# Biased Weights
+
+fig, ax  = plt.subplots(1,3, figsize = [10,5])
+plt.sca(ax[0])
+bsensory = summary_curves[summary_curves['parameter'].isin(['6','25','12', '100'])]
+sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['6','12','25','100'], size = 7)
+sns.barplot(data = bsensory, x = 'parameter', y= 'weight', fill=False, 
+            order=['6','12','25','100'], linewidth =2, ci = 68, color = 'k')
+ax[0].get_legend().set_visible(False)
+ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
+ax[0].set_ylabel('Weight')
+ax[0].set_ylim(0,5)
+plt.sca(ax[1])
+breward= summary_curves[summary_curves['parameter'].isin(['rchoice','uchoice'])]
+sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['rchoice','uchoice'], size = 7)
+sns.barplot(data = breward, x = 'parameter', y= 'weight', fill=False, 
+            order=['rchoice','uchoice'], linewidth =2, ci = 68)
+ax[1].get_legend().set_visible(False)
+ax[1].set_xlabel(' ')
+if correction == True:
+    ax[1].set_xticklabels(['Corrected Rewarded Choice (t-1)', 
+                           'Corrected Unrewarded Choice (t-1)'], rotation = 45, ha='right')
+else:
+    ax[1].set_xticklabels(['Rewarded \n Choice (t-1)', 'Unrewarded \n Choice (t-1)'],
+                          ha='center')
+ax[1].set_ylabel('Weight')
+ax[1].set_ylim(0,1)
+plt.sca(ax[2])
+bbias= summary_curves[summary_curves['parameter'].isin(['block', 'intercept'])]
+sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['block', 'intercept'], size = 7)
+sns.barplot(data = bbias, x = 'parameter', y= 'weight', fill=False, 
+            order=['block', 'intercept'], linewidth =2, ci = 68)
+ax[2].get_legend().set_visible(False)
+ax[2].set_xlabel(' ')
+ax[2].set_xticklabels(['Block Bias', 'Bias'], rotation = 45, ha='right')
+ax[2].set_ylabel('Weight')
+ax[2].set_ylim(-1,1)
+
+plt.tight_layout()
+sns.despine(trim=True)
+
+
+# Unbiased Weights
+fig, ax  = plt.subplots(1,3, figsize = [10,5])
+plt.sca(ax[0])
+bsensory = tsummary_curves[tsummary_curves['parameter'].isin(['6','25','12', '100'])]
+sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['6','12','25','100'], size = 7)
+sns.barplot(data = bsensory, x = 'parameter', y= 'weight', fill=False, 
+            order=['6','12','25','100'], linewidth =2, ci = 68)
+ax[0].get_legend().set_visible(False)
+ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
+ax[0].set_ylabel('Weight')
+ax[0].set_ylim(0,5)
+
+plt.sca(ax[1])
+breward= tsummary_curves[tsummary_curves['parameter'].isin(['rchoice','uchoice'])]
+sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['rchoice','uchoice', 'rchoice+1','uchoice+1'], size = 7)
+sns.barplot(data = breward, x = 'parameter', y= 'weight', fill=False, 
+            order=['rchoice','uchoice'], linewidth =2, ci = 68)
+ax[1].get_legend().set_visible(False)
+ax[1].set_xlabel(' ')
+ax[1].set_ylim(0,1)
+
+if correction == True:
+    ax[1].set_xticklabels(['Corrected Rewarded \n Choice (t-1)', 
+                           'Corrected Unrewarded \n Choice (t-1)'], 
+                           ha='right')
+else:
+     ax[1].set_xticklabels(['Rewarded \n Choice (t-1)', 
+                            'Unrewarded \n Choice (t-1)'], 
+                           ha='center')
+ax[1].set_ylabel('Weight')
+plt.sca(ax[2])
+bbias= tsummary_curves[tsummary_curves['parameter'].isin(['block', 'intercept'])]
+sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['intercept'], size = 7)
+sns.barplot(data = bbias, x = 'parameter', y= 'weight', fill=False, 
+            order=['intercept'], linewidth =2, ci = 68)
+ax[2].get_legend().set_visible(False)
+ax[2].set_xlabel('     ')
+ax[2].set_xticklabels(['Bias'], ha='center')
+ax[2].set_ylabel('Weight')
+ax[2].set_ylim(-1,1)
+plt.tight_layout()
+sns.despine(trim=True)
+
+
+# Accuracy
+behav_merge = pd.concat([behav, tbehav]).copy()
+behav_merge = behav_merge[~np.isnan(behav_merge['simulation_prob'])]
+behav_merge['accu'] = behav_merge['simulation_prob'].round().to_numpy()
+behav_merge.loc[behav_merge['accu'] == 0, 'accu']  = -1
+behav_merge['accu'] =  (behav_merge['accu'] == behav_merge['choice'])
+behav_merge1 =  behav_merge.copy()
+behav_merge1['institution_code'] = 'All'
+behav_merge = pd.concat([behav_merge, behav_merge1])
+
+grouped = behav_merge.groupby(['subject_nickname',
+                         'institution_code'])['accu'].mean().reset_index()
+pal.append((1,1,0))
+
+fig, ax  = plt.subplots()
+plt.sca(ax)
+sns.boxplot(data = grouped, x = 'institution_code', y =grouped['accu']*100, palette= pal, 
+            order= ['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
+                    'All'], linewidth = 2)
+sns.swarmplot(data=grouped, x = 'institution_code', y =grouped['accu']*100,color = 'k', 
+              order=['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
+                    'All'])
+ax.set_xlabel('Laboratory')
+ax.set_ylabel('Model Accuracy %')
+sns.despine(trim=True)
+
+
+
+
+
+    

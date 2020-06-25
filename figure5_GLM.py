@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
 import seaborn as sns
-from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
+from paper_behavior_functions import (seaborn_style, query_sessions_around_criterion, seaborn_style,
                                       institution_map, group_colors, figpath, EXAMPLE_MOUSE)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference, acquisition
@@ -583,6 +583,8 @@ rsimulation = rsimulation[abs(rsimulation['signed_contrast'])!= 50]
 tsimulation = tsimulation[abs(tsimulation['signed_contrast'])!= 50]
 
 # Plot
+seaborn_style()
+
 sns.lineplot(rsimulation['signed_contrast'], rsimulation['simulation_run'], 
              color = 'k', ci = 95, linewidth = 0)
   
@@ -621,7 +623,7 @@ ax[1].set_ylabel('Fraction of choices')
 ax[1].set_ylim(0,1)
 ax[1].set_xlabel('Signed contrast %')
 ax[1].set_title('Biased - Example mouse')
-sns.despine()
+sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, 'figure5_GLM.pdf'), dpi=600)
 
@@ -668,7 +670,7 @@ ax[2].set_ylabel('Weight')
 ax[2].set_ylim(-1,1)
 
 plt.tight_layout()
-sns.despine()
+sns.despine(trim=True)
 
 
 # Unbiased Weights
@@ -715,7 +717,7 @@ ax[2].set_xticklabels(['Bias'], ha='center')
 ax[2].set_ylabel('Weight')
 ax[2].set_ylim(-1,1)
 plt.tight_layout()
-sns.despine()
+sns.despine(trim=True)
 
 
 # Accuracy
@@ -742,29 +744,9 @@ sns.swarmplot(data=grouped, x = 'institution_code', y =grouped['accu']*100,color
                     'All'])
 ax.set_xlabel('Laboratory')
 ax.set_ylabel('Model Accuracy %')
-sns.despine()
+sns.despine(trim=True)
 
-## Individual diferences
-fig, ax = plt.subplots(figsize = (5,5))
-selection = behav[behav['subject_nickname'].isin(tbehav['subject_nickname'])]
-selection =  selection.groupby(['subject_nickname']).mean()
-selection['institution'] = [behav.loc[behav['subject_nickname'] == mouse, 
-            'institution_code'].unique()[0]for mouse in selection.index]
-selection_t = tbehav.groupby(['subject_nickname']).mean()
-sns.regplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
-            color = 'k', scatter=False)
-sns.scatterplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
-                hue =selection['institution'], palette = group_colors())
-ax.set_ylabel('$\Delta$ Bias Right  - Bias Left')
-ax.get_legend().set_visible(False)
-ax.set_xlabel('Sensory threshold during training')
-dbias = pd.DataFrame()
-dbias['bias'] = selection['bias_r']-selection['bias_l']
-dbias['t_threshold']  = selection_t['threshold']
-dbias.dropna(inplace=True)
-stats.spearmanr(dbias['t_threshold'], dbias['bias']) 
-stats.pearsonr(dbias['t_threshold'], dbias['bias'])
-sns.despine()
+
 
 
 

@@ -6,6 +6,8 @@ Psychometric functions of training mice, within and across labs
 """
 import seaborn as sns
 import os
+from os.path import join
+import pandas as pd
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, EXAMPLE_MOUSE,
                                       query_sessions_around_criterion, institution_map,
@@ -14,7 +16,10 @@ from paper_behavior_functions import (figpath, seaborn_style, group_colors, EXAM
 from ibl_pipeline import reference, subject, behavior
 from dj_tools import plot_psychometric, dj2pandas, plot_chronometric
 
-# INITIALIZE A FEW THINGS
+# whether to query data from DataJoint (True), or load from disk (False)
+query = False
+
+# Initialize
 seaborn_style()
 figpath = figpath()
 pal = group_colors()
@@ -25,23 +30,29 @@ col_names = col_names[:-1]
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
-                                                         days_from_criterion=[2, 0],
-                                                         as_dataframe=False)
+if query is True:
+    # query sessions
+    use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
+                                                             days_from_criterion=[2, 0],
+                                                             as_dataframe=False)
 
-# restrict by list of dicts with uuids for these sessions
-b = use_sessions * subject.Subject * subject.SubjectLab * reference.Lab * behavior.TrialSet.Trial
-# reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-            'trial_response_time', 'trial_stim_on_time')
-bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-behav = dj2pandas(bdat)
-behav['institution_code'] = behav.institution_short.map(institution_map)
-assert(~behav.empty)
-print(behav.describe())
+    # restrict by list of dicts with uuids for these sessions
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
+
+    # reduce the size of the fetch
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+                'trial_response_time', 'trial_stim_on_time')
+
+    # construct pandas dataframe
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav = dj2pandas(bdat)
+    behav['institution_code'] = behav.institution_short.map(institution_map)
+else:
+    behav = pd.read_csv(join('data', 'Fig3'))
 
 # %%
 

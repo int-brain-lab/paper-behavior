@@ -21,35 +21,56 @@ from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
 import scikit_posthocs as sp
 
-# Settings
-fig_path = figpath()
-seaborn_style()
+# whether to query data from DataJoint (True), or load from disk (False)
+query = False
 
-# Query sessions
-sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]
-sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
+# Initialize
+seaborn_style()
+figpath = figpath()
+pal = group_colors()
+institution_map, col_names = institution_map()
+col_names = col_names[:-1]
+
+if query is True:
+    # query sessions
+    use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
+                                                             days_from_criterion=[2, 0],
+                                                             as_dataframe=False)
+
+    # restrict by list of dicts with uuids for these sessions
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
+
+    # reduce the size of the fetch
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+                'trial_response_time', 'trial_stim_on_time')
+
+    # construct pandas dataframe
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav = dj2pandas(bdat)
+    behav['institution_code'] = behav.institution_short.map(institution_map)
+else:
+    behav = pd.read_csv(join('data', 'Fig3.csv'))
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
                                 'threshold', 'bias', 'reaction_time',
                                 'lapse_low', 'lapse_high'])
 
-for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
+for i, nickname in enumerate(behav['subject_nickname'].unique()):
     if np.mod(i+1, 10) == 0:
-        print('Loading data of subject %d of %d' % (i+1, len(
-                np.unique(sessions.fetch('subject_nickname')))))
+        print('Processing data of subject %d of %d' % (i+1,
+                                                       len(behav['subject_nickname'].unique())))
 
     # Get the trials of the sessions around criterion
-    trials = (sessions * behavior.TrialSet.Trial
-              & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
+    trials = behav[behav['subject_nickname'] == nickname]
     trials = trials.reset_index()
 
-    # Add n-trials per day
-    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
-
     # Fit a psychometric function to these trials and get fit results
-    fit_df = dj2pandas(trials)
-    fit_result = fit_psychfunc(fit_df)
+    fit_result = fit_psychfunc(trials)
 
     # Get RT, performance and number of trials
     reaction_time = trials['rt'].median()*1000
@@ -58,8 +79,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
-    learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
-                                                                    'institution_short')[0]
+    learned.loc[i, 'lab'] = trials['lab_name'][0]
     learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'reaction_time'] = reaction_time
@@ -133,6 +153,7 @@ learned_2 = learned.append(learned_2)
 # Plot behavioral metrics per lab
 f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6,
                                                  figsize=(FIGURE_WIDTH*1.1, FIGURE_HEIGHT))
+seaborn_style()
 lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
@@ -230,13 +251,14 @@ for i, var in enumerate(['perf_easy', 'threshold',
 
 sns.despine(trim=True)
 plt.tight_layout(w_pad=-0.1)
-plt.savefig(join(fig_path, 'figure3c-e_all_metrics_per_lab_level1.pdf'))
-plt.savefig(join(fig_path, 'figure3c-e_all_metrics_per_lab_level1.png'), dpi=300)
+plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_level1.pdf'))
+plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_level1.png'), dpi=300)
 
 # %%
 
 # Plot behavioral metrics per lab
 f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(FIGURE_WIDTH*0.6, FIGURE_HEIGHT))
+seaborn_style()
 lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
@@ -278,7 +300,7 @@ ax3.get_legend().set_visible(False)
 
 
 # statistical annotation
-for i, var in enumerate(['perf_easy', 'threshold','bias']):
+for i, var in enumerate(['perf_easy', 'threshold', 'bias']):
     def num_star(pvalue):
         if pvalue < 0.05:
             stars = '* p < 0.05'
@@ -298,8 +320,8 @@ for i, var in enumerate(['perf_easy', 'threshold','bias']):
 
 sns.despine(trim=True)
 plt.tight_layout()
-plt.savefig(join(fig_path, 'figure3c-e_metrics_per_lab_level1.pdf'))
-plt.savefig(join(fig_path, 'figure3c-e_metrics_per_lab_level1.png'), dpi=300)
+plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_level1.pdf'))
+plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_level1.png'), dpi=300)
 
 # %%
 

@@ -9,6 +9,7 @@ from dj_tools import dj2pandas, plot_psychometric, fit_psychfunc, plot_chronomet
 import pandas as pd
 import numpy as np
 import os
+from os.path import join
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
@@ -17,32 +18,60 @@ from paper_behavior_functions import (seaborn_style, figpath, group_colors, inst
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH)
 # import wrappers etc
-from ibl_pipeline import reference, subject, acquisition, behavior
+from ibl_pipeline import reference, subject, behavior
 from ibl_pipeline.utils import psychofit as psy
 
+# whether to query data from DataJoint (True), or load from disk (False)
+query = False
 
-# INITIALIZE A FEW THINGS
+# Initialize
 seaborn_style()
 figpath = figpath()
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
-sns.set_palette(cmap)  # palette for water types
 pal = group_colors()
 institution_map, col_names = institution_map()
+col_names = col_names[:-1]
+cmap = sns.diverging_palette(20, 220, n=3, center="dark")
+sns.set_palette(cmap)  # palette for water types
+
+# ================================= #
+# GET DATA FROM TRAINED ANIMALS
+# ================================= #
+
+if query is True:
+    # query sessions
+    use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
+                                                             days_from_criterion=[2, 0],
+                                                             as_dataframe=False)
+
+    # restrict by list of dicts with uuids for these sessions
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
+
+    # reduce the size of the fetch
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+                'trial_response_time', 'trial_stim_on_time')
+
+    # construct pandas dataframe
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav = dj2pandas(bdat)
+    behav['institution_code'] = behav.institution_short.map(institution_map)
+else:
+    behav = pd.read_csv(join('data', 'Fig4.csv'))
+
+# how many mice are there for each lab?
+N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
+behav['n_mice'] = behav.institution_code.map(N)
+behav['institution_name'] = behav.institution_code + '\n' + behav.n_mice.apply(str) + ' mice'
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
 # FOR OUR EXAMPLE ANIMAL
 # ================================= #
 
-b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
-     & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
-
-bdat = b.fetch(order_by='session_start_time, trial_id',
-               format='frame').reset_index()
-behav = dj2pandas(bdat)
-assert not behav.empty
-
-fig = sns.FacetGrid(behav,
+fig = sns.FacetGrid(behav[behav['subject_nickname'] == EXAMPLE_MOUSE],
                     hue="probabilityLeft", palette=cmap,
                     sharex=True, sharey=True,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
@@ -56,36 +85,6 @@ fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_example.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased_example.png"), dpi=600)
 plt.close('all')
-
-# ================================= #
-# GET DATA FROM TRAINED ANIMALS
-# ================================= #
-
-use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
-                                                         days_from_criterion=[
-                                                             2, 0],
-                                                         as_dataframe=False)
-# restrict by list of dicts with uuids for these sessions
-b = (use_sessions & 'task_protocol LIKE "%biased%"') \
-    * subject.Subject * subject.SubjectLab * reference.Lab * \
-    behavior.TrialSet.Trial
-# reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
-bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-behav = dj2pandas(bdat)
-behav['institution_code'] = behav.institution_short.map(institution_map)
-
-assert(~behav.empty)
-print(behav.describe())
-
-# how many mice are there for each lab?
-N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
-behav['n_mice'] = behav.institution_code.map(N)
-behav['institution_name'] = behav.institution_code + \
-    '\n' + behav.n_mice.apply(str) + ' mice'
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
@@ -178,7 +177,7 @@ for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav3[behav3['institution_code'].str.contains(inst)]
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
                       tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
-#ax1.set_title('All labs', color='k', fontweight='bold')
+# ax1.set_title('All labs', color='k', fontweight='bold')
 ax1.set(xlabel='Signed contrast (%)', ylabel='\u0394 Rightward choice (%)',
         yticks=[0, 10, 20, 30, 40])
 sns.despine(trim=True)
@@ -222,5 +221,5 @@ ax1.set(ylabel='\u0394 Rightward choices (%)\n at 0% contrast',
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 seaborn_style()
-#plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.pdf'))
-#plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.png'), dpi=300)
+# plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.pdf'))
+# plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.png'), dpi=300)

@@ -110,3 +110,5 @@ venv.bak/
 # macOS stuff
 .DS_store
 dj_local_conf.json
+
+data/

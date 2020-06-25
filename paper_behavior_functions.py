@@ -19,8 +19,9 @@ CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously
 STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
 
 # LAYOUT
-FIGURE_HEIGHT = 2 # inch
-FIGURE_WIDTH = 8 # inch
+FIGURE_HEIGHT = 2  # inch
+FIGURE_WIDTH = 8  # inch
+
 
 def group_colors():
     return sns.color_palette("Dark2", 7)
@@ -46,9 +47,9 @@ def seaborn_style():
                 "lines.linewidth": 1,
                 "xtick.labelsize": 7,
                 "ytick.labelsize": 7,
-                "savefig.transparent":True,
-                "xtick.major.size":2.5,
-                "ytick.major.size":2.5,
+                "savefig.transparent": True,
+                "xtick.major.size": 2.5,
+                "ytick.major.size": 2.5,
                 })
     sns.despine(trim=True)
     matplotlib.rcParams['pdf.fonttype'] = 42
@@ -211,7 +212,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
                             applies to biased and ready for ephys criterion
     """
 
-    from ibl_pipeline import subject, acquisition, reference
+    from ibl_pipeline import subject, acquisition
     from ibl_pipeline.analyses import behavior as behavior_analysis
 
     # Query all included subjects

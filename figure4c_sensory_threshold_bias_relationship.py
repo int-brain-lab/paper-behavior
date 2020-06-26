@@ -129,9 +129,9 @@ sns.regplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
             color = 'k', scatter=False)
 sns.scatterplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
                 hue =selection['institution'], palette = group_colors())
-ax.set_ylabel('$\Delta$ Bias Right  - Bias Left')
+ax.set_ylabel('$\Delta$ Rightward choices (%)\nin full task')
 ax.get_legend().set_visible(False)
-ax.set_xlabel('Sensory threshold during training')
+ax.set_xlabel('Visual threshold\n in basic task')
 
 sns.despine(trim=True)
 plt.tight_layout()

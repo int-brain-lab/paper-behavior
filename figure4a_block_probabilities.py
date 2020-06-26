@@ -67,8 +67,8 @@ behav['signed_contrast'] = behav['signed_contrast'].replace(100, 35)
 for dayidx, behavtmp in behav.groupby(['session_start_time']):
 
     # 1. patches to show the blocks
-    fig, axes = plt.subplots(ncols=1, nrows=1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT*0.9))
-    xmax = min([behavtmp.trial_id.max() + 5, 1005])
+    fig, axes = plt.subplots(ncols=1, nrows=1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
+    xmax = min([behavtmp.trial_id.max() + 5, 500])
 
     # Loop over data points; create box from errors at each point
     behavtmp['blocks'] = (behavtmp["probabilityLeft"].ne(
@@ -104,13 +104,13 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
                  data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax,
                  linestyle=':')
     rightax.set(xlim=[-5, xmax], xlabel='Trial number',
-                ylabel='Rightwards choice (%)', ylim=[-1, 101])
+                ylabel='Rightwards choices (%)', ylim=[-1, 101])
     rightax.yaxis.label.set_color("firebrick")
     rightax.tick_params(axis='y', colors='firebrick')
 
     axes.set_yticks([0, 50, 100])
     rightax.set_yticks([0, 50, 100])
-    # axes.set_title('Example session')
+    axes.set_title(' \n ')
 
     plt.tight_layout()
     fig.savefig(os.path.join(

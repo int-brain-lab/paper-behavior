@@ -15,7 +15,7 @@ from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
 
 # whether to query data from DataJoint (True), or load from disk (False)
-query = False
+query = True
 
 # Initialize
 seaborn_style()

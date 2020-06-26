@@ -67,6 +67,7 @@ behav_merged['task'] = behav_merged['task_protocol'].str[14:20].copy()
 
 behav = behav_merged.loc[behav_merged['task']=='biased'].copy() 
 behav = behav.reset_index()
+xvec = behav.signed_contrast.unique()
 
 for i, nickname in enumerate(np.unique(behav['subject_nickname'])):
         if np.mod(i+1, 10) == 0:
@@ -85,10 +86,18 @@ for i, nickname in enumerate(np.unique(behav['subject_nickname'])):
                 neutral_n.loc[0, 'threshold']
         behav.loc[behav['subject_nickname'] == nickname, 'bias_n'] = \
                 neutral_n.loc[0, 'bias']
+
+        # instaed of the bias term, compute delta rightward choices
         behav.loc[behav['subject_nickname'] == nickname, 'bias_r'] = \
-                right_fit.loc[0, 'bias']
+            psy.erf_psycho_2gammas([right_fit.bias.item(),
+                                           right_fit.threshold.item(),
+                                           right_fit.lapselow.item(),
+                                           right_fit.lapsehigh.item()], 0)
         behav.loc[behav['subject_nickname'] == nickname, 'bias_l'] = \
-                left_fit.loc[0, 'bias']
+            psy.erf_psycho_2gammas([left_fit.bias.item(),
+                                    left_fit.threshold.item(),
+                                    left_fit.lapselow.item(),
+                                    left_fit.lapsehigh.item()], 0)
 
 ##############################################################################
 #*****************************Unbiased Task**********************************#
@@ -107,12 +116,10 @@ for i, nickname in enumerate(np.unique(tbehav['subject_nickname'])):
     
         # Get the trials of the sessions around criterion
         trials = tbehav.loc[tbehav['subject_nickname'] == nickname].copy()
-        
         fit_df = dj2pandas(trials.copy())
         fit_result = fit_psychfunc(fit_df)
         tbehav.loc[tbehav['subject_nickname'] == nickname, 'threshold'] = \
                 fit_result.loc[0, 'threshold']
-
 
 ##############################################################################
 #***********************************Plot*************************************#
@@ -126,9 +133,9 @@ selection['institution'] = [behav.loc[behav['subject_nickname'] == mouse,
             'institution_code'].unique()[0]for mouse in selection.index]
 selection_t = tbehav.groupby(['subject_nickname']).mean()
 sns.regplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
-            color = 'k', scatter=False)
+            color = 'k', scatter=False, )
 sns.scatterplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
-                hue =selection['institution'], palette = group_colors())
+                hue=selection['institution'], palette = group_colors())
 ax.set_ylabel('$\Delta$ Rightward choices (%)\nin full task')
 ax.get_legend().set_visible(False)
 ax.set_xlabel('Visual threshold\n in basic task')

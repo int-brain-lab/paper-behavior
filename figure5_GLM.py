@@ -635,8 +635,6 @@ plt.sca(ax[0])
 bsensory = summary_curves[summary_curves['parameter'].isin(['6','25','12', '100'])]
 sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
              palette= pal, order=['6','12','25','100'], size = 7)
-sns.barplot(data = bsensory, x = 'parameter', y= 'weight', fill=False, 
-            order=['6','12','25','100'], linewidth =2, ci = 68, color = 'k')
 ax[0].get_legend().set_visible(False)
 ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
 ax[0].set_ylabel('Weight')
@@ -645,8 +643,6 @@ plt.sca(ax[1])
 breward= summary_curves[summary_curves['parameter'].isin(['rchoice','uchoice'])]
 sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
              palette= pal, order=['rchoice','uchoice'], size = 7)
-sns.barplot(data = breward, x = 'parameter', y= 'weight', fill=False, 
-            order=['rchoice','uchoice'], linewidth =2, ci = 68)
 ax[1].get_legend().set_visible(False)
 ax[1].set_xlabel(' ')
 if correction == True:
@@ -660,17 +656,17 @@ ax[1].set_ylim(0,1)
 plt.sca(ax[2])
 bbias= summary_curves[summary_curves['parameter'].isin(['block', 'intercept'])]
 sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['block', 'intercept'], size = 7)
-sns.barplot(data = bbias, x = 'parameter', y= 'weight', fill=False, 
-            order=['block', 'intercept'], linewidth =2, ci = 68)
+             palette= pal,  size = 7, order =
+             ['block', 'intercept'])
 ax[2].get_legend().set_visible(False)
 ax[2].set_xlabel(' ')
-ax[2].set_xticklabels(['Block Bias', 'Bias'], rotation = 45, ha='right')
+ax[2].set_xticklabels(['Bias', 'Block Bias'], rotation = 45, ha='right')
 ax[2].set_ylabel('Weight')
 ax[2].set_ylim(-1,1)
 
 plt.tight_layout()
 sns.despine(trim=True)
+fig.savefig(os.path.join(figpath, 'figure5_biased _weights.pdf'), dpi=600)
 
 
 # Unbiased Weights
@@ -679,8 +675,6 @@ plt.sca(ax[0])
 bsensory = tsummary_curves[tsummary_curves['parameter'].isin(['6','25','12', '100'])]
 sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
              palette= pal, order=['6','12','25','100'], size = 7)
-sns.barplot(data = bsensory, x = 'parameter', y= 'weight', fill=False, 
-            order=['6','12','25','100'], linewidth =2, ci = 68)
 ax[0].get_legend().set_visible(False)
 ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
 ax[0].set_ylabel('Weight')
@@ -690,8 +684,6 @@ plt.sca(ax[1])
 breward= tsummary_curves[tsummary_curves['parameter'].isin(['rchoice','uchoice'])]
 sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
              palette= pal, order=['rchoice','uchoice', 'rchoice+1','uchoice+1'], size = 7)
-sns.barplot(data = breward, x = 'parameter', y= 'weight', fill=False, 
-            order=['rchoice','uchoice'], linewidth =2, ci = 68)
 ax[1].get_legend().set_visible(False)
 ax[1].set_xlabel(' ')
 ax[1].set_ylim(0,1)
@@ -709,8 +701,6 @@ plt.sca(ax[2])
 bbias= tsummary_curves[tsummary_curves['parameter'].isin(['block', 'intercept'])]
 sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
              palette= pal, order=['intercept'], size = 7)
-sns.barplot(data = bbias, x = 'parameter', y= 'weight', fill=False, 
-            order=['intercept'], linewidth =2, ci = 68)
 ax[2].get_legend().set_visible(False)
 ax[2].set_xlabel('     ')
 ax[2].set_xticklabels(['Bias'], ha='center')
@@ -718,6 +708,7 @@ ax[2].set_ylabel('Weight')
 ax[2].set_ylim(-1,1)
 plt.tight_layout()
 sns.despine(trim=True)
+fig.savefig(os.path.join(figpath, 'figure5_unbiased _weights.pdf'), dpi=600)
 
 
 # Accuracy
@@ -745,7 +736,7 @@ sns.swarmplot(data=grouped, x = 'institution_code', y =grouped['accu']*100,color
 ax.set_xlabel('Laboratory')
 ax.set_ylabel('Model Accuracy %')
 sns.despine(trim=True)
-
+fig.savefig(os.path.join(figpath, 'figure5_accuracy.pdf'), dpi=600)
 
 
 

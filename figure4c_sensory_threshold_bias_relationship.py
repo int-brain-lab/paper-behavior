@@ -125,16 +125,18 @@ for i, nickname in enumerate(np.unique(tbehav['subject_nickname'])):
 #***********************************Plot*************************************#
 ##############################################################################    
 
-fig, ax = plt.subplots(1,1,figsize = (FIGURE_WIDTH/4, FIGURE_HEIGHT))
 
+# why copy these data again?
 selection = behav[behav['subject_nickname'].isin(tbehav['subject_nickname'])]
-selection =  selection.groupby(['subject_nickname']).mean()
+selection = selection.groupby(['subject_nickname']).mean()
 selection['institution'] = [behav.loc[behav['subject_nickname'] == mouse, 
             'institution_code'].unique()[0]for mouse in selection.index]
 selection_t = tbehav.groupby(['subject_nickname']).mean()
-sns.regplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
+
+fig, ax = plt.subplots(1,1,figsize = (FIGURE_WIDTH/4, FIGURE_HEIGHT))
+sns.regplot( selection_t['threshold'], (selection['bias_r']-selection['bias_l']) * 100,
             color = 'k', scatter=False, )
-sns.scatterplot( selection_t['threshold'], selection['bias_r']-selection['bias_l'],
+sns.scatterplot( selection_t['threshold'], (selection['bias_r']-selection['bias_l']) * 100,
                 hue=selection['institution'], palette = group_colors())
 ax.set_ylabel('$\Delta$ Rightward choices (%)\nin full task')
 ax.get_legend().set_visible(False)
@@ -149,6 +151,5 @@ dbias = pd.DataFrame()
 dbias['bias'] = selection['bias_r']-selection['bias_l']
 dbias['t_threshold']  = selection_t['threshold']
 dbias.dropna(inplace=True)
-stats.spearmanr(dbias['t_threshold'], dbias['bias']) 
-stats.pearsonr(dbias['t_threshold'], dbias['bias'])
-sns.despine(trim=True)
+print(stats.spearmanr(dbias['t_threshold'], dbias['bias']))
+print(stats.pearsonr(dbias['t_threshold'], dbias['bias']))

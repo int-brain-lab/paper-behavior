@@ -49,19 +49,23 @@ plt.close('all' )
 
 lab = (subject.SubjectLab * subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) \
       .fetch1('lab_name')
+days = [2, 7, 10, 14]
 
 # ==================================================
 # CONTRAST HEATMAP
 # ================================= #
 
 plt.close('all')
-xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
 fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/2, FIGURE_HEIGHT))
-behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[1].axis('off')
-ax[0].set_ylabel('Signed contrast (%)')
-ax[0].set_xlabel('Training days')
-ax[0].set_title('Example mouse')
+xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
+behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
+ax[0].set(ylabel='Contrast (%)', xlabel='Training day',
+       xticks= [d + 1.5 for d in days], xticklabels=days,
+       yticklabels=['-100', '-50', '-25', '-12.5', '-6.25', '0',
+                    '6', '12.5', '25', '50', '100'])
+for item in ax[0].get_xticklabels():
+    item.set_rotation(-0)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure1_example_contrastheatmap.pdf"))
 fig.savefig(os.path.join(
@@ -71,13 +75,14 @@ fig.savefig(os.path.join(
 # PSYCHOMETRIC AND CHRONOMETRIC FUNCTIONS FOR EXAMPLE 3 DAYS
 # ================================================================== #
 
+# make these a bit more narrow
+
 b = ((subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE)
      * (subject.SubjectLab & 'lab_name="%s"' % lab)
      * behavioral_analyses.BehavioralSummaryByDate)
 behav = b.fetch(format='frame').reset_index()
 behav['training_day'] = behav.training_day - \
     behav.training_day.min() + 1  # start at session 1
-days = [2, 7, 10, 14]
 
 for didx, day in enumerate(days):
 
@@ -99,19 +104,19 @@ for didx, day in enumerate(days):
         continue
 
     # PSYCHOMETRIC FUNCTIONS
-    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
+    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
     dj_tools.plot_psychometric(behavtmp.signed_contrast,
                                behavtmp.choice_right,
                                behavtmp.trial_id,
                                ax=ax, color='k')
-    ax.set(xlabel="Signed contrast (%)")
+    ax.set(xlabel="Contrast (%)")
 
     if didx == 0:
         ax.set(ylabel="Rightward choices (%)")
     else:
-        ax.set(ylabel=" ")
+        ax.set(ylabel=" ", yticklabels=[])
 
-    ax.set(title='Training day %d' % (day))
+    # ax.set(title='Training day %d' % (day))
     sns.despine(trim=True)
     plt.tight_layout()
     fig.savefig(os.path.join(
@@ -124,61 +129,66 @@ for didx, day in enumerate(days):
     # ================================================================== #
 
     plt.close('all')
-    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3.5, FIGURE_HEIGHT))
+    fig, ax = plt.subplots(2, 1, sharex=True,
+                           figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT*1.5))
 
     # running median overlaid
     sns.lineplot(x='trial_start_time', y='rt', color='black', ci=None,
-                 data=behavtmp[['trial_start_time', 'rt']].rolling(20).median(), ax=ax)
-    ax.set(xlabel="Trial number", ylabel="RT (s)", ylim=[0.02, 60])
-    ax.set_yscale("log")
-    ax.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
-                                                          ('{{:.{:1d}f}}'.format(int(np.maximum(
-                                                              -np.log10(y), 0)))).format(y)))
-    ax.set(xlabel="Time in session (min)")
+                 data=behavtmp[['trial_start_time', 'rt']].rolling(20).median(), ax=ax[0])
+    ax[0].set(xlabel="", ylabel="RT (s)", ylim=[0.02, 60])
+    ax[0].set_yscale("log")
+    ax[0].set(yticks=[0.01, 0.1, 1, 10, 60],
+              yticklabels=['', '0.1', '1', '10', ''],
+              xlim=[ax[0].get_xlim()[0]-2, ax[0].get_xlim()[1]])
 
+    # remove the x axis
+    ax[0].tick_params(axis='x', colors='white')
+    ax[0].spines['bottom'].set_color('white')
+    ax[0].get_xaxis().set_visible(False)
+    # ax[0].yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
+    #                                                       ('{{:.{:1d}f}}'.format(int(np.maximum(
+    #                                                           -np.log10(y), 0)))).format(y)))
     if didx == 0:
-        ax.set(ylabel="Trial duration (s)")
+        ax[0].set(ylabel="Trial duration (s)")
     else:
-        ax.set(ylabel=" ")
+        ax[0].set(ylabel=" ", yticklabels=[])
 
     # right y-axis with sliding performance
     # from :
     # https://stackoverflow.com/questions/36988123/pandas-groupby-and-rolling-apply-ignoring-nans
 
-    g1 = behavtmp[['trial_start_time', 'correct_easy']]
+    g1 = behavtmp[['trial_start_time', 'correct_easy']].copy()
     g1['correct_easy'] = g1.correct_easy * 100
     g2 = g1.fillna(0).copy()
     s = g2.rolling(50).sum() / g1.rolling(50).count()  # the actual computation
 
-    ax2 = ax.twinx()
-    sns.lineplot(x='trial_start_time', y='correct_easy', color='deepskyblue', ci=None,
-                 data=s, ax=ax2)
-    ax2.set(xlabel='',
-            ylim=[0, 101], yticks=[0, 50, 100])
+    sns.lineplot(x='trial_start_time', y='correct_easy', color='black', ci=None,
+                 data=s, ax=ax[1])
 
-    if day == max(days):
-        ax2.set(ylabel="Accuracy (%)")
+    if day == min(days):
+        ax[1].set(ylabel="Accuracy (%)")
     else:
-        ax2.set(ylabel=" ")
+        ax[1].set(ylabel=" ", yticklabels=[])
 
-    ax2.yaxis.label.set_color("deepskyblue")
-    ax2.tick_params(axis='y', colors='deepskyblue')
-    ax2.spines['right'].set_color('deepskyblue')
+    ax[1].set(xlabel='Time (min)', ylim=[0, 101], yticks=[0, 50, 100],
+              xlim=ax[0].get_xlim(), xticks=[0, 20, 40, 60])
+
+    #ax[1].yaxis.label.set_color("deepskyblue")
+    #ax[1].tick_params(axis='y', colors='deepskyblue')
+    # ax2.spines['right'].set_color('deepskyblue')
 
     # INDICATE THE REASON AND TRIAL AT WHICH SESSION SHOULD HAVE ENDED
     end_x = behavtmp.loc[behavtmp.trial_id == behavtmp.end_status_index.unique()[
         0], 'trial_start_time'].values.item()
-    ax2.axvline(x=end_x, color='darkgrey')
+    ax[0].axvline(x=end_x, color='darkgrey', linestyle=':')
+    ax[1].axvline(x=end_x, color='darkgrey', linestyle=':')
     # ax2.annotate(behavtmp.end_status.unique()[0], xy=(end_x, 100), xytext=(end_x, 105),
     #              arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
     print(behavtmp.end_status.unique()[0])
 
-    ax.set(title='Training day %d' % (day))
-    # sns.despine(trim=True)
-    sns.despine(ax=ax, top=True, left=False, right=False)
-    sns.despine(ax=ax2, top=True,  left=False, right=False)
-
-    plt.tight_layout()
+    ax[0].set(title='Day %d' % (day))
+    sns.despine(trim=True)
+    plt.tight_layout(h_pad=-0.1)
     fig.savefig(os.path.join(
         figpath, "figure1_example_disengagement_day%d.pdf" % (day)))
     fig.savefig(os.path.join(

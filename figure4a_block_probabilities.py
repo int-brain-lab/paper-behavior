@@ -67,7 +67,7 @@ behav['signed_contrast'] = behav['signed_contrast'].replace(100, 35)
 for dayidx, behavtmp in behav.groupby(['session_start_time']):
 
     # 1. patches to show the blocks
-    fig, axes = plt.subplots(ncols=1, nrows=1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
+    fig, axes = plt.subplots(ncols=1, nrows=1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT*0.9))
     xmax = min([behavtmp.trial_id.max() + 5, 1005])
 
     # Loop over data points; create box from errors at each point
@@ -110,7 +110,7 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
 
     axes.set_yticks([0, 50, 100])
     rightax.set_yticks([0, 50, 100])
-    axes.set_title('Example session')
+    # axes.set_title('Example session')
 
     plt.tight_layout()
     fig.savefig(os.path.join(

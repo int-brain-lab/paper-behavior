@@ -50,6 +50,8 @@ def seaborn_style():
                 "savefig.transparent": True,
                 "xtick.major.size": 2.5,
                 "ytick.major.size": 2.5,
+                "xtick.minor.size": 2,
+                "ytick.minor.size": 2,
                 })
     sns.despine(trim=True)
     matplotlib.rcParams['pdf.fonttype'] = 42
@@ -235,6 +237,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     elif criterion == 'ephys':
         subj_crit = (subject.Subject * use_subjects).aggr(
                         (acquisition.Session * behavior_analysis.SessionTrainingStatus)
+                        & 'task_protocol LIKE "%biased%" OR task_protocol LIKE "%ephys%"' \
                         & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
                         'subject_nickname', date_criterion='min(date(session_start_time))')
     else:

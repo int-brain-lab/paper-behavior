@@ -18,11 +18,11 @@ from paper_behavior_functions import (seaborn_style, figpath, group_colors, inst
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH)
 # import wrappers etc
-from ibl_pipeline import reference, subject, behavior
+from ibl_pipeline import reference, subject, behavior, acquisition
 from ibl_pipeline.utils import psychofit as psy
 
 # whether to query data from DataJoint (True), or load from disk (False)
-query = False
+query = True
 
 # Initialize
 seaborn_style()
@@ -78,7 +78,7 @@ fig = sns.FacetGrid(behav[behav['subject_nickname'] == EXAMPLE_MOUSE],
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_uuid")
 fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
 fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
-fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=8)
+fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
 fig.despine(trim=True)
 fig.axes[0][0].set_title('Example mouse', fontweight='bold', color='k')
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_example.pdf"))
@@ -97,13 +97,13 @@ fig = sns.FacetGrid(behav,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname")
-fig.set_axis_labels('Signed contrast (%)', ' ')
+fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
 fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
-fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=8)
+fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
 fig.despine(trim=True)
 fig.axes[0][0].set_title('All mice: n = %d' % behav.subject_nickname.nunique(),
                          fontweight='bold', color='k')
-fig.axes[0][0].set(yticklabels=" ")
+# fig.axes[0][0].set(yticklabels=" ")
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased.png"), dpi=600)
@@ -147,12 +147,12 @@ behav3['biasshift'] = behav3[20] - behav3[80]
 # plot one curve for each animal, one panel per lab
 plt.close('all')
 fig = sns.FacetGrid(behav3,
-                    col="institution_code", col_wrap=7, col_order=col_names[0:-1],
+                    col="institution_code", col_wrap=7, col_order=col_names,
                     sharex=True, sharey=True, hue="subject_nickname",
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/7)/FIGURE_HEIGHT)
 fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)
-fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choice (%)')
+fig.set_axis_labels('Contrast (%)', '\u0394 Rightward choices (%)')
 fig.set_titles("{col_name}")
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(sorted(behav.institution_name.unique())[axidx],
@@ -162,9 +162,9 @@ for axidx, ax in enumerate(fig.axes.flat):
 tmpdat = behav3[behav3['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_chronometric(tmpdat.signed_contrast, tmpdat.biasshift, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
-fig.set_axis_labels('Signed contrast (%)', '\u0394 Rightward choices (%)')
+fig.set_axis_labels('Contrast (%)', '\u0394 Rightward choices (%)')
 fig.despine(trim=True)
-plt.tight_layout(w_pad=-5)
+plt.tight_layout(w_pad=-1.7)
 fig.savefig(os.path.join(figpath, "figure4d_biasshift.pdf"))
 fig.savefig(os.path.join(figpath, "figure4d_biasshift.png"), dpi=300)
 plt.close('all')
@@ -178,7 +178,7 @@ for i, inst in enumerate(behav.institution_code.unique()):
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
                       tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
 # ax1.set_title('All labs', color='k', fontweight='bold')
-ax1.set(xlabel='Signed contrast (%)', ylabel='\u0394 Rightward choice (%)',
+ax1.set(xlabel='Contrast (%)', ylabel='\u0394 Rightward choices (%)',
         yticks=[0, 10, 20, 30, 40])
 sns.despine(trim=True)
 plt.tight_layout()

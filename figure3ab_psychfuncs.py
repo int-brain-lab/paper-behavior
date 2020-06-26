@@ -17,7 +17,7 @@ from ibl_pipeline import reference, subject, behavior
 from dj_tools import plot_psychometric, dj2pandas, plot_chronometric
 
 # whether to query data from DataJoint (True), or load from disk (False)
-query = False
+query = True
 
 # Initialize
 seaborn_style()
@@ -83,8 +83,8 @@ tmpdat = behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_psychometric(tmpdat.signed_contrast, tmpdat.choice_right, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
 fig.despine(trim=True)
-fig.set_axis_labels("Signed contrast (%)", 'Rightward choice (%)')
-plt.tight_layout(w_pad=-5)
+fig.set_axis_labels("Contrast (%)", 'Rightward choices (%)')
+plt.tight_layout(w_pad=-1.7)
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.png"), dpi=300)
 print('done')
@@ -98,7 +98,7 @@ for i, inst in enumerate(behav.institution_code.unique()):
     plot_psychometric(tmp_behav.signed_contrast, tmp_behav.choice_right,
                       tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
 ax1.set_title('All labs', color='k', fontweight='bold')
-ax1.set(xlabel='Signed contrast (%)', ylabel='Rightward choice (%)')
+ax1.set(xlabel='Contrast (%)', ylabel='Rightward choices (%)')
 sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure3b_psychfuncs_all_labs.pdf"))

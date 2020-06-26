@@ -13,7 +13,8 @@ import numpy as np
 from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (seaborn_style, query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath, EXAMPLE_MOUSE)
+                                      institution_map, group_colors, figpath, EXAMPLE_MOUSE,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference, acquisition
 import statsmodels.api as sm
@@ -23,7 +24,9 @@ import os
 from ibl_pipeline.utils import psychofit as psy
 from scipy import stats
 
-
+seaborn_style()
+institution_map, col_names = institution_map()
+figpath = figpath()
 
 ##############################################################################
 #*******************************Biased Task**********************************#
@@ -35,7 +38,6 @@ use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
                                                          days_from_criterion=[
                                                              2, 3],
                                                          as_dataframe=False)
-institution_map, col_names = institution_map()
 
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -80,7 +82,7 @@ for i, nickname in enumerate(np.unique(behav['subject_nickname'])):
                                             & (behav['probabilityLeft'] == 20)])
             
         behav.loc[behav['subject_nickname'] == nickname, 'threshold'] = \
-                fit_result.loc[0, 'threshold']
+                neutral_n.loc[0, 'threshold']
         behav.loc[behav['subject_nickname'] == nickname, 'bias_n'] = \
                 neutral_n.loc[0, 'bias']
         behav.loc[behav['subject_nickname'] == nickname, 'bias_r'] = \
@@ -115,9 +117,9 @@ for i, nickname in enumerate(np.unique(tbehav['subject_nickname'])):
 ##############################################################################
 #***********************************Plot*************************************#
 ##############################################################################    
-seaborn_style()
 
-fig, ax = plt.subplots(figsize = (5,5))
+fig, ax = plt.subplots(1,1,figsize = (FIGURE_WIDTH/4, FIGURE_HEIGHT))
+
 selection = behav[behav['subject_nickname'].isin(tbehav['subject_nickname'])]
 selection =  selection.groupby(['subject_nickname']).mean()
 selection['institution'] = [behav.loc[behav['subject_nickname'] == mouse, 
@@ -130,6 +132,12 @@ sns.scatterplot( selection_t['threshold'], selection['bias_r']-selection['bias_l
 ax.set_ylabel('$\Delta$ Bias Right  - Bias Left')
 ax.get_legend().set_visible(False)
 ax.set_xlabel('Sensory threshold during training')
+
+sns.despine(trim=True)
+plt.tight_layout()
+fig.savefig(os.path.join(figpath, "figure4c_correlation.pdf"))
+fig.savefig(os.path.join(figpath, "figure4c_correlation.png"), dpi=300)
+
 dbias = pd.DataFrame()
 dbias['bias'] = selection['bias_r']-selection['bias_l']
 dbias['t_threshold']  = selection_t['threshold']

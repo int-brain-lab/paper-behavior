@@ -23,6 +23,8 @@ import os
 from ibl_pipeline.utils import psychofit as psy
 from scipy import stats
 
+# whether to query data from DataJoint (True), or load from disk (False)
+query = True
 
 ##############################################################################
 #******************************* Functions **********************************#
@@ -375,29 +377,27 @@ bsession= '2019-08-31 11:59:37'
 tsession= '2019-08-23 11:00:32'
 correction = False
 
-# Query sessions biased data 
-use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[
-                                                             2, 3],
-                                                         as_dataframe=False)
-institution_map, col_names = institution_map()
-
-# restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
-
-# reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
-            'trial_feedback_type')
-bdat = b2.fetch(order_by=
-        'institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-behav_merged = dj2pandas(bdat)
-
-behav_merged['institution_code'] = \
-    behav_merged.institution_short.map(institution_map)
+if query is True:
+    # Query sessions biased data 
+    use_sessions, _ = query_sessions_around_criterion(criterion='biased',
+                                                      days_from_criterion=[2, 3])
+    institution_map, col_names = institution_map()
+    
+    # restrict by list of dicts with uuids for these sessions
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
+    
+    # reduce the size of the fetch
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 
+                'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+                'trial_feedback_type')
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav_merged = dj2pandas(bdat)
+    behav_merged['institution_code'] = behav_merged.institution_short.map(institution_map)
+else:
+    behav_merged = pd.read_csv(join('data', 'Fig5.csv'))
 
 # Variable to store model parameters
 behav_merged['rchoice'] = np.nan

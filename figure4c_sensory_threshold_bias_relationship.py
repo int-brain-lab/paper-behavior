@@ -24,6 +24,10 @@ import os
 from ibl_pipeline.utils import psychofit as psy
 from scipy import stats
 
+# whether to query data from DataJoint (True), or load from disk (False)
+query = False
+
+# initialize
 seaborn_style()
 institution_map, col_names = institution_map()
 figpath = figpath()
@@ -32,35 +36,36 @@ figpath = figpath()
 #*******************************Biased Task**********************************#
 ##############################################################################
 
+if query is True:
+    # Query sessions biased data 
+    use_sessions, _ = query_sessions_around_criterion(criterion='biased', days_from_criterion=[2, 3])
+    
+    # restrict by list of dicts with uuids for these sessions
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
+    
+    # reduce the size of the fetch
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 
+                'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+                'trial_feedback_type')
+    bdat = b2.fetch(order_by=
+            'institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav_merged = dj2pandas(bdat)
+    behav_merged['institution_code'] = behav_merged.institution_short.map(institution_map)
+    
+    # exclude contrasts that were part of a pilot with a different contrast set
+    behav_merged = behav_merged[((behav_merged['signed_contrast'] != -8)
+                                 & (behav_merged['signed_contrast'] != -4)
+                                 & (behav_merged['signed_contrast'] != 4)
+                                 & (behav_merged['signed_contrast'] != 8))]
+else:
+    behav_merged = pd.read_csv(join('data', 'Fig4c_and_Fig5.csv'))
+        
+        
+        
 
-# Query sessions biased data 
-use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[
-                                                             2, 3],
-                                                         as_dataframe=False)
-
-# restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
-
-# reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
-            'trial_feedback_type')
-bdat = b2.fetch(order_by=
-        'institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-behav_merged = dj2pandas(bdat)
-
-behav_merged['institution_code'] = \
-    behav_merged.institution_short.map(institution_map)
-
-# Drop trials with weird contrasts
-behav_merged.drop(behav_merged['probabilityLeft']
-                  [~behav_merged['signed_contrast'].isin(
-                      [100,25,12.5,6.25,0,-6.25,-12.5,-25,-100])].index, 
-                          inplace=True)
 
 # split the two types of task protocols (remove the pybpod version number
 behav_merged['task'] = behav_merged['task_protocol'].str[14:20].copy()

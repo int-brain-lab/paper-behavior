@@ -16,6 +16,9 @@ from ibl_pipeline.analyses import behavior as behavioral_analyses
 from ibl_pipeline import reference, subject, behavior, acquisition
 from dj_tools import dj2pandas
 
+# Get map of lab number to institute
+institution_map, _ = institution_map()
+
 # create data directory if it doesn't exist yet
 if not isdir('data'):
     mkdir('data')
@@ -37,7 +40,7 @@ use_subjects = query_subjects()
 b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
 behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
                 format='frame').reset_index()
-behav['institution_code'] = behav.institution_short.map(institution_map()[0])
+behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # Save to csv
 behav.to_csv(join('data', 'Fig2ab.csv'))
@@ -78,7 +81,7 @@ training_time['trials'] = ses.groupby('subject_nickname').sum()
 training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
 
 # Change lab name into lab number
-training_time['lab_number'] = training_time.lab.map(institution_map()[0])
+training_time['lab_number'] = training_time.lab.map(institution_map)
 training_time = training_time.sort_values('lab_number')
 
 # Save to csv
@@ -119,9 +122,7 @@ behav.to_csv(join('data', 'Fig3.csv'))
 print('Starting figure 4..')
 
 # query sessions
-use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
-                                                         days_from_criterion=[2, 0],
-                                                         as_dataframe=False)
+use_sessions, _ = query_sessions_around_criterion(criterion='ephys', days_from_criterion=[2, 0])
 
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -139,5 +140,39 @@ bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_tim
 behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
+# exclude contrasts that were part of a pilot with a different contrast set
+behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -4)
+               & (behav['signed_contrast'] != 4) & (behav['signed_contrast'] != 8))]
+
 # save to disk
 behav.to_csv(join('data', 'Fig4.csv'))
+
+# %%=============================== #
+# FIGURE 4c AND FIGURE 5
+# ================================= #
+print('Starting figure 5..')
+
+# Query sessions biased data 
+use_sessions, _ = query_sessions_around_criterion(criterion='biased', days_from_criterion=[2, 3])
+
+# restrict by list of dicts with uuids for these sessions
+b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+     * behavior.TrialSet.Trial)
+
+# reduce the size of the fetch
+b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
+            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+            'trial_feedback_type')
+bdat = b2.fetch(order_by=
+        'institution_short, subject_nickname, session_start_time, trial_id',
+                format='frame').reset_index()
+behav = dj2pandas(bdat)
+behav['institution_code'] = behav.institution_short.map(institution_map)
+
+# exclude contrasts that were part of a pilot with a different contrast set
+behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -4)
+               & (behav['signed_contrast'] != 4) & (behav['signed_contrast'] != 8))]
+
+# save to disk
+behav.to_csv(join('data', 'Fig4c_and_Fig5.csv'))

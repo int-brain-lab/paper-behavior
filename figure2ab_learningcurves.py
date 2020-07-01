@@ -16,6 +16,9 @@ from paper_behavior_functions import (query_subjects, figpath, group_colors,
                                       FIGURE_HEIGHT, FIGURE_WIDTH)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 
+# whether to query data from DataJoint (True), or load from disk (False)
+query = True
+
 # INITIALIZE A FEW THINGS
 seaborn_style()
 figpath = figpath()
@@ -27,11 +30,14 @@ col_names = col_names[:-1]
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-use_subjects = query_subjects()
-b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
-behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
-                format='frame').reset_index()
-behav['institution_code'] = behav.institution_short.map(institution_map)
+if query is True:
+    use_subjects = query_subjects()
+    b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
+    behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
+                    format='frame').reset_index()
+    behav['institution_code'] = behav.institution_short.map(institution_map)
+else:
+    behav = pd.read_csv(os.path.join('data', 'Fig2ab.csv'))
 
 # exclude sessions with fewer than 100 trials
 behav = behav[behav['n_trials_date'] > 100]

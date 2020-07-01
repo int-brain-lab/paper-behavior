@@ -15,30 +15,36 @@ import seaborn as sns
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH)
-from ibl_pipeline.analyses import behavior as behavior_analysis
+from ibl_pipeline.analyses import behavior as behavior_analyses
 from scipy import stats
 import scikit_posthocs as sp
+
+# whether to query data from DataJoint (True), or load from disk (False)
+query = True
 
 # Settings
 fig_path = figpath()
 seaborn_style()
 
-# Query sessions
-use_subjects = query_subjects()
-ses = (use_subjects * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResults
-       & 'training_status = "in_training" OR training_status = "untrainable"').proj(
-               'subject_nickname', 'n_trials_stim', 'institution_short').fetch(format='frame')
-ses = ses.reset_index()
-ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
-
-# Construct dataframe
-training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
-training_time['trials'] = ses.groupby('subject_nickname').sum()
-training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
-
-# Change lab name into lab number
-training_time['lab_number'] = training_time.lab.map(institution_map()[0])
-training_time = training_time.sort_values('lab_number')
+if query is True:
+    # Query sessions
+    use_subjects = query_subjects()
+    ses = (use_subjects * behavior_analyses.SessionTrainingStatus * behavior_analyses.PsychResults
+           & 'training_status = "in_training" OR training_status = "untrainable"').proj(
+                   'subject_nickname', 'n_trials_stim', 'institution_short').fetch(format='frame')
+    ses = ses.reset_index()
+    ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
+    
+    # Construct dataframe
+    training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
+    training_time['trials'] = ses.groupby('subject_nickname').sum()
+    training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
+    
+    # Change lab name into lab number
+    training_time['lab_number'] = training_time.lab.map(institution_map()[0])
+    training_time = training_time.sort_values('lab_number')
+else:
+    behav = pd.read_csv(join('data', 'Fig2d.csv'))
 
 # Number of sessions to trained for example mouse
 example_training_time = \

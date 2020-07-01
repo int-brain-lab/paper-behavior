@@ -255,8 +255,9 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
                    'subject_uuid', 'subject_nickname', 'session_date')
 
     # Use dates to query sessions
-    ses_query = (acquisition.Session).aggr(
-            days, from_date='min(session_date)', to_date='max(session_date)')
+    ses_query = (acquisition.Session 
+                 & 'task_protocol LIKE "%biased%" OR task_protocol LIKE "%ephys%"').aggr(
+                     days, from_date='min(session_date)', to_date='max(session_date)')
     sessions = (acquisition.Session * ses_query & 'date(session_start_time) >= from_date'
                 & 'date(session_start_time) <= to_date')
 

@@ -19,28 +19,35 @@ from paper_behavior_functions import (seaborn_style, institution_map,
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from lifelines import KaplanMeierFitter
 
+# whether to query data from DataJoint (True), or load from disk (False)
+query = True
+
 # Settings
 fig_path = figpath()
 seaborn_style()
 
-# Query all mice
-all_mice = (subject.Subject * subject.SubjectLab * reference.Lab
-            * subject.SubjectProject() & 'subject_project = "ibl_neuropixel_brainwide_01"')
-mice_started_training = (all_mice & (acquisition.Session() & 'task_protocol LIKE "%training%"'))
-still_training = all_mice.aggr(behavior_analysis.SessionTrainingStatus,
-                               session_start_time='max(session_start_time)') \
-                                    * behavior_analysis.SessionTrainingStatus - subject.Death \
-                                    & 'training_status = "in_training"' \
-                                    & 'session_start_time > "%s"' % CUTOFF_DATE
-use_subjects = mice_started_training - still_training
-
-# Get training status and training time in number of sessions and trials
-ses = (use_subjects
-       * behavior_analysis.SessionTrainingStatus
-       * behavior_analysis.PsychResults).proj(
-               'subject_nickname', 'training_status', 'n_trials_stim', 'institution_short').fetch(
-                                                                   format='frame').reset_index()
-ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
+if query is True:
+    # Query all mice
+    all_mice = (subject.Subject * subject.SubjectLab * reference.Lab
+                * subject.SubjectProject() & 'subject_project = "ibl_neuropixel_brainwide_01"')
+    mice_started_training = (all_mice & (acquisition.Session() & 'task_protocol LIKE "%training%"'))
+    still_training = all_mice.aggr(behavior_analysis.SessionTrainingStatus,
+                                   session_start_time='max(session_start_time)') \
+                                        * behavior_analysis.SessionTrainingStatus - subject.Death \
+                                        & 'training_status = "in_training"' \
+                                        & 'session_start_time > "%s"' % CUTOFF_DATE
+    use_subjects = mice_started_training - still_training
+    
+    # Get training status and training time in number of sessions and trials
+    ses = (use_subjects
+           * behavior_analysis.SessionTrainingStatus
+           * behavior_analysis.PsychResults).proj(
+                   'subject_nickname', 'training_status', 'n_trials_stim', 'institution_short').fetch(
+                                                                       format='frame').reset_index()
+    ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
+    ses = ses.drop('n_trials_stim', axis=1)
+else:
+    ses = pd.read_csv(join('data', 'Fig2c.csv'))
 
 # Construct dataframe from query
 training_time = pd.DataFrame()

@@ -99,6 +99,7 @@ behav_merged = pd.merge(behav_merged,
                         on=['institution_code', 'subject_nickname'])
 t2 = time.time()
 print('Elapsed time: %fs'%(t2-t))
+behav_merged.to_csv(os.path.join(figpath, 'correlation_anne.csv'))
 
 # %% PLOT - delta rightward choices
 fig, ax = plt.subplots(1,1,figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
@@ -156,3 +157,21 @@ fig.savefig(os.path.join(figpath, "figure4c_correlation_check.pdf"))
 print(stats.spearmanr(behav_merged['choiceprob_shift'],
                       behav_merged['bias_shift'], nan_policy='omit'))
 # print(stats.pearsonr(behav_merged['threshold'], behav_merged['choiceprob_shift']))
+
+
+# %% COMPARE THE TWO!
+csv_anne = pd.read_csv(os.path.join(figpath, 'correlation_anne.csv'))
+csv_alex = pd.read_csv(os.path.join(figpath, 'correlation_alex.csv'))
+csv_merged = pd.merge(csv_anne, csv_alex, on=['subject_nickname'])
+csv_merged = csv_merged.rename(columns={'threshold':'threshold_anne',
+                                        'threshold_y':'threshold_alex',
+                                        'bias_shift':'biasshift_anne',
+                                        'biasshift':'biasshift_alex',
+                                        'choiceprob_shift':'choiceprobshift_anne'})
+
+g = sns.pairplot(csv_merged[['threshold_anne', 'threshold_alex',
+                             'biasshift_anne', 'biasshift_alex',
+                             'choiceprobshift_anne']], corner=True)
+sns.despine(trim=True)
+plt.tight_layout()
+g.savefig(os.path.join(figpath, "figure4c_correlation_pairplot.pdf"))

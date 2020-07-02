@@ -19,10 +19,10 @@ def fit_psychfunc(df):
     if len(choicedat) > 4: # need some minimum number of unique x-values
         pars, L = psy.mle_fit_psycho(choicedat.values.transpose(), P_model='erf_psycho_2gammas',
                                  parstart=np.array(
-                                     [choicedat['signed_contrast'].mean(), 20., 0.05, 0.05]),
+                                     [0, 20., 0.05, 0.05]),
                                  parmin=np.array(
                                      [choicedat['signed_contrast'].min(), 5, 0., 0.]),
-                                 parmax=np.array([choicedat['signed_contrast'].max(), 100., 1, 1]))
+                                 parmax=np.array([choicedat['signed_contrast'].max(), 40., 1, 1]))
     else:
         pars = [np.nan, np.nan, np.nan, np.nan]
 
@@ -69,7 +69,7 @@ def plot_psychometric(x, y, subj, **kwargs):
     pars, L = psy.mle_fit_psycho(df2.transpose().values,  # extract the data from the df
                                  P_model='erf_psycho_2gammas',
                                  parstart=np.array(
-                                     [df2['signed_contrast'].mean(), 20., 0.05, 0.05]),
+                                     [0, 20., 0.05, 0.05]),
                                  parmin=np.array(
                                      [df2['signed_contrast'].min(), 5, 0., 0.]),
                                  parmax=np.array([df2['signed_contrast'].max(), 40., 1, 1]))

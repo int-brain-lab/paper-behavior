@@ -127,15 +127,22 @@ selection = behav[behav['subject_nickname'].isin(tbehav['subject_nickname'])]
 selection = selection.groupby(['subject_nickname']).mean()
 selection['institution'] = [behav.loc[behav['subject_nickname'] == mouse,
                                       'institution_code'].unique()[0] for mouse in selection.index]
+selection['biasshift'] = selection['bias_r'] - selection['bias_l']
 selection_t = tbehav.groupby(['subject_nickname']).mean()
+
+
+dbias = pd.merge(selection.reset_index(), selection_t.reset_index(), on=['subject_nickname'])
+# save for head-to-head comparison
+dbias[['institution', 'subject_nickname',
+    'threshold_y', 'biasshift']].to_csv(os.path.join(figpath, 'correlation_alex.csv'))
+
 sns.regplot(selection_t['threshold'], selection['bias_r'] - selection['bias_l'],
             color='k', scatter=False)
-sns.scatterplot(selection_t['threshold'], selection['bias_r'] - selection['bias_l'],
+sns.scatterplot(dbias['threshold_y'], dbias['biasshift'],
                 hue=selection['institution'], palette=group_colors())
 ax.set_ylabel('$\Delta$ Rightward choices (%)\nin full task')
 ax.get_legend().set_visible(False)
 ax.set_xlabel('Visual threshold\n in basic task')
-
 sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure4c_correlation.pdf"))
@@ -145,6 +152,6 @@ dbias = pd.DataFrame()
 dbias['bias'] = selection['bias_r'] - selection['bias_l']
 dbias['t_threshold'] = selection_t['threshold']
 dbias.dropna(inplace=True)
-stats.spearmanr(dbias['t_threshold'], dbias['bias'])
-stats.pearsonr(dbias['t_threshold'], dbias['bias'])
+stats.spearmanr(dbias['threshold_y'], dbias['biasshift'])
+stats.pearsonr(dbias['threshold_y'], dbias['biasshift'])
 sns.despine(trim=True)

@@ -93,9 +93,7 @@ training_time.to_csv(join('data', 'Fig2d.csv'))
 print('Starting figure 3..')
 
 # query sessions
-use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
-                                                         days_from_criterion=[2, 0],
-                                                         as_dataframe=False)
+use_sessions, _ = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])
 
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -148,7 +146,7 @@ behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -
 behav.to_csv(join('data', 'Fig4.csv'))
 
 # %%=============================== #
-# FIGURE 4c AND FIGURE 5
+# FIGURE 5
 # ================================= #
 print('Starting figure 5..')
 
@@ -175,4 +173,4 @@ behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -
                & (behav['signed_contrast'] != 4) & (behav['signed_contrast'] != 8))]
 
 # save to disk
-behav.to_csv(join('data', 'Fig4c_and_Fig5.csv'))
+behav.to_csv(join('data', 'Fig5.csv'))

@@ -24,8 +24,7 @@ Guido Meijer
 import pandas as pd
 import numpy as np
 from os.path import join
-from datetime import timedelta
-from paper_behavior_functions import query_sessions_around_criterion, institution_map
+from paper_behavior_functions import query_sessions_around_criterion, institution_map, QUERY
 from ibl_pipeline import subject, reference
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior
@@ -60,40 +59,61 @@ def decoding(resp, labels, clf, NUM_SPLITS, random_state):
     return f1, cm
 
 
-# Query sessions
-sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]
-sessions = sessions & 'task_protocol LIKE "%training%"'  # only get training sessions
-
-sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
+if QUERY is True:
+    use_sessions, _ = query_sessions_around_criterion(criterion='trained',
+                                                      days_from_criterion=[2, 0])
+    use_sessions = use_sessions & 'task_protocol LIKE "%training%"'  # only get training sessions   
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+                'trial_response_time', 'trial_stim_on_time', 'time_zone')
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav = dj2pandas(bdat)
+    behav['institution_code'] = behav.institution_short.map(institution_map()[0])
+    
+    # exclude contrasts that were part of a pilot with a different contrast set
+    behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -4)
+                   & (behav['signed_contrast'] != 4) & (behav['signed_contrast'] != 8))]
+else:
+    behav = pd.read_csv('data', 'Fig3.csv')
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
                                 'threshold', 'bias', 'reaction_time',
                                 'lapse_low', 'lapse_high', 'time_zone', 'UTC'])
 
-for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
+for i, nickname in enumerate(behav['subject_nickname'].unique()):
     if np.mod(i+1, 10) == 0:
-        print('Loading data of subject %d of %d' % (i+1, len(
-                np.unique(sessions.fetch('subject_nickname')))))
+        print('Processing data of subject %d of %d' % (i+1,
+                                                       len(behav['subject_nickname'].unique())))
 
-    # Get only the trials of the 50/50 blocks
-    trials = (sessions * behavior.TrialSet.Trial
-              & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
+    # Get the trials of the sessions around criterion for this subject
+    trials = behav[behav['subject_nickname'] == nickname]
     trials = trials.reset_index()
 
     # Fit a psychometric function to these trials and get fit results
-    fit_df = dj2pandas(trials)
-    fit_result = fit_psychfunc(fit_df)
+    fit_result = fit_psychfunc(trials)
 
     # Get RT, performance and number of trials
     reaction_time = trials['rt'].median()*1000
     perf_easy = trials['correct_easy'].mean()*100
     ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
+    
+     # Get timezone
+    time_zone = trials['time_zone'][0]
+    if (time_zone == 'Europe/Lisbon') or (time_zone == 'Europe/London'):
+        time_zone_number = 0
+    elif time_zone == 'America/New_York':
+        time_zone_number = -5
+    elif time_zone == 'America/Los_Angeles':
+        time_zone_number = -7
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
-    learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
-                                                                    'institution_short')[0]
+    learned.loc[i, 'lab'] = trials['institution_short'][0]
     learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
@@ -101,20 +121,7 @@ for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
     learned.loc[i, 'reaction_time'] = reaction_time
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
     learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
-
-    # Get the time zone and the time of training of the last session
-    time_zone = (sessions & 'subject_nickname = "%s"' % nickname).fetch('time_zone')[0]
-    if (time_zone == 'Europe/Lisbon') or (time_zone == 'Europe/London'):
-        time_zone_number = 0
-    elif time_zone == 'America/New_York':
-        time_zone_number = -5
-    elif time_zone == 'America/Los_Angeles':
-        time_zone_number = -7
-    session_time = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
-                                                            'session_start_time')[-1]
-    session_time = (session_time - timedelta(hours=time_zone_number)).time()
     learned.loc[i, 'time_zone'] = time_zone_number
-    learned.loc[i, 'UTC'] = session_time.hour
 
 # Drop mice with faulty RT
 learned = learned[learned['reaction_time'].notnull()]

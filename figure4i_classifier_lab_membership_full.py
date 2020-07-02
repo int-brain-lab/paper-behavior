@@ -23,7 +23,7 @@ June 22, 2020
 
 import numpy as np
 from os.path import join
-from paper_behavior_functions import institution_map
+from paper_behavior_functions import institution_map, QUERY
 from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -31,9 +31,6 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
-
-# whether to query data from DataJoint (True), or load from disk (False)
-query = True
 
 # Settings
 DECODER = 'forest'          # forest, bayes or regression
@@ -64,11 +61,12 @@ def decoding(resp, labels, clf, NUM_SPLITS, random_state):
 
 # %% query sessions
     
-if query is True:
+if QUERY is True:
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior
     use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
                                                       days_from_criterion=[2, 0])
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
     b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',

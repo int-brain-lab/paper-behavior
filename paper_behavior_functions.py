@@ -14,6 +14,7 @@ import datajoint as dj
 # from IPython import embed as shell  # for debugging
 
 # Some constants
+QUERY = True  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
 EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
 CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
 STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable

@@ -10,12 +10,9 @@ import numpy as np
 from os.path import join
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT)
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
 from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
-
-# whether to query data from DataJoint (True), or load from disk (False)
-query = True
 
 # Initialize
 seaborn_style()
@@ -26,7 +23,7 @@ col_names = col_names[:-1]
 
 # %% Process data
 
-if query is True:
+if QUERY is True:
     # query sessions
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior

@@ -16,13 +16,10 @@ from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
                                       institution_map, group_colors, figpath,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT)
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
 import scikit_posthocs as sp
-
-# whether to query data from DataJoint (True), or load from disk (False)
-query = True
 
 # Initialize
 seaborn_style()
@@ -31,7 +28,7 @@ pal = group_colors()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
-if query is True:
+if QUERY is True:
     # query sessions
     use_sessions, _ = query_sessions_around_criterion(criterion='trained',
                                                       days_from_criterion=[2, 0])
@@ -65,7 +62,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
         print('Processing data of subject %d of %d' % (i+1,
                                                        len(behav['subject_nickname'].unique())))
 
-    # Get the trials of the sessions around criterion
+    # Get the trials of the sessions around criterion for this subject
     trials = behav[behav['subject_nickname'] == nickname]
     trials = trials.reset_index()
 

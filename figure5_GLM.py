@@ -510,7 +510,7 @@ np.random.seed(1)
 # Line colors
 cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 
-# Get data from example session (TODO make inot specific query)
+# Get data from example session (TODO make into specific query)
 
 
 # Data for bias session
@@ -596,7 +596,7 @@ ax[0].lines[3].set_alpha(0)
 ax[0].set_ylabel('Fraction of choices')
 ax[0].set_ylim(0,1)
 ax[0].set_xlabel('Signed contrast %')
-ax[0].set_title('Unbiased - Example mouse')
+ax[0].set_title('Basic task - Example mouse')
 plt.sca(ax[1])
 for c, i  in enumerate([20, 50, 80]):
     subset = brsimulation.loc[brsimulation['probabilityLeft'] == i]
@@ -622,7 +622,7 @@ ax[1].lines[13].set_alpha(0)
 ax[1].set_ylabel('Fraction of choices')
 ax[1].set_ylim(0,1)
 ax[1].set_xlabel('Signed contrast %')
-ax[1].set_title('Biased - Example mouse')
+ax[1].set_title('Full task - Example mouse')
 sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, 'figure5_GLM.pdf'), dpi=600)

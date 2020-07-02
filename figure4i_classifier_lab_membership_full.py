@@ -78,7 +78,7 @@ if query is True:
     bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                     format='frame').reset_index()
     behav = dj2pandas(bdat)
-    behav['institution_code'] = behav.institution_short.map(institution_map)
+    behav['institution_code'] = behav.institution_short.map(institution_map()[0])
     
     # exclude contrasts that were part of a pilot with a different contrast set
     behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -4)

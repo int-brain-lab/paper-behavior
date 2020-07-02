@@ -15,7 +15,7 @@ from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
 
 # whether to query data from DataJoint (True), or load from disk (False)
-query = False
+query = True
 
 # Initialize
 seaborn_style()
@@ -81,7 +81,7 @@ f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(FIGURE_WIDTH*0.8, FIGURE_H
 
 lab_colors = group_colors()
 
-ax1.plot([10, 20], [10, 20], linestyle='dashed', color=[0.6, 0.6, 0.6])
+ax1.plot([10, 25], [10, 25], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
     ax1.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].mean(),
                  biased_fits.loc[biased_fits['lab'] == lab, 'threshold_r'].mean(),
@@ -89,9 +89,9 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
                  yerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
                  fmt='.', color=lab_colors[i])
 ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold',
-        yticks=ax1.get_xticks(), ylim=ax1.get_xlim())
+        xticks=[10, 15, 20, 25], yticks=[10, 15, 20, 25], ylim=ax1.get_xlim())
 
-ax2.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
+ax2.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
     ax2.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].mean(),
                  biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].mean(),
@@ -101,7 +101,7 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
 ax2.set(xlabel='80:20 block', ylabel='', title='Lapse left',
         yticks=ax2.get_xticks(), ylim=ax2.get_xlim())
 
-ax3.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
+ax3.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
     ax3.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].mean(),
                  biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_r'].mean(),

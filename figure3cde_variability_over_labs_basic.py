@@ -33,9 +33,9 @@ col_names = col_names[:-1]
 
 if query is True:
     # query sessions
-    use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
-                                                             days_from_criterion=[2, 0],
-                                                             as_dataframe=False)
+    use_sessions, _ = query_sessions_around_criterion(criterion='trained',
+                                                      days_from_criterion=[2, 0])
+    use_sessions = use_sessions & 'task_protocol LIKE "%training%"'  # only get training sessions
 
     # restrict by list of dicts with uuids for these sessions
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -79,7 +79,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
-    learned.loc[i, 'lab'] = trials['lab_name'][0]
+    learned.loc[i, 'lab'] = trials['institution_short'][0]
     learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'reaction_time'] = reaction_time
@@ -92,7 +92,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
 learned = learned[learned['reaction_time'].notnull()]
 
 # Change lab name into lab number
-learned['lab_number'] = learned.lab.map(institution_map()[0])
+learned['lab_number'] = learned.lab.map(institution_map)
 learned = learned.sort_values('lab_number')
 
 # Convert to float
@@ -255,10 +255,9 @@ plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_level1.pdf'))
 plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_level1.png'), dpi=300)
 
 # %%
-
 # Plot behavioral metrics per lab
 f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(FIGURE_WIDTH*0.6, FIGURE_HEIGHT))
-seaborn_style()
+
 lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
@@ -318,8 +317,8 @@ for i, var in enumerate(['perf_easy', 'threshold', 'bias']):
         axes[i].annotate(num_star(pvalue.to_numpy()[0]),
                          xy=[0.1, 0.8], xycoords='axes fraction', fontsize=5)
 
-sns.despine(trim=True)
 plt.tight_layout()
+sns.despine(trim=True)
 plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_level1.pdf'))
 plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_level1.png'), dpi=300)
 

@@ -94,8 +94,10 @@ print('Starting figure 3..')
 
 # query sessions
 use_sessions, _ = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])
+use_sessions = use_sessions & 'task_protocol LIKE "%training%"'  # only get training sessions
 
-# restrict by list of dicts with uuids for these sessions
+# query all trials for these sessions, it's split in two because otherwise the query would become 
+# too big to handle in one go
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
      * behavior.TrialSet.Trial)
 
@@ -121,6 +123,7 @@ print('Starting figure 4..')
 
 # query sessions
 use_sessions, _ = query_sessions_around_criterion(criterion='ephys', days_from_criterion=[2, 0])
+use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
 
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab

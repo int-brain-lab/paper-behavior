@@ -36,7 +36,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-DECODER = 'regression'           # forest, bayes or regression
+DECODER = 'forest'           # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
 METRICS = ['perf_easy', 'threshold', 'bias']
@@ -62,6 +62,8 @@ def decoding(resp, labels, clf, NUM_SPLITS, random_state):
 
 # Query sessions
 sessions = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])[0]
+sessions = sessions & 'task_protocol LIKE "%training%"'  # only get training sessions
+
 sessions = sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # Create dataframe with behavioral metrics of all mice

@@ -18,7 +18,7 @@ from paper_behavior_functions import (seaborn_style, figpath, group_colors, inst
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH)
 # import wrappers etc
-from ibl_pipeline import reference, subject, behavior, acquisition
+from ibl_pipeline import reference, subject, behavior
 from ibl_pipeline.utils import psychofit as psy
 
 # whether to query data from DataJoint (True), or load from disk (False)
@@ -39,9 +39,9 @@ sns.set_palette(cmap)  # palette for water types
 
 if query is True:
     # query sessions
-    use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
-                                                             days_from_criterion=[2, 0],
-                                                             as_dataframe=False)
+    use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
+                                                      days_from_criterion=[2, 0])
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
 
     # restrict by list of dicts with uuids for these sessions
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab

@@ -72,7 +72,7 @@ def plot_psychometric(x, y, subj, **kwargs):
                                      [df2['signed_contrast'].mean(), 20., 0.05, 0.05]),
                                  parmin=np.array(
                                      [df2['signed_contrast'].min(), 5, 0., 0.]),
-                                 parmax=np.array([df2['signed_contrast'].max(), 100., 1, 1]))
+                                 parmax=np.array([df2['signed_contrast'].max(), 40., 1, 1]))
 
     if brokenXaxis:
         # plot psychfunc
@@ -240,3 +240,4 @@ def dj2pandas(behav):
     #                  behav['session_start_time'].min()).dt.days
 
     return behav
+

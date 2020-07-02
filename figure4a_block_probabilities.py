@@ -64,10 +64,11 @@ assert not behav.empty
 behav['signed_contrast'] = behav['signed_contrast'].replace(-100, -35)
 behav['signed_contrast'] = behav['signed_contrast'].replace(100, 35)
 
+# %%
 for dayidx, behavtmp in behav.groupby(['session_start_time']):
 
     # 1. patches to show the blocks
-    fig, axes = plt.subplots(ncols=1, nrows=1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
+    fig, axes = plt.subplots(ncols=1, nrows=1, figsize=(FIGURE_WIDTH/3.2, FIGURE_HEIGHT*0.9))
     xmax = min([behavtmp.trial_id.max() + 5, 500])
 
     # Loop over data points; create box from errors at each point
@@ -82,7 +83,7 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
                                              0]],
                                          ec='none', alpha=0.2))
 
-    # %%
+    #
     # 2. actual block probabilities as grey line
     behavtmp['stim_sign'] = 100 * \
         ((np.sign(behavtmp.signed_contrast) / 2) + 0.5)
@@ -91,27 +92,26 @@ for dayidx, behavtmp in behav.groupby(['session_start_time']):
     #                 ec='none', linewidth=0, zorder=2)
     sns.lineplot(x='trial_id', y='stim_sign', color='black', ci=None,
                  data=behavtmp[['trial_id', 'stim_sign']].rolling(10).mean(), ax=axes)
-    axes.set(xlim=[-5, xmax], xlabel='Trial number',
-             ylabel='Stimuli on right (%)', ylim=[-1, 101])
-    axes.yaxis.label.set_color("black")
-    axes.tick_params(axis='y', colors='black')
     # %%
 
     # 3. ANIMAL CHOICES, rolling window
-    rightax = axes.twinx()
+    #rightax = axes.twinx()
     behavtmp['choice_right'] = behavtmp.choice_right * 100
     sns.lineplot(x='trial_id', y='choice_right', color='firebrick', ci=None,
-                 data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=rightax,
+                 data=behavtmp[['trial_id', 'choice_right']].rolling(10).mean(), ax=axes,
                  linestyle=':')
-    rightax.set(xlim=[-5, xmax], xlabel='Trial number',
-                ylabel='Rightwards choices (%)', ylim=[-1, 101])
-    rightax.yaxis.label.set_color("firebrick")
-    rightax.tick_params(axis='y', colors='firebrick')
+    # rightax.set(xlim=[-5, xmax], xlabel='Trial number',
+    #             ylabel='Rightwards choices (%)', ylim=[-1, 101])
+    # rightax.yaxis.label.set_color("firebrick")
+    # rightax.tick_params(axis='y', colors='firebrick')
+    # axes.set_yticks([0, 50, 100])
+    # rightax.set_yticks([0, 50, 100])
+    # axes.set_title(' \n ')
 
-    axes.set_yticks([0, 50, 100])
-    rightax.set_yticks([0, 50, 100])
-    axes.set_title(' \n ')
-
+    axes.set(xlim=[-5, xmax], xlabel='Trial number',
+             ylabel=' ', ylim=[-1, 101])
+    axes.yaxis.label.set_color("black")
+    axes.tick_params(axis='y', colors='black')
     plt.tight_layout()
     fig.savefig(os.path.join(
         figpath, "figure4_panel_session_course_%s.png" % dayidx.date()), dpi=600)

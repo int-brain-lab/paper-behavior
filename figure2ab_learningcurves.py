@@ -13,11 +13,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (query_subjects, figpath, group_colors,
                                       institution_map, seaborn_style, EXAMPLE_MOUSE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH)
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
-
-# whether to query data from DataJoint (True), or load from disk (False)
-query = True
 
 # INITIALIZE A FEW THINGS
 seaborn_style()
@@ -30,7 +27,7 @@ col_names = col_names[:-1]
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-if query is True:
+if QUERY is True:
     use_subjects = query_subjects()
     b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
     behav = b.fetch(order_by='institution_short, subject_nickname, training_day',

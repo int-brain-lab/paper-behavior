@@ -11,13 +11,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, EXAMPLE_MOUSE,
                                       query_sessions_around_criterion, institution_map,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH)
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from dj_tools import plot_psychometric, dj2pandas, plot_chronometric
-
-# whether to query data from DataJoint (True), or load from disk (False)
-query = True
 
 # Initialize
 seaborn_style()
@@ -30,7 +27,7 @@ col_names = col_names[:-1]
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-if query is True:
+if QUERY is True:
     # query sessions
     use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
                                                              days_from_criterion=[2, 0],

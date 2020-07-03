@@ -15,18 +15,15 @@ import seaborn as sns
 from ibl_pipeline import subject, reference, acquisition
 from paper_behavior_functions import (seaborn_style, institution_map,
                                       group_colors, figpath, CUTOFF_DATE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH)
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from lifelines import KaplanMeierFitter
-
-# whether to query data from DataJoint (True), or load from disk (False)
-query = True
 
 # Settings
 fig_path = figpath()
 seaborn_style()
 
-if query is True:
+if QUERY is True:
     # Query all mice
     all_mice = (subject.Subject * subject.SubjectLab * reference.Lab
                 * subject.SubjectProject() & 'subject_project = "ibl_neuropixel_brainwide_01"')

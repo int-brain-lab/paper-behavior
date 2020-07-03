@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-General functions and queries for the analysis of behavioral data
+General functions and queries for the analysis of behavioral data from the IBL task
 
-@authors: Guido Meijer, Anne Urai & Alejandro Pan Vazquez
+Guido Meijer, Anne Urai & Alejandro Pan Vazquez
 16 Jan 2020
 """
 

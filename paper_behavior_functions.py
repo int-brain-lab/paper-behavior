@@ -23,6 +23,9 @@ STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
 FIGURE_HEIGHT = 2  # inch
 FIGURE_WIDTH = 8  # inch
 
+# EXCLUDED SESSIONS 
+EXCLUDED_SESSIONS = ['a9fb578a-9d7d-42b4-8dbc-3b419ce9f424'] # Session UUID
+
 
 def group_colors():
     return sns.color_palette("Dark2", 7)
@@ -175,6 +178,9 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
 
     # Only use sessions up until the end of December
     sessions = sessions & 'date(session_start_time) <= "%s"' % CUTOFF_DATE
+    
+    # Exclude weird sessions
+    sessions = sessions & dj.Not([{'session_uuid': u_id} for u_id in EXCLUDED_SESSIONS])
 
     # If required only output sessions with stable hardware
     if stable is True:
@@ -257,8 +263,12 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     # Use dates to query sessions
     ses_query = (acquisition.Session).aggr(
                             days, from_date='min(session_date)', to_date='max(session_date)')
+    
     sessions = (acquisition.Session * ses_query & 'date(session_start_time) >= from_date'
                 & 'date(session_start_time) <= to_date')
+    
+    # Exclude weird sessions
+    sessions = sessions & dj.Not([{'session_uuid': u_id} for u_id in EXCLUDED_SESSIONS])
 
     # Transform to pandas dataframe if necessary
     if as_dataframe is True:
@@ -266,5 +276,8 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
         sessions = sessions.reset_index()
         days = days.fetch(format='frame')
         days = days.reset_index()
+        
+    
+    
 
     return sessions, days

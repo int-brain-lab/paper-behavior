@@ -41,9 +41,6 @@ if QUERY is True:
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map)
     
-    # exclude contrasts that were part of a pilot with a different contrast set
-    behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -4)
-                   & (behav['signed_contrast'] != 4) & (behav['signed_contrast'] != 8))]
 else:
     behav = pd.read_csv(join('data', 'Fig4.csv'))
 

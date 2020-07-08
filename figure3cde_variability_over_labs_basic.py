@@ -274,7 +274,7 @@ sns.swarmplot(y='threshold', x='lab_number', data=learned_no_all, hue='lab_numbe
               palette=lab_colors, ax=ax2, marker='.')
 axbox = sns.boxplot(y='threshold', x='lab_number', data=learned_2, color='white',
                     showfliers=False, ax=ax2)
-ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 25], xlabel='')
+ax2.set(ylabel='Contrast threshold (%)', ylim=[-1, 25], xlabel='')
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
 plt.setp(ax2.xaxis.get_majorticklabels(), rotation=60)
 axbox.artists[-1].set_edgecolor('black')
@@ -286,7 +286,7 @@ sns.swarmplot(y='bias', x='lab_number', data=learned_no_all, hue='lab_number',
               palette=lab_colors, ax=ax3, marker='.')
 axbox = sns.boxplot(y='bias', x='lab_number', data=learned_2, color='white', showfliers=False,
                     ax=ax3)
-ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
+ax3.set(ylabel='Bias (%)', ylim=[-30, 30], xlabel='')
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
 plt.setp(ax3.xaxis.get_majorticklabels(), rotation=60)
 axbox.artists[-1].set_edgecolor('black')

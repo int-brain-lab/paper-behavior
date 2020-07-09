@@ -91,10 +91,10 @@ for i, lab in enumerate(np.unique(training_time['lab_number'])):
     ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values,
              color=lab_colors[i])
 kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
-ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values, color='black')
+# ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values, color='black')
 ax1.set(ylabel='Cumulative probability of\nreaching trained criterion', xlabel='Training day',
         xlim=[0, 60], ylim=[0, 1.02])
-ax1.set_title('Per lab')
+ax1.set_title('All labs: %d mice'%training_time['nickname'].nunique())
 
 # kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
 # kmf.plot_cumulative_density(ax=ax2)

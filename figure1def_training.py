@@ -135,16 +135,16 @@ for didx, day in enumerate(days):
     # running median overlaid
     sns.lineplot(x='trial_start_time', y='rt', color='black', ci=None,
                  data=behavtmp[['trial_start_time', 'rt']].rolling(20).median(), ax=ax[0])
-    ax[0].set(xlabel="", ylabel="RT (s)", ylim=[0.02, 60])
+    ax[0].set(xlabel="", ylabel="RT (s)", ylim=[0.1, 60])
     ax[0].set_yscale("log")
-    ax[0].set(yticks=[0.01, 0.1, 1, 10, 60],
-              yticklabels=['', '0.1', '1', '10', ''],
+    ax[0].set(yticks=[0.1, 1, 10, 60],
+              yticklabels=['0.1', '1', '10', ''],
               xlim=[ax[0].get_xlim()[0]-2, ax[0].get_xlim()[1]])
 
     # remove the x axis
-    ax[0].tick_params(axis='x', colors='white')
-    ax[0].spines['bottom'].set_color('white')
-    ax[0].get_xaxis().set_visible(False)
+    # ax[0].tick_params(axis='x', colors='white')
+    # ax[0].spines['bottom'].set_color('white')
+    # ax[0].get_xaxis().set_visible(False)
     # ax[0].yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
     #                                                       ('{{:.{:1d}f}}'.format(int(np.maximum(
     #                                                           -np.log10(y), 0)))).format(y)))
@@ -170,7 +170,7 @@ for didx, day in enumerate(days):
     else:
         ax[1].set(ylabel=" ", yticklabels=[])
 
-    ax[1].set(xlabel='Time (min)', ylim=[0, 101], yticks=[0, 50, 100],
+    ax[1].set(xlabel='Time (min)', ylim=[0, 110], yticks=[0, 50, 100],
               xlim=ax[0].get_xlim(), xticks=[0, 20, 40, 60])
 
     #ax[1].yaxis.label.set_color("deepskyblue")
@@ -188,7 +188,7 @@ for didx, day in enumerate(days):
 
     ax[0].set(title='Day %d' % (day))
     sns.despine(trim=True)
-    plt.tight_layout(h_pad=-0.1)
+    plt.tight_layout(h_pad=-0.05)
     fig.savefig(os.path.join(
         figpath, "figure1_example_disengagement_day%d.pdf" % (day)))
     fig.savefig(os.path.join(

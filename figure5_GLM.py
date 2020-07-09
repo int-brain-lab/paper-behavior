@@ -494,15 +494,6 @@ for i in tbehav['institution_code'].unique():
 ##############################################################################
 
 
-
-# Set seed for simulation
-np.random.seed(1)
-
-# Line colors
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
-
-# Data for bias session
-
 b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
   & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
 
@@ -584,7 +575,8 @@ brsimulation['simulation_run'] = \
 
 # Figure of single session
 pal = group_colors()
-
+# Line colors
+cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 # Start plotting
 
 fig, ax =  plt.subplots(1,2, figsize=(FIGURE_WIDTH*0.5, FIGURE_HEIGHT), sharey='row')

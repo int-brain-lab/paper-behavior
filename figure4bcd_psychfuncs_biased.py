@@ -74,21 +74,21 @@ behav['institution_name'] = behav.institution_code + '\n' + behav.n_mice.apply(s
 # PSYCHOMETRIC FUNCTIONS
 # FOR OUR EXAMPLE ANIMAL
 # ================================= #
-#
-# fig = sns.FacetGrid(behav[behav['subject_nickname'] == EXAMPLE_MOUSE],
-#                     hue="probabilityLeft", palette=cmap,
-#                     sharex=True, sharey=True,
-#                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
-# fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_uuid")
-# fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
-# fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
-# fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
-# fig.despine(trim=True)
-# fig.axes[0][0].set_title('Example mouse', fontweight='bold', color='k')
-# fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_example.pdf"))
-# fig.savefig(os.path.join(
-#     figpath, "figure4b_psychfuncs_biased_example.png"), dpi=600)
-# plt.close('all')
+
+fig = sns.FacetGrid(behav[behav['subject_nickname'] == EXAMPLE_MOUSE],
+                    hue="probabilityLeft", palette=cmap,
+                    sharex=True, sharey=True,
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
+fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_uuid")
+fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
+fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
+fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
+fig.despine(trim=True)
+fig.axes[0][0].set_title('Example mouse', fontweight='bold', color='k')
+fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased_example.pdf"))
+fig.savefig(os.path.join(
+    figpath, "figure4b_psychfuncs_biased_example.png"), dpi=600)
+plt.close('all')
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
@@ -101,13 +101,13 @@ fig = sns.FacetGrid(behav,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname")
-fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
+fig.set_axis_labels('Contrast (%)', '')
 fig.ax.annotate('80:20', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
 fig.ax.annotate('20:80', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
 fig.despine(trim=True)
 fig.axes[0][0].set_title('All mice: n = %d' % behav.subject_nickname.nunique(),
                          fontweight='bold', color='k')
-# fig.axes[0][0].set(yticklabels=" ")
+fig.axes[0][0].set(yticklabels=" ")
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased.png"), dpi=600)

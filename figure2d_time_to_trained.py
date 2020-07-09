@@ -80,6 +80,9 @@ training_time_all = training_time.copy()
 training_time_all['lab_number'] = 'All'
 training_time_all = training_time.append(training_time_all)
 
+# print
+print(training_time_all.reset_index().groupby(['lab_number'])['subject_nickname'].nunique())
+
 f, (ax1) = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.set_palette(lab_colors)
 sns.swarmplot(y='sessions', x='lab_number', hue='lab_number', data=training_time_no_all,
@@ -93,6 +96,31 @@ ax1.set(ylabel='Days to trained', xlabel='')
 ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+sns.despine(trim=True)
+plt.tight_layout()
+plt.savefig(join(fig_path, 'figure2d_time_to_trained.pdf'))
+plt.savefig(join(fig_path, 'figure2d_time_to_trained.png'), dpi=300)
+
+
+# SAME FOR TRIALS TO TRAINED
+f, (ax1) = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
+sns.set_palette(lab_colors)
+sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all,
+              palette=lab_colors, ax=ax1, marker='.')
+axbox = sns.boxplot(y='trials', x='lab_number', data=training_time_all,
+                    color='white', showfliers=False, ax=ax1)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+    axbox.lines[j].set_color('black')
+ax1.set(ylabel='Trials to trained', xlabel='')
+ax1.get_legend().set_visible(False)
+# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+sns.despine(trim=True)
+plt.tight_layout()
+plt.savefig(join(fig_path, 'figure2d_trials_to_trained.pdf'))
+plt.savefig(join(fig_path, 'figure2d_trials_to_trained.png'), dpi=300)
+
 
 # sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all,
 #               palette=lab_colors, ax=ax2)
@@ -105,11 +133,6 @@ plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 # ax2.get_legend().set_visible(False)
 # # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 # plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
-
-sns.despine(trim=True)
-plt.tight_layout()
-plt.savefig(join(fig_path, 'figure2d_time_to_trained.pdf'))
-plt.savefig(join(fig_path, 'figure2d_time_to_trained.png'), dpi=300)
 
 # Get stats in text
 # Interquartile range per lab

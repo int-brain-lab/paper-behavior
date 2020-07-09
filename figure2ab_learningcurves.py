@@ -95,7 +95,7 @@ sns.lineplot(ax=fig.axes[0], x='training_day', y='performance_easy', color='blac
 
 fig.set_axis_labels('Training day', 'Performance (%)\n on easy trials')
 fig.despine(trim=True)
-plt.tight_layout(w_pad=-1.8)
+plt.tight_layout(w_pad=-2.2)
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.pdf"))
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=300)
 
@@ -103,12 +103,12 @@ fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=300)
 fig, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal,
              ax=ax1, legend=False, data=behav, ci=None)
-ax1.set_title('Per lab')
+ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
 ax1.set(xlabel='Training day',
-        ylabel='Performance (%)\non easy trials', xlim=[-1, 40])
-ax1.set(xticks=[0, 10, 20, 30, 40])
+        ylabel='Performance (%)\non easy trials', xlim=[-1, 60], ylim=[15,100])
+ax1.set(xticks=[0, 10, 20, 30, 40, 50, 60])
 
-seaborn_style()
+sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.pdf"))
 fig.savefig(os.path.join(

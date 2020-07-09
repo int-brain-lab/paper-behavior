@@ -145,8 +145,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
                      applies to biased and ready for ephys criterion
     """
 
-    from ibl_pipeline import subject, acquisition, reference
-    from ibl_pipeline.analyses import behavior as behavior_analysis
+    from ibl_pipeline import acquisition
 
     # Query sessions
     if force_cutoff is True:
@@ -156,23 +155,13 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
 
     # Query all sessions or only training or biased if required
     if task == 'all':
-        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
-                    * use_subjects * behavior_analysis.SessionTrainingStatus
-                    & 'task_protocol LIKE "%training%" OR task_protocol LIKE "%biased%"').proj(
-            'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
-                            'task_protocol', 'training_status')
+        sessions = acquisition.Session * use_subjects & 'task_protocol NOT LIKE "%habituation%"'
     elif task == 'training':
-        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
-                    * use_subjects * behavior_analysis.SessionTrainingStatus
-                    & 'task_protocol LIKE "%training%"').proj(
-            'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
-                            'task_protocol', 'training_status')
+        sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%training%"'
     elif task == 'biased':
-        sessions = (acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
-                    * use_subjects * behavior_analysis.SessionTrainingStatus
-                    & 'task_protocol LIKE "%biased%"').proj(
-            'session_uuid', 'subject_uuid', 'subject_nickname', 'institution_short',
-                            'task_protocol', 'training_status')
+        sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%biased%"'
+    elif task == 'ephys':
+        sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%ephys%"'
     else:
         raise Exception('task must be all, training or biased')
 

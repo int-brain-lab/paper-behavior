@@ -1,121 +1,99 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Quantify the variability of behavioral metrics within and between labs of mouse behavior.
-This script doesn't perform any analysis but plots summary statistics over labs.
+Plotting of behavioral metrics during the full task (biased blocks) per lab
 
 Guido Meijer
-16 Jan 2020
+6 May 2020
 """
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy import stats
-from os.path import join
 import seaborn as sns
-from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH)
-from dj_tools import dj2pandas, fit_psychfunc
-from ibl_pipeline import behavior, subject, reference
+import numpy as np
+from os.path import join
+import matplotlib.pyplot as plt
+from scipy import stats
 import scikit_posthocs as sp
+from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
+from dj_tools import fit_psychfunc, dj2pandas
+import pandas as pd
+from statsmodels.stats.multitest import multipletests
 
-# Settings
-fig_path = figpath()
+# Initialize
 seaborn_style()
+figpath = figpath()
+pal = group_colors()
+institution_map, col_names = institution_map()
+col_names = col_names[:-1]
 
-# Query sessions
-sessions = query_sessions_around_criterion(criterion='biased', days_from_criterion=[0, 10])[0]
-sessions = (sessions * subject.Subject * subject.SubjectLab * reference.Lab
-            & 'task_protocol LIKE "%biased%"')
+# %% Process data
 
-# Create dataframe with behavioral metrics of all mice
-learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'threshold', 'bias', 'reaction_time',
-                                'lapse_low', 'lapse_high', 'n_trials', 'n_sessions'])
+if QUERY is True:
+    # query sessions
+    from paper_behavior_functions import query_sessions_around_criterion
+    from ibl_pipeline import reference, subject, behavior
+    use_sessions, _ = query_sessions_around_criterion(criterion='biased',
+                                                      days_from_criterion=[1, 3])
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+                'trial_response_time', 'trial_stim_on_time')
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav = dj2pandas(bdat)
+    behav['institution_code'] = behav.institution_short.map(institution_map)
+else:
+    behav = pd.read_csv(join('data', 'Fig4.csv'))
 
-for i, nickname in enumerate(np.unique(sessions.fetch('subject_nickname'))):
+biased_fits = pd.DataFrame()
+for i, nickname in enumerate(behav['subject_nickname'].unique()):
     if np.mod(i+1, 10) == 0:
-        print('Loading data of subject %d of %d' % (i+1, len(
-                np.unique(sessions.fetch('subject_nickname')))))
+        print('Processing data of subject %d of %d' % (i+1,
+                                                       len(behav['subject_nickname'].unique())))
 
-    # Get only the trials of the 50/50 blocks
-    trials = (sessions * behavior.TrialSet.Trial
-              & 'subject_nickname = "%s"' % nickname
-              & 'trial_stim_prob_left = "0.5"').fetch(format='frame')
-    trials = trials.reset_index()
+    # Get lab
+    lab = behav.loc[behav['subject_nickname'] == nickname, 'institution_code'].unique()[0]
 
-    # Fit a psychometric function to these trials and get fit results
-    fit_df = dj2pandas(trials)
-    fit_result = fit_psychfunc(fit_df)
+    # Fit psychometric curve
+    left_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
+                                   & (behav['probabilityLeft'] == 80)])
+    right_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
+                                    & (behav['probabilityLeft'] == 20)])
+    fits = pd.DataFrame(data={'threshold_l': left_fit['threshold'],
+                              'threshold_r': right_fit['threshold'],
+                              'bias_l': left_fit['bias'],
+                              'bias_r': right_fit['bias'],
+                              'lapselow_l': left_fit['lapselow'],
+                              'lapselow_r': right_fit['lapselow'],
+                              'lapsehigh_l': left_fit['lapsehigh'],
+                              'lapsehigh_r': right_fit['lapsehigh'],
+                              'nickname': nickname, 'lab': lab})
+    biased_fits = biased_fits.append(fits, sort=False)
 
-    # Get performance, reaction time and number of trials
-    reaction_time = trials['rt'].median()*1000
-    perf_easy = trials['correct_easy'].mean()*100
-
-    # Get all the trials to get number of trials
-    trials = (sessions * behavior.TrialSet.Trial
-              & 'subject_nickname = "%s"' % nickname).fetch(format='frame')
-    trials = trials.reset_index()
-    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
-    nsessions = trials.groupby('session_uuid').size().shape[0]
-
-    # Add results to dataframe
-    learned.loc[i, 'mouse'] = nickname
-    learned.loc[i, 'lab'] = (sessions & 'subject_nickname = "%s"' % nickname).fetch(
-                                                                    'institution_short')[0]
-    learned.loc[i, 'perf_easy'] = perf_easy
-    learned.loc[i, 'reaction_time'] = reaction_time
-    learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
-    learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
-    learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
-    learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
-    learned.loc[i, 'n_trials'] = ntrials_perday
-    learned.loc[i, 'n_sessions'] = nsessions
-
-# Drop mice with faulty RT
-learned = learned[learned['reaction_time'].notnull()]
-
-# Change lab name into lab number
-learned['lab_number'] = learned.lab.map(institution_map()[0])
-learned = learned.sort_values('lab_number')
-
-# Convert to float
-learned[['perf_easy', 'reaction_time', 'threshold', 'n_sessions',
-         'bias', 'lapse_low', 'lapse_high', 'n_trials']] = learned[['perf_easy', 'reaction_time',
-                                                                    'threshold', 'n_sessions',
-                                                                    'bias', 'lapse_low',
-                                                                    'lapse_high',
-                                                                    'n_trials']].astype(float)
-
-# Add all mice to dataframe seperately for plotting
-learned_no_all = learned.copy()
-learned_no_all.loc[learned_no_all.shape[0] + 1, 'lab_number'] = 'All'
-learned_2 = learned.copy()
-learned_2['lab_number'] = 'All'
-learned_2 = learned.append(learned_2)
-
-# Stats
+# %% Statistics
+    
 stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
 posthoc_tests = {}
 
-for i, var in enumerate(['perf_easy', 'reaction_time', 'threshold', 'bias', 'n_trials']):
-    _, normal = stats.normaltest(learned[var])
+for i, var in enumerate(['threshold_l', 'threshold_r', 'lapselow_l', 'lapselow_r', 'lapsehigh_l',
+                         'lapsehigh_r', 'bias_l', 'bias_r']):
+    _, normal = stats.normaltest(biased_fits[var])
 
     if normal < 0.05:
         test_type = 'kruskal'
         test = stats.kruskal(*[group[var].values
-                               for name, group in learned.groupby('lab_number')])
+                               for name, group in biased_fits.groupby('lab')])
         if test[1] < 0.05:  # Proceed to posthocs
-            posthoc = sp.posthoc_dunn(learned, val_col=var, group_col='lab_number')
+            posthoc = sp.posthoc_dunn(biased_fits, val_col=var, group_col='lab')
         else:
             posthoc = np.nan
     else:
         test_type = 'anova'
         test = stats.f_oneway(*[group[var].values
-                                for name, group in learned.groupby('lab_number')])
+                                for name, group in biased_fits.groupby('lab')])
         if test[1] < 0.05:
-            posthoc = sp.posthoc_tukey(learned, val_col=var, group_col='lab_number')
+            posthoc = sp.posthoc_tukey(biased_fits, val_col=var, group_col='lab')
         else:
             posthoc = np.nan
 
@@ -124,120 +102,55 @@ for i, var in enumerate(['perf_easy', 'reaction_time', 'threshold', 'bias', 'n_t
     stats_tests.loc[i, 'test_type'] = test_type
     stats_tests.loc[i, 'p_value'] = test[1]
 
-if (stats.normaltest(learned['n_trials'])[1] < 0.05 or
-        stats.normaltest(learned['reaction_time'])[1] < 0.05):
-    test_type = 'spearman'
-    correlation_coef, correlation_p = stats.spearmanr(learned['reaction_time'],
-                                                      learned['n_trials'])
-if (stats.normaltest(learned['n_trials'])[1] > 0.05 and
-        stats.normaltest(learned['reaction_time'])[1] > 0.05):
-    test_type = 'pearson'
-    correlation_coef, correlation_p = stats.pearsonr(learned['reaction_time'],
-                                                     learned['n_trials'])
+# Correct for multiple tests
+stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
 
-# %% Plot behavioral metrics per lab
-
-
-def num_star(pvalue):
-    if pvalue < 0.05:
-        stars = '* p < 0.05'
-    if pvalue < 0.01:
-        stars = '** p < 0.01'
-    if pvalue < 0.001:
-        stars = '*** p < 0.001'
-    if pvalue < 0.0001:
-        stars = '**** p < 0.0001'
-    if pvalue > 0.05:
-        stars = ''
-    return stars
-
-
-# Create plot
-f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6, figsize=(20, 4))
-
+# %% Plot metrics
+    
+f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(FIGURE_WIDTH*0.8, FIGURE_HEIGHT))
 lab_colors = group_colors()
-sns.set_palette(lab_colors)
 
-sns.swarmplot(y='perf_easy', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax1)
-axbox = sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax1)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax1.set(ylabel='Performance at easy contrasts (%)', ylim=[70, 101], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-ax1.get_legend().set_visible(False)
-ax1.text(5, 101, num_star(stats_tests.loc[stats_tests['variable'] == 'perf_easy',
-                                          'p_value'].to_numpy()[0]))
+ax1.plot([10, 20], [10, 20], linestyle='dashed', color=[0.6, 0.6, 0.6])
+for i, lab in enumerate(biased_fits['lab'].unique()):
+    ax1.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].mean(),
+                 biased_fits.loc[biased_fits['lab'] == lab, 'threshold_r'].mean(),
+                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
+                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'threshold_l'].sem(),
+                 fmt='.', color=lab_colors[i])
+ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold',
+        yticks=ax1.get_xticks(), ylim=ax1.get_xlim())
 
-sns.swarmplot(y='threshold', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax2)
-axbox = sns.boxplot(y='threshold', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax2)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 40], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=40)
-ax2.get_legend().set_visible(False)
-ax2.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'threshold',
-                                      'p_value'].to_numpy()[0]), xy=[5, 40])
+ax2.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
+for i, lab in enumerate(biased_fits['lab'].unique()):
+    ax2.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].mean(),
+                 biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].mean(),
+                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].sem(),
+                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].sem(),
+                 fmt='.', color=lab_colors[i])
+ax2.set(xlabel='80:20 block', ylabel='', title='Lapse left',
+        yticks=ax2.get_xticks(), ylim=ax2.get_xlim())
 
-sns.swarmplot(y='bias', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax3)
-axbox = sns.boxplot(y='bias', x='lab_number', data=learned_2, color='white', showfliers=False,
-                    ax=ax3)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
-plt.setp(ax3.xaxis.get_majorticklabels(), rotation=40)
-ax3.set(ylabel='Bias', ylim=[-30, 30], xlabel='')
-ax3.get_legend().set_visible(False)
-ax3.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'bias',
-                                      'p_value'].to_numpy()[0]), xy=[5, 5])
+ax3.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
+for i, lab in enumerate(biased_fits['lab'].unique()):
+    ax3.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].mean(),
+                 biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_r'].mean(),
+                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
+                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].sem(),
+                 fmt='.', color=lab_colors[i])
+ax3.set(xlabel='80:20 block', ylabel='', title='Lapse right',
+        yticks=ax3.get_xticks(), ylim=ax3.get_xlim())
 
-sns.swarmplot(y='reaction_time', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax4)
-axbox = sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax4)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax4.get_legend().set_visible(False)
-ax4.set(ylabel='Trial duration (ms)', ylim=[100, 10000], xlabel='', yscale='log')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
-plt.setp(ax4.xaxis.get_majorticklabels(), rotation=40)
-ax4.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'reaction_time',
-                                      'p_value'].to_numpy()[0]), xy=[5, 3500])
+ax4.plot([-10, 10], [-10, 10], linestyle='dashed', color=[0.6, 0.6, 0.6])
+for i, lab in enumerate(biased_fits['lab'].unique()):
+    ax4.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].mean(),
+                 biased_fits.loc[biased_fits['lab'] == lab, 'bias_r'].mean(),
+                 xerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
+                 yerr=biased_fits.loc[biased_fits['lab'] == lab, 'bias_l'].sem(),
+                 fmt='.', color=lab_colors[i])
+ax4.set(xlabel='80:20 block', ylabel='', title='Bias',
+        yticks=ax4.get_xticks(), ylim=ax4.get_xlim())
 
-sns.swarmplot(y='n_trials', x='lab_number', data=learned_no_all, hue='lab_number', ax=ax5)
-axbox = sns.boxplot(y='n_trials', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax5)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax5.get_legend().set_visible(False)
-ax5.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
-plt.setp(ax5.xaxis.get_majorticklabels(), rotation=40)
-ax5.annotate(num_star(stats_tests.loc[stats_tests['variable'] == 'n_trials',
-                                      'p_value'].to_numpy()[0]), xy=[5, 1200])
-
-correlation_coef, correlation_p
-sns.regplot(x='reaction_time', y='n_trials', data=learned_2, color=[0.6, 0.6, 0.6],
-            ci=None, scatter=False, ax=ax6)
-sns.scatterplot(y='n_trials', x='reaction_time', hue='lab_number', data=learned,
-                palette=lab_colors, ax=ax6)
-ax6.annotate('Coef =' + ' ' + str(round(correlation_coef, 3)) +
-             ' ' + '**** p < 0.0001', xy=[300, 2000])
-
-ax6.set(ylabel='Number of trials', ylim=[0, 2000])
-ax6.set(xlabel='Reaction Time (ms)', xlim=[0, 2000])
-ax6.get_legend().remove()
-
-# statistical annotation
-plt.tight_layout(pad=2)
-seaborn_style()
-
-plt.savefig(join(fig_path, 'figure3g-i_metrics_per_lab_level2.pdf'), dpi=300)
-plt.savefig(join(fig_path, 'figure3g-i_metrics_per_lab_level2.png'), dpi=300)
+plt.tight_layout(w_pad=-0.1)
+sns.despine(trim=True)
+plt.savefig(join(figpath, 'suppfig_metrics_per_lab_full.pdf'))
+plt.savefig(join(figpath, 'suppfig_metrics_per_lab_full.png'), dpi=300)

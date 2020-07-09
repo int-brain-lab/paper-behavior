@@ -9,10 +9,13 @@ import seaborn as sns
 import numpy as np
 from os.path import join
 import matplotlib.pyplot as plt
+from scipy import stats
+import scikit_posthocs as sp
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
                                       FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
 from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
+from statsmodels.stats.multitest import multipletests
 
 # Initialize
 seaborn_style()
@@ -68,6 +71,40 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'lapsehigh_r': right_fit['lapsehigh'],
                               'nickname': nickname, 'lab': lab})
     biased_fits = biased_fits.append(fits, sort=False)
+
+# %% Statistics
+    
+stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
+posthoc_tests = {}
+
+for i, var in enumerate(['threshold_l', 'threshold_r', 'lapselow_l', 'lapselow_r', 'lapsehigh_l',
+                         'lapsehigh_r', 'bias_l', 'bias_r']):
+    _, normal = stats.normaltest(biased_fits[var])
+
+    if normal < 0.05:
+        test_type = 'kruskal'
+        test = stats.kruskal(*[group[var].values
+                               for name, group in biased_fits.groupby('lab')])
+        if test[1] < 0.05:  # Proceed to posthocs
+            posthoc = sp.posthoc_dunn(biased_fits, val_col=var, group_col='lab')
+        else:
+            posthoc = np.nan
+    else:
+        test_type = 'anova'
+        test = stats.f_oneway(*[group[var].values
+                                for name, group in biased_fits.groupby('lab')])
+        if test[1] < 0.05:
+            posthoc = sp.posthoc_tukey(biased_fits, val_col=var, group_col='lab')
+        else:
+            posthoc = np.nan
+
+    posthoc_tests['posthoc_'+str(var)] = posthoc
+    stats_tests.loc[i, 'variable'] = var
+    stats_tests.loc[i, 'test_type'] = test_type
+    stats_tests.loc[i, 'p_value'] = test[1]
+
+# Correct for multiple tests
+stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
 
 # %% Plot metrics
     

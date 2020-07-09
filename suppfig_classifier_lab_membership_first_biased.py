@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Decode in which lab a mouse was trained based on its behavioral metrics during the three sessions
-of the basic task variant in which the mouse was determined to be trained.
+of the full task variant in which the mouse was determined to be ready for ephys.
 
 As a positive control, the time zone in which the mouse was trained is included in the dataset
 since the timezone provides geographical information. Decoding is performed using cross-validated
@@ -18,28 +18,28 @@ METRICS:            List of strings indicating which behavioral metrics to inclu
 METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
 
 Guido Meijer
-16 Jan 2020
+June 22, 2020
 """
 
-import pandas as pd
 import numpy as np
 from os.path import join
-from paper_behavior_functions import query_sessions_around_criterion, institution_map, QUERY
-from ibl_pipeline import subject, reference
-from dj_tools import dj2pandas, fit_psychfunc
-from ibl_pipeline import behavior
+from paper_behavior_functions import institution_map, QUERY
+from dj_tools import fit_psychfunc, dj2pandas
+import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
-# Parameters
-DECODER = 'forest'           # forest, bayes or regression
+# Settings
+DECODER = 'forest'          # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
-METRICS = ['perf_easy', 'threshold', 'bias']
-METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'time_zone']
+METRICS = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
+           'lapsehigh_l', 'lapsehigh_r']
+METRICS_CONTROL = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
+                   'lapsehigh_l', 'lapsehigh_r', 'time_zone']
 
 
 # Decoding function with n-fold cross validation
@@ -59,10 +59,14 @@ def decoding(resp, labels, clf, NUM_SPLITS, random_state):
     return f1, cm
 
 
+# %% query sessions
+    
 if QUERY is True:
-    use_sessions, _ = query_sessions_around_criterion(criterion='trained',
-                                                      days_from_criterion=[2, 0])
-    use_sessions = use_sessions & 'task_protocol LIKE "%training%"'  # only get training sessions   
+    from paper_behavior_functions import query_sessions_around_criterion
+    from ibl_pipeline import reference, subject, behavior
+    use_sessions, _ = query_sessions_around_criterion(criterion='biased',
+                                                      days_from_criterion=[1, 3])
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
     b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
@@ -73,33 +77,19 @@ if QUERY is True:
                     format='frame').reset_index()
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
+    
 else:
-    behav = pd.read_csv('data', 'Fig3.csv')
+    behav = pd.read_csv('data', 'Fig4.csv')
 
-# Create dataframe with behavioral metrics of all mice
-learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
-                                'threshold', 'bias', 'reaction_time',
-                                'lapse_low', 'lapse_high', 'time_zone', 'UTC'])
-
+biased_fits = pd.DataFrame()
 for i, nickname in enumerate(behav['subject_nickname'].unique()):
     if np.mod(i+1, 10) == 0:
         print('Processing data of subject %d of %d' % (i+1,
                                                        len(behav['subject_nickname'].unique())))
 
-    # Get the trials of the sessions around criterion for this subject
-    trials = behav[behav['subject_nickname'] == nickname]
-    trials = trials.reset_index()
-
-    # Fit a psychometric function to these trials and get fit results
-    fit_result = fit_psychfunc(trials)
-
-    # Get RT, performance and number of trials
-    reaction_time = trials['rt'].median()*1000
-    perf_easy = trials['correct_easy'].mean()*100
-    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
-    
-     # Get timezone
-    time_zone = trials['time_zone'][0]
+    # Get lab and timezone
+    lab = behav.loc[behav['subject_nickname'] == nickname, 'institution_code'].unique()[0]
+    time_zone = behav.loc[behav['subject_nickname'] == nickname, 'time_zone'].unique()[0]
     if (time_zone == 'Europe/Lisbon') or (time_zone == 'Europe/London'):
         time_zone_number = 0
     elif time_zone == 'America/New_York':
@@ -107,22 +97,24 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     elif time_zone == 'America/Los_Angeles':
         time_zone_number = -7
 
-    # Add results to dataframe
-    learned.loc[i, 'mouse'] = nickname
-    learned.loc[i, 'lab'] = trials['institution_short'][0]
-    learned.loc[i, 'perf_easy'] = perf_easy
-    learned.loc[i, 'n_trials'] = ntrials_perday
-    learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
-    learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
-    learned.loc[i, 'reaction_time'] = reaction_time
-    learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
-    learned.loc[i, 'lapse_high'] = fit_result.loc[0, 'lapsehigh']
-    learned.loc[i, 'time_zone'] = time_zone_number
+    # Fit psychometric curve
+    left_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
+                                   & (behav['probabilityLeft'] == 80)])
+    right_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
+                                    & (behav['probabilityLeft'] == 20)])
+    fits = pd.DataFrame(data={'threshold_l': left_fit['threshold'],
+                              'threshold_r': right_fit['threshold'],
+                              'bias_l': left_fit['bias'],
+                              'bias_r': right_fit['bias'],
+                              'lapselow_l': left_fit['lapselow'],
+                              'lapselow_r': right_fit['lapselow'],
+                              'lapsehigh_l': left_fit['lapsehigh'],
+                              'lapsehigh_r': right_fit['lapsehigh'],
+                              'nickname': nickname, 'lab': lab, 'time_zone': time_zone_number})
+    biased_fits = biased_fits.append(fits, sort=False)
 
-# Drop mice with faulty RT
-learned = learned[learned['reaction_time'].notnull()]
-learned['lab_number'] = learned.lab.map(institution_map()[0])
-learned = learned.sort_values('lab_number')
+
+# %% Do decoding
 
 # Initialize decoders
 print('\nDecoding of lab membership..')
@@ -140,32 +132,28 @@ np.random.seed(424242)
 random_states = np.random.randint(10000, 99999, ITERATIONS)
 
 # Perform decoding of lab membership
-decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
-                                        'control', 'control_shuffled', 'control_cm'])
-decod = learned.copy()
+result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
+                               'control', 'control_shuffled', 'control_cm'])
+decod = biased_fits.copy()
 decoding_set = decod[METRICS].values
-control_set = decod[METRIS_CONTROL].values
+control_set = decod[METRICS_CONTROL].values
 for i in range(ITERATIONS):
     if np.mod(i+1, 100) == 0:
         print('Iteration %d of %d' % (i+1, ITERATIONS))
-    # Original dataset
-    decoding_result.loc[i, 'original'], conf_matrix = decoding(
-            decoding_set, list(decod['lab_number']), clf, NUM_SPLITS, random_states[i])
-    decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
-                                                  / conf_matrix.sum(axis=1)[:, np.newaxis])
-    decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
-                                                           list(
-                                                              decod['lab_number'].sample(frac=1)),
-                                                           clf, NUM_SPLITS, random_states[i])[0]
-    # Positive control dataset
-    decoding_result.loc[i, 'control'], conf_matrix = decoding(
-            control_set, list(decod['lab_number']), clf, NUM_SPLITS, random_states[i])
-    decoding_result.loc[i, 'control_cm'] = (conf_matrix
-                                            / conf_matrix.sum(axis=1)[:, np.newaxis])
-    decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
-                                                          list(decod['lab_number'].sample(frac=1)),
-                                                          clf, NUM_SPLITS, random_states[i])[0]
 
+    # Original dataset
+    result.loc[i, 'original'], conf_matrix = decoding(decoding_set, list(decod['lab']),
+                                                      clf, NUM_SPLITS, random_states[i])
+    result.loc[i, 'confusion_matrix'] = conf_matrix / conf_matrix.sum(axis=1)[:, np.newaxis]
+    result.loc[i, 'original_shuffled'] = decoding(decoding_set, list(decod['lab'].sample(frac=1)),
+                                                  clf, NUM_SPLITS, random_states[i])[0]
+
+    # Positive control dataset
+    result.loc[i, 'control'], conf_matrix = decoding(control_set, list(decod['lab']),
+                                                     clf, NUM_SPLITS, random_states[i])
+    result.loc[i, 'control_cm'] = conf_matrix / conf_matrix.sum(axis=1)[:, np.newaxis]
+    result.loc[i, 'control_shuffled'] = decoding(control_set, list(decod['lab'].sample(frac=1)),
+                                                 clf, NUM_SPLITS, random_states[i])[0]
 # Save to csv
-decoding_result.to_pickle(join('classification_results',
-                               'classification_results_basic_%s.pkl' % DECODER))
+result.to_pickle(join('classification_results',
+                      'classification_results_first_biased_%s.pkl' % DECODER))

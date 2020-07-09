@@ -11,15 +11,17 @@ Guido Meijer
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from os.path import join
 from paper_behavior_functions import (seaborn_style, institution_map, group_colors, figpath,
-                                      query_subjects)
+                                      query_subjects, FIGURE_WIDTH, FIGURE_HEIGHT)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # Settings
 fig_path = figpath()
 bin_centers = np.arange(3, 40, 3)
 bin_size = 5
+seaborn_style()
 
 # Load in data
 use_subjects = query_subjects()
@@ -39,17 +41,17 @@ for i, day in enumerate(bin_centers):
 # Plot output
 
 colors = group_colors()
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(FIGURE_WIDTH*0.7, FIGURE_HEIGHT))
 for i, lab in enumerate(std_days.index.values):
     ax1.plot(std_days.loc[lab], color=colors[i], lw=2, label='Lab %s' % (i + 1))
-    ax1.legend(frameon=False, loc='lower center', ncol=3, bbox_to_anchor=(0.5, 1))
+    #ax1.legend(frameon=False, loc='lower center', ncol=3, bbox_to_anchor=(0.5, 1))
 ax1.set(xlabel='Training days', ylabel='Variability (std)', title='Within labs')
 ax1.set(xlim=[0, 40])
 ax2.plot(mean_days.std(), lw=2)
 ax2.set(xlabel='Training days', ylabel='Variability (std)', title='Between labs')
 ax2.set(xlim=[0, 40])
 
-seaborn_style()
-plt.tight_layout(pad=2)
-plt.savefig(join(fig_path, 'suppfig4_variability_over_time.pdf'), dpi=300)
+sns.despine(trim=True)
+plt.tight_layout()
+plt.savefig(join(fig_path, 'suppfig4_variability_over_time.pdf'))
 plt.savefig(join(fig_path, 'suppfig4_variability_over_time.png'), dpi=300)

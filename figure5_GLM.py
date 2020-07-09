@@ -638,7 +638,8 @@ bsensory = tsummary_curves[tsummary_curves['parameter'].isin(['6','25','12', '10
 sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
              palette= pal, order=['6','12','25','100'])
 ax[0].get_legend().set_visible(False)
-ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
+ax[0].set_title('Visual Parameters')
+ax[0].set_xlabel('Contrast %')
 ax[0].set_ylabel('Weight')
 ax[0].set_ylim(0,5)
 
@@ -646,6 +647,7 @@ plt.sca(ax[1])
 breward= tsummary_curves[tsummary_curves['parameter'].isin(['rchoice','uchoice'])]
 sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
              palette= pal, order=['rchoice','uchoice'])
+ax[1].set_title('History Parameters')
 ax[1].get_legend().set_visible(False)
 ax[1].set_xlabel(' ')
 ax[1].set_ylim(0,1)
@@ -665,6 +667,7 @@ sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight',
              palette= pal, order=['intercept'])
 ax[2].get_legend().set_visible(False)
 ax[2].set_xlabel('     ')
+ax[2].set_title('Bias Parameter')
 ax[2].set_xticklabels(['Bias'], ha='center')
 ax[2].set_ylabel('Weight')
 ax[2].set_ylim(-1,1)
@@ -682,6 +685,7 @@ sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight'
              palette= pal, order=['6','12','25','100'])
 ax[0].get_legend().set_visible(False)
 ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
+ax[0].set_title('Visual Parameters')
 ax[0].set_ylabel('Weight')
 ax[0].set_ylim(0,5)
 plt.sca(ax[1])
@@ -697,6 +701,7 @@ else:
     ax[1].set_xticklabels(['Rewarded \n Choice (t-1)', 'Unrewarded \n Choice (t-1)'],
                           ha='center')
 ax[1].set_ylabel('Weight')
+ax[1].set_title('History Parameters')
 ax[1].set_ylim(0,1)
 plt.sca(ax[2])
 bbias= summary_curves[summary_curves['parameter'].isin(['block', 'intercept'])]
@@ -704,6 +709,7 @@ sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight',
              palette= pal, order = ['block', 'intercept'])
 ax[2].get_legend().set_visible(False)
 ax[2].set_xlabel(' ')
+ax[2].set_title('Bias Parameters')
 ax[2].set_xticklabels(['Bias', 'Block Bias'], rotation = 45, ha='right')
 ax[2].set_ylabel('Weight')
 ax[2].set_ylim(-1,1)

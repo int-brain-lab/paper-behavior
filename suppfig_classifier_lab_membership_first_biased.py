@@ -36,10 +36,8 @@ from sklearn.metrics import f1_score, confusion_matrix
 DECODER = 'forest'          # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
-METRICS = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
-           'lapsehigh_l', 'lapsehigh_r']
-METRICS_CONTROL = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
-                   'lapsehigh_l', 'lapsehigh_r', 'time_zone']
+METRICS = ['perf_easy', 'threshold_l', 'threshold_r', 'bias_l', 'bias_r']
+METRICS_CONTROL = ['perf_easy', 'threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'time_zone']
 
 
 # Decoding function with n-fold cross validation
@@ -102,17 +100,14 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                                    & (behav['probabilityLeft'] == 80)])
     right_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
                                     & (behav['probabilityLeft'] == 20)])
-    fits = pd.DataFrame(data={'threshold_l': left_fit['threshold'],
+    perf_easy = (behav.loc[behav['subject_nickname'] == nickname, 'correct_easy'].mean()) * 100
+    fits = pd.DataFrame(data={'perf_easy': perf_easy,
+                              'threshold_l': left_fit['threshold'],
                               'threshold_r': right_fit['threshold'],
                               'bias_l': left_fit['bias'],
                               'bias_r': right_fit['bias'],
-                              'lapselow_l': left_fit['lapselow'],
-                              'lapselow_r': right_fit['lapselow'],
-                              'lapsehigh_l': left_fit['lapsehigh'],
-                              'lapsehigh_r': right_fit['lapsehigh'],
                               'nickname': nickname, 'lab': lab, 'time_zone': time_zone_number})
     biased_fits = biased_fits.append(fits, sort=False)
-
 
 # %% Do decoding
 

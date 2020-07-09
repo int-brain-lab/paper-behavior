@@ -30,8 +30,8 @@ if QUERY is True:
     # query sessions
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior
-    use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
-                                                      days_from_criterion=[2, 0])
+    use_sessions, _ = query_sessions_around_criterion(criterion='biased',
+                                                      days_from_criterion=[1, 3])
     use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
@@ -43,7 +43,6 @@ if QUERY is True:
                     format='frame').reset_index()
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map)
-    
 else:
     behav = pd.read_csv(join('data', 'Fig4.csv'))
 
@@ -121,7 +120,7 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
 ax1.set(xlabel='80:20 block', ylabel='20:80 block', title='Threshold',
         yticks=ax1.get_xticks(), ylim=ax1.get_xlim())
 
-ax2.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
+ax2.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
     ax2.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_l'].mean(),
                  biased_fits.loc[biased_fits['lab'] == lab, 'lapselow_r'].mean(),
@@ -131,7 +130,7 @@ for i, lab in enumerate(biased_fits['lab'].unique()):
 ax2.set(xlabel='80:20 block', ylabel='', title='Lapse left',
         yticks=ax2.get_xticks(), ylim=ax2.get_xlim())
 
-ax3.plot([0, 0.1], [0, 0.1], linestyle='dashed', color=[0.6, 0.6, 0.6])
+ax3.plot([0, 0.2], [0, 0.2], linestyle='dashed', color=[0.6, 0.6, 0.6])
 for i, lab in enumerate(biased_fits['lab'].unique()):
     ax3.errorbar(biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_l'].mean(),
                  biased_fits.loc[biased_fits['lab'] == lab, 'lapsehigh_r'].mean(),
@@ -153,5 +152,5 @@ ax4.set(xlabel='80:20 block', ylabel='', title='Bias',
 
 plt.tight_layout(w_pad=-0.1)
 sns.despine(trim=True)
-plt.savefig(join(figpath, 'figure4e-h_metrics_per_lab_full.pdf'))
-plt.savefig(join(figpath, 'figure4e-h_metrics_per_lab_full.png'), dpi=300)
+plt.savefig(join(figpath, 'suppfig_metrics_per_lab_full.pdf'))
+plt.savefig(join(figpath, 'suppfig_metrics_per_lab_full.png'), dpi=300)

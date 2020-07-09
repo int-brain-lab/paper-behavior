@@ -12,8 +12,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from os.path import join
 import seaborn as sns
-from paper_behavior_functions import (seaborn_style, query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath, EXAMPLE_MOUSE)
+from paper_behavior_functions import (seaborn_style, query_sessions_around_criterion, 
+                                      seaborn_style, institution_map, 
+                                      group_colors, figpath, EXAMPLE_MOUSE,
+                                      FIGURE_WIDTH, FIGURE_HEIGHT)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference, acquisition
 import statsmodels.api as sm
@@ -25,11 +27,17 @@ from scipy import stats
 
 # whether to query data from DataJoint (True), or load from disk (False)
 query = True
+# whether to load already saved fitted model
+load_model =  True
+
+# Load figure path
+figpath = figpath()
+
+# %%
 
 ##############################################################################
 #******************************* Functions **********************************#
 ##############################################################################
-
 
 def model_psychometric_history(behav):
     select =  behav.copy()
@@ -83,12 +91,6 @@ def run_glm(behav, example, correction = True,  bias = False, cross_validation =
         data = trials[['index', 'trial_feedback_type',
                        'signed_contrast', 'choice',
                            'probabilityLeft']].copy()
-        
-        #drop trials with odd probabilities of left
-        data.drop(
-            data['probabilityLeft'][~data['probabilityLeft'].isin([50,20,80])].index,
-            inplace=True)
-        
         
         # Rewardeded choices: 
         data.loc[(data['choice'] == 0) &
@@ -235,12 +237,6 @@ def data_2_X_test (behav, correction = True, bias = True):
                        'signed_contrast', 'choice',
                            'probabilityLeft']].copy()
         
-        #drop trials with odd probabilities of left
-        data.drop(
-            data['probabilityLeft'][~data['probabilityLeft'].isin([50,20,80])].index,
-            inplace=True)
-        
-        
         # Rewardeded choices: 
         data.loc[(data['choice'] == 0) &
                  (data['trial_feedback_type'].isnull()), 'rchoice']  = 0 # NoGo trials
@@ -358,7 +354,8 @@ def plot_psychometric(x, y, col, point = False, mark = 'o', al =1):
     if point == True:
         sns.lineplot(df['signed_contrast'], df['choice'], err_style="bars",
                          linewidth=0, linestyle='None', mew=0.5,
-                         marker=mark, ci=95, color = col, alpha = al)
+                         marker=mark, ci=95, color = col, alpha = al, 
+                         markersize=3)
 
     g.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
     g.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
@@ -368,9 +365,12 @@ def plot_psychometric(x, y, col, point = False, mark = 'o', al =1):
     g.set_yticks([0, 0.25, 0.5, 0.75, 1])
     g.set_yticklabels(['0', '25', '50', '75', '100'])
 
+# %%
 ##############################################################################
+#******************************* Fit Model **********************************#
+##############################################################################
+
 #*******************************Biased Task**********************************#
-##############################################################################
 
 # Set properties of the analysis '2019-09-20 10:15:34'
 bsession= '2019-08-31 11:59:37'
@@ -415,47 +415,40 @@ if correction == True:
     behav_merged['uchoice+1'] = np.nan
     behav_merged['choice+1'] = np.nan
 
-
-# Drop trials with weird contrasts
-behav_merged.drop(behav_merged['probabilityLeft']
-                  [~behav_merged['probabilityLeft'].isin([50,20,80])].index,
-        inplace=True)
-behav_merged.drop(behav_merged['probabilityLeft']
-                  [~behav_merged['signed_contrast'].isin(
-                      [100,25,12.5,6.25,0,-6.25,-12.5,-25,-100])].index, 
-                          inplace=True)
-
 # split the two types of task protocols (remove the pybpod version number
 behav_merged['task'] = behav_merged['task_protocol'].str[14:20].copy()
 
 behav = behav_merged.loc[behav_merged['task']=='biased'].copy() 
 behav = behav.reset_index()
 
-behav, example_model = run_glm(behav, EXAMPLE_MOUSE, correction = correction,
-                               bias = True, cross_validation  = False)
-
-        
-##############################################################################
+if load_model ==  False:
+    behav, example_model = run_glm(behav, EXAMPLE_MOUSE, correction = correction,
+                                   bias = True, cross_validation  = True)
+    behav.to_pickle('./model_results/behav.pkl')
+    
+if load_model ==  True:
+    behav = pd.read_pickle('./model_results/behav.pkl')
+    
 #*****************************Unbiased Task**********************************#
-##############################################################################    
+    
 
 # Query sessions traning data 
 tbehav = behav_merged.loc[behav_merged['task']=='traini'].copy()
-tbehav.drop(tbehav['probabilityLeft'][~tbehav['probabilityLeft'].isin([50])].index,
-        inplace=True)
+tbehav['probabilityLeft'] = 50
 tbehav = tbehav.reset_index()
 
-tbehav , example_model_t = run_glm(tbehav, EXAMPLE_MOUSE, correction = correction,
-                                   bias = False, cross_validation  = False)
+if load_model ==  False:
+    tbehav , example_model_t = run_glm(tbehav, EXAMPLE_MOUSE, correction = correction,
+                                       bias = False, cross_validation  = True)
+    tbehav.to_pickle('./model_results/tbehav.pkl')
+
+if load_model ==  True:
+    tbehav = pd.read_pickle('./model_results/tbehav.pkl')
 
 
-
-##############################################################################
 #*****************************Summary information****************************#
-##############################################################################    
-
-
-# Plot curve of predictors
+    
+# Summarize model data
 summary_curves = pd.DataFrame()
 
 if correction == True:
@@ -494,26 +487,12 @@ for i in tbehav['institution_code'].unique():
             tbehav_temp[t].mean()
     tsummary_curves = pd.concat([tsummary_curves, tsum_temp])
 
+# %%
+
 ##############################################################################
-#******************************* Plotting ***********************************#
+#**************************** Run simulation ********************************#
 ##############################################################################
 
-pal = group_colors()
-
-# Visualization
-
-figpath = figpath()
-
-# Set seed for simulation
-np.random.seed(1)
-
-# Line colors
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
-
-# Get data from example session (TODO make into specific query)
-
-
-# Data for bias session
 
 b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
   & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
@@ -526,8 +505,14 @@ ebehav = ebehav.reset_index()
 bebehav = ebehav.loc[ebehav['subject_nickname'] ==  EXAMPLE_MOUSE]
 bebehav_model_data, index = data_2_X_test (bebehav, correction = \
                                            correction, bias = True)
-bebehav.loc[bebehav['index'].isin(index) ,'simulation_prob'] = \
-    example_model.predict(bebehav_model_data).to_numpy()# Run simulation
+    
+if load_model == False:  
+    bebehav.loc[bebehav['index'].isin(index) ,'simulation_prob'] = \
+        example_model.predict(bebehav_model_data).to_numpy() # Run simulation
+    bebehav.to_pickle('./model_results/bebehav.pkl')
+    
+if load_model ==  True:
+    bebehav = pd.read_pickle('./model_results/bebehav.pkl')
 
 
 
@@ -547,14 +532,20 @@ bdat1 = b2.fetch(order_by=
         'institution_short, subject_nickname, session_start_time, trial_id',
                 format='frame').reset_index()
 
-tbehav = dj2pandas(bdat1)
-tbehav = tbehav.reset_index()
-tebehav = tbehav.loc[tbehav['subject_nickname'] ==  EXAMPLE_MOUSE]
+etbehav = dj2pandas(bdat1)
+etbehav = etbehav.reset_index()
+tebehav = etbehav.loc[etbehav['subject_nickname'] ==  EXAMPLE_MOUSE]
 tebehav_model_data, index = data_2_X_test (tebehav, correction = correction,
                                            bias = False)
-tebehav.loc[tebehav['index'].isin(index) ,'simulation_prob'] = \
-    example_model_t.predict(tebehav_model_data).to_numpy()# Run simulation
 
+
+if load_model == False:  
+    tebehav.loc[tebehav['index'].isin(index) ,'simulation_prob'] = \
+        example_model_t.predict(tebehav_model_data).to_numpy() # Run simulation
+    tebehav.to_pickle('./model_results/tebehav.pkl')
+    
+if load_model ==  True:
+    tebehav = pd.read_pickle('./model_results/tebehav.pkl')
 
 
 # Run simulation
@@ -573,9 +564,22 @@ brsimulation['simulation_run'] = \
     np.random.binomial(1, p = brsimulation['simulation_prob'])
 
 
-# Figure of single session
+# %%
 
-fig, ax =  plt.subplots(1,2, figsize = [10,5], sharey='row')
+##############################################################################
+#******************************* Plotting ***********************************#
+##############################################################################
+
+#******************************* Fig 5b *************************************#
+
+
+# Figure of single session
+pal = group_colors()
+# Line colors
+cmap = sns.diverging_palette(20, 220, n=3, center="dark")
+# Start plotting
+
+fig, ax =  plt.subplots(1,2, figsize=(FIGURE_WIDTH*0.5, FIGURE_HEIGHT), sharey='row')
 plt.sca(ax[0])
 
 # Drop 50s, they are only a temporary step
@@ -603,8 +607,6 @@ for c, i  in enumerate([20, 50, 80]):
     subset1 = bsimulation.loc[bsimulation['probabilityLeft'] == i]
     sns.lineplot(subset['signed_contrast'], subset['simulation_run'], ci = 95,
                  color =cmap[c], linewidth = 0)
-    #plot_psychometric(subset['signed_contrast'], 
-    #                  subset['simulation_run'], col = cmap[c] ,  point = True,  mark = '^')
     plot_psychometric(subset1['signed_contrast'], 
                       subset1['choice_right'], cmap[c] , point = True,  mark = 'o', al = 0.5)
 
@@ -625,56 +627,16 @@ ax[1].set_xlabel('Signed contrast %')
 ax[1].set_title('Full task - Example mouse')
 sns.despine(trim=True)
 plt.tight_layout()
-fig.savefig(os.path.join(figpath, 'figure5_GLM.pdf'), dpi=600)
+fig.savefig(os.path.join(figpath, 'figure5b_GLM.pdf'), dpi=600)
 
-
-# Biased Weights
-
-fig, ax  = plt.subplots(1,3, figsize = [10,5])
-plt.sca(ax[0])
-bsensory = summary_curves[summary_curves['parameter'].isin(['6','25','12', '100'])]
-sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['6','12','25','100'], size = 7)
-ax[0].get_legend().set_visible(False)
-ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
-ax[0].set_ylabel('Weight')
-ax[0].set_ylim(0,5)
-plt.sca(ax[1])
-breward= summary_curves[summary_curves['parameter'].isin(['rchoice','uchoice'])]
-sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['rchoice','uchoice'], size = 7)
-ax[1].get_legend().set_visible(False)
-ax[1].set_xlabel(' ')
-if correction == True:
-    ax[1].set_xticklabels(['Corrected Rewarded Choice (t-1)', 
-                           'Corrected Unrewarded Choice (t-1)'], rotation = 45, ha='right')
-else:
-    ax[1].set_xticklabels(['Rewarded \n Choice (t-1)', 'Unrewarded \n Choice (t-1)'],
-                          ha='center')
-ax[1].set_ylabel('Weight')
-ax[1].set_ylim(0,1)
-plt.sca(ax[2])
-bbias= summary_curves[summary_curves['parameter'].isin(['block', 'intercept'])]
-sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal,  size = 7, order =
-             ['block', 'intercept'])
-ax[2].get_legend().set_visible(False)
-ax[2].set_xlabel(' ')
-ax[2].set_xticklabels(['Bias', 'Block Bias'], rotation = 45, ha='right')
-ax[2].set_ylabel('Weight')
-ax[2].set_ylim(-1,1)
-
-plt.tight_layout()
-sns.despine(trim=True)
-fig.savefig(os.path.join(figpath, 'figure5_biased _weights.pdf'), dpi=600)
-
+#******************************* Fig 5c *************************************#
 
 # Unbiased Weights
-fig, ax  = plt.subplots(1,3, figsize = [10,5])
+fig, ax  = plt.subplots(1,3, figsize=(FIGURE_WIDTH*1.1, FIGURE_HEIGHT))
 plt.sca(ax[0])
 bsensory = tsummary_curves[tsummary_curves['parameter'].isin(['6','25','12', '100'])]
 sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['6','12','25','100'], size = 7)
+             palette= pal, order=['6','12','25','100'])
 ax[0].get_legend().set_visible(False)
 ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
 ax[0].set_ylabel('Weight')
@@ -683,7 +645,7 @@ ax[0].set_ylim(0,5)
 plt.sca(ax[1])
 breward= tsummary_curves[tsummary_curves['parameter'].isin(['rchoice','uchoice'])]
 sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['rchoice','uchoice', 'rchoice+1','uchoice+1'], size = 7)
+             palette= pal, order=['rchoice','uchoice'])
 ax[1].get_legend().set_visible(False)
 ax[1].set_xlabel(' ')
 ax[1].set_ylim(0,1)
@@ -700,16 +662,60 @@ ax[1].set_ylabel('Weight')
 plt.sca(ax[2])
 bbias= tsummary_curves[tsummary_curves['parameter'].isin(['block', 'intercept'])]
 sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
-             palette= pal, order=['intercept'], size = 7)
+             palette= pal, order=['intercept'])
 ax[2].get_legend().set_visible(False)
 ax[2].set_xlabel('     ')
 ax[2].set_xticklabels(['Bias'], ha='center')
 ax[2].set_ylabel('Weight')
 ax[2].set_ylim(-1,1)
-plt.tight_layout()
 sns.despine(trim=True)
-fig.savefig(os.path.join(figpath, 'figure5_unbiased _weights.pdf'), dpi=600)
+fig.savefig(os.path.join(figpath, 'figure5c_unbiased _weights.pdf'), dpi=600)
 
+#******************************* Fig 5d *************************************#
+
+# Biased Weights
+
+fig, ax  = plt.subplots(1,3, figsize=(FIGURE_WIDTH*1.1, FIGURE_HEIGHT))
+plt.sca(ax[0])
+bsensory = summary_curves[summary_curves['parameter'].isin(['6','25','12', '100'])]
+sns.swarmplot(data = bsensory, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['6','12','25','100'])
+ax[0].get_legend().set_visible(False)
+ax[0].set_xlabel('Fitted Visual Parameter (Contrast %)')
+ax[0].set_ylabel('Weight')
+ax[0].set_ylim(0,5)
+plt.sca(ax[1])
+breward= summary_curves[summary_curves['parameter'].isin(['rchoice','uchoice'])]
+sns.swarmplot(data = breward, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order=['rchoice','uchoice'])
+ax[1].get_legend().set_visible(False)
+ax[1].set_xlabel(' ')
+if correction == True:
+    ax[1].set_xticklabels(['Corrected Rewarded Choice (t-1)', 
+                           'Corrected Unrewarded Choice (t-1)'], rotation = 45, ha='right')
+else:
+    ax[1].set_xticklabels(['Rewarded \n Choice (t-1)', 'Unrewarded \n Choice (t-1)'],
+                          ha='center')
+ax[1].set_ylabel('Weight')
+ax[1].set_ylim(0,1)
+plt.sca(ax[2])
+bbias= summary_curves[summary_curves['parameter'].isin(['block', 'intercept'])]
+sns.swarmplot(data = bbias, hue = 'institution', x = 'parameter', y= 'weight', 
+             palette= pal, order = ['block', 'intercept'])
+ax[2].get_legend().set_visible(False)
+ax[2].set_xlabel(' ')
+ax[2].set_xticklabels(['Bias', 'Block Bias'], rotation = 45, ha='right')
+ax[2].set_ylabel('Weight')
+ax[2].set_ylim(-1,1)
+sns.despine(trim=True)
+fig.savefig(os.path.join(figpath, 'figure5d_biased _weights.pdf'), dpi=600)
+
+
+#******************************* Fig 5supplentary ****************************#
+
+# Load data
+behav = pd.read_pickle('./model_results/behav.pkl')
+tbehav = pd.read_pickle('./model_results/tbehav.pkl')
 
 # Accuracy
 behav_merge = pd.concat([behav, tbehav]).copy()
@@ -722,21 +728,45 @@ behav_merge1['institution_code'] = 'All'
 behav_merge = pd.concat([behav_merge, behav_merge1])
 
 grouped = behav_merge.groupby(['subject_nickname',
-                         'institution_code'])['accu'].mean().reset_index()
-pal.append((1,1,0))
+                         'institution_code','task'])['accu'].mean().reset_index()
+grouped['accu'] = grouped['accu']*100
+grouped['alpha']  = 1
+grouped.loc[grouped['institution_code']=='All', 'alpha'] = 0
+pal.append((1,1,1))
 
-fig, ax  = plt.subplots()
-plt.sca(ax)
-sns.boxplot(data = grouped, x = 'institution_code', y =grouped['accu']*100, palette= pal, 
+fig, ax  = plt.subplots(1,2,figsize=(FIGURE_WIDTH*1.1, FIGURE_HEIGHT),sharey=True)
+plt.sca(ax[0])
+axbox = sns.boxplot(data = grouped.loc[grouped['task']=='traini'], x = 'institution_code',
+                    y ='accu', color= 'white', 
             order= ['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
-                    'All'], linewidth = 2)
-sns.swarmplot(data=grouped, x = 'institution_code', y =grouped['accu']*100,color = 'k', 
-              order=['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
                     'All'])
-ax.set_xlabel('Laboratory')
-ax.set_ylabel('Model Accuracy %')
+sns.swarmplot(data=grouped.loc[(grouped['task']=='traini') & 
+                               (grouped['alpha']== 1)], x = 'institution_code', 
+              y =grouped['accu'],color = 'k', 
+              order=['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
+                    'All'], palette = pal)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists))+1, 5 * len(axbox.artists)+7):
+    axbox.lines[j].set_color('black')
+ax[0].set_xlabel('Laboratory')
+ax[0].set_ylabel('Model Accuracy %')
+
+plt.sca(ax[1])
+axbox = sns.boxplot(data = grouped.loc[(grouped['task']=='biased')], x = 'institution_code', y ='accu', color= 'white', 
+            order= ['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
+                    'All'])
+sns.swarmplot(data=grouped.loc[(grouped['task']=='biased') & 
+                               (grouped['alpha']== 1)], x = 'institution_code', y =grouped['accu'],color = 'k', 
+              order=['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7',
+                    'All'], palette = pal)
+axbox.artists[-1].set_edgecolor('black')
+for j in range(5 * (len(axbox.artists))+1, 5 * len(axbox.artists)+7):
+    axbox.lines[j].set_color('black')
+ax[1].set_xlabel('Laboratory')
+ax[1].set_ylabel('Model Accuracy %')
 sns.despine(trim=True)
 fig.savefig(os.path.join(figpath, 'figure5_accuracy.pdf'), dpi=600)
+
 
 
 

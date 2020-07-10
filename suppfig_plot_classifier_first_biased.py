@@ -36,7 +36,7 @@ else:
 # %%
 
 # Plot
-f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
+f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
 sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control']], axis=1),
                color=[0.6, 0.6, 0.6], ax=ax1)
 ax1.plot([-1, 2], [chance_level, chance_level], 'r--', zorder=-10)
@@ -50,15 +50,11 @@ plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.1,
 plt.tight_layout()
 sns.despine(trim=True)
 
-if DECODER == 'forest':
-    plt.savefig(join(FIG_PATH, 'figure4i_decoding_%s_full.pdf' % DECODER))
-    plt.savefig(join(FIG_PATH, 'figure4i_decoding_%s_full.png' % DECODER), dpi=300)
-else:
-    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_full.pdf' % DECODER))
-    plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_full.png' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_first_biased.pdf' % DECODER))
+plt.savefig(join(FIG_PATH, 'suppfig_decoding_%s_first_biased.png' % DECODER), dpi=300)
 
 # %%
-f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
+f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
 n_labs = decoding_result['confusion_matrix'][0].shape[0]
 sns.heatmap(data=decoding_result['confusion_matrix'].mean())
 ax1.plot([0, 7], [0, 7], '--w')
@@ -70,18 +66,5 @@ plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout()
 
-plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_full.pdf' % DECODER))
-plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_full.png' % DECODER), dpi=300)
-
-f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
-sns.heatmap(data=decoding_result['control_cm'].mean())
-ax1.plot([0, 7], [0, 7], '--w')
-ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
-        title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab',
-        ylim=[0, n_labs], xlim=[0, n_labs])
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
-plt.gca().invert_yaxis()
-plt.tight_layout()
-plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_full.pdf' % DECODER))
-plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s_full.png' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_first_biased.pdf' % DECODER))
+plt.savefig(join(FIG_PATH, 'suppfig_confusion_matrix_%s_first_biased.png' % DECODER), dpi=300)

@@ -400,15 +400,16 @@ else:
     behav_merged = pd.read_csv(join('data', 'Fig5.csv'))
 
 # Variable to store model parameters
-behav_merged['rchoice'] = np.nan
-behav_merged['uchoice'] = np.nan
-behav_merged['6'] = np.nan
-behav_merged['12'] = np.nan
-behav_merged['25'] = np.nan
-behav_merged['100'] = np.nan
-behav_merged['block'] = np.nan
-behav_merged['intercept'] = np.nan
-behav_merged['simulation_prob'] = np.nan
+if load_model == False:
+    behav_merged['rchoice'] = np.nan
+    behav_merged['uchoice'] = np.nan
+    behav_merged['6'] = np.nan
+    behav_merged['12'] = np.nan
+    behav_merged['25'] = np.nan
+    behav_merged['100'] = np.nan
+    behav_merged['block'] = np.nan
+    behav_merged['intercept'] = np.nan
+    behav_merged['simulation_prob'] = np.nan
 
 if correction == True:
     behav_merged['rchoice+1'] = np.nan
@@ -424,13 +425,17 @@ behav = behav.reset_index()
 if load_model ==  False:
     behav, example_model = run_glm(behav, EXAMPLE_MOUSE, correction = correction,
                                    bias = True, cross_validation  = True)
-    behav.to_pickle('./model_results/behav.pkl')
+    
+    model_to_save = behav[['rchoice', 'uchoice','6','12','25','100', 
+                             'block', 'intercept', 'simulation_prob']]
+    
+    model_to_save.to_pickle('./model_results/model_to_save_biased.pkl')
     
 if load_model ==  True:
-    behav = pd.read_pickle('./model_results/behav.pkl')
+    model_to_save = pd.read_pickle('./model_results/model_to_save_biased.pkl')
+    behav = pd.concat([behav,model_to_save], axis =1)
     
 #*****************************Unbiased Task**********************************#
-    
 
 # Query sessions traning data 
 tbehav = behav_merged.loc[behav_merged['task']=='traini'].copy()
@@ -440,11 +445,15 @@ tbehav = tbehav.reset_index()
 if load_model ==  False:
     tbehav , example_model_t = run_glm(tbehav, EXAMPLE_MOUSE, correction = correction,
                                        bias = False, cross_validation  = True)
-    tbehav.to_pickle('./model_results/tbehav.pkl')
-
+    
+    model_to_save_unbiased = tbehav[['rchoice', 'uchoice','6','12','25','100', 
+                             'intercept', 'simulation_prob']]
+    
+    model_to_save_unbiased.to_pickle('./model_results/model_to_save_unbiased.pkl')
+    
 if load_model ==  True:
-    tbehav = pd.read_pickle('./model_results/tbehav.pkl')
-
+    model_to_save_unbiased = pd.read_pickle('./model_results/model_to_save_unbiased.pkl')
+    tbehav = pd.concat([tbehav,model_to_save_unbiased], axis =1)
 
 #*****************************Summary information****************************#
     
@@ -719,9 +728,6 @@ fig.savefig(os.path.join(figpath, 'figure5d_biased _weights.pdf'), dpi=600)
 
 #******************************* Fig 5supplentary ****************************#
 
-# Load data
-behav = pd.read_pickle('./model_results/behav.pkl')
-tbehav = pd.read_pickle('./model_results/tbehav.pkl')
 
 # Accuracy
 behav_merge = pd.concat([behav, tbehav]).copy()

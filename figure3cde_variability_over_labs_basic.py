@@ -248,8 +248,8 @@ for i, var in enumerate(['perf_easy', 'threshold',
 
 sns.despine(trim=True)
 plt.tight_layout(w_pad=-0.1)
-plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_level1.pdf'))
-plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_level1.png'), dpi=300)
+plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_basic.pdf'))
+plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_basic.png'), dpi=300)
 
 # %%
 # Plot behavioral metrics per lab
@@ -316,8 +316,8 @@ for i, var in enumerate(['perf_easy', 'threshold', 'bias']):
 
 plt.tight_layout()
 sns.despine(trim=True)
-plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_level1.pdf'))
-plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_level1.png'), dpi=300)
+plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_basic.pdf'))
+plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_basic.png'), dpi=300)
 
 # %%
 

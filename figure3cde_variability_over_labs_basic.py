@@ -150,6 +150,7 @@ seaborn_style()
 lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
+
 def num_star(pvalue):
     if pvalue < 0.05:
         stars = '* p < 0.05'
@@ -161,10 +162,11 @@ def num_star(pvalue):
         stars = '**** p < 0.0001'
     return stars
 
+# %%
 vars = ['n_trials', 'perf_easy',  'threshold', 'bias', 'reaction_time']
 ylabels =['Number of trials', 'Performance (%)\non easy trials',
           'Contrast threshold (%)', 'Bias (%)', 'Trial duration (ms)' ]
-ylims = [[0, 2000],[70, 100], [0, 30], [-30, 30], [0, 2000]]
+ylims = [[0, 2000],[70, 100], [0, 25], [-25, 25], [0, 2000]]
 for v, ylab, ylim in zip(vars, ylabels, ylims):
 
     f, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))

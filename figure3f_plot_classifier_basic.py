@@ -59,13 +59,13 @@ for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
         plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s_basic.png' % DECODER), dpi=300)
 
     # %%
-    f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
+    f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
     n_labs = decoding_result['confusion_matrix'][0].shape[0]
-    sns.heatmap(data=decoding_result['confusion_matrix'].mean())
+    sns.heatmap(data=decoding_result['confusion_matrix'].mean(), vmin=0, vmax=0.6)
     ax1.plot([0, 7], [0, 7], '--w')
     ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
             ylim=[0, n_labs], xlim=[0, n_labs],
-            title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab')
+            title='', ylabel='Actual lab', xlabel='Predicted lab')
     plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
     plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
     plt.gca().invert_yaxis()
@@ -74,11 +74,11 @@ for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
     plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_basic.pdf' % DECODER))
     plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s_basic.png' % DECODER), dpi=300)
 
-    f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
-    sns.heatmap(data=decoding_result['control_cm'].mean())
+    f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
+    sns.heatmap(data=decoding_result['control_cm'].mean(), vmin=0, vmax=1)
     ax1.plot([0, 7], [0, 7], '--w')
     ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
-            title='Normalized Confusion Matrix', ylabel='Actual lab', xlabel='Predicted lab',
+            title='', ylabel='Actual lab', xlabel='Predicted lab',
             ylim=[0, n_labs], xlim=[0, n_labs])
     plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
     plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)

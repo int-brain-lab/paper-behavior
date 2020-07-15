@@ -20,6 +20,7 @@ from paper_behavior_functions import (query_sessions_around_criterion, seaborn_s
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
 import scikit_posthocs as sp
+from statsmodels.stats.multitest import multipletests
 
 # Initialize
 seaborn_style()
@@ -98,7 +99,7 @@ learned[['perf_easy', 'reaction_time', 'threshold', 'n_trials',
                                                         'threshold', 'n_trials', 'bias',
                                                         'lapse_low', 'lapse_high']].astype(float)
 
-# Stats
+# %% Stats
 stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
 posthoc_tests = {}
 
@@ -126,6 +127,9 @@ for i, var in enumerate(['perf_easy', 'reaction_time', 'n_trials', 'threshold', 
     stats_tests.loc[i, 'variable'] = var
     stats_tests.loc[i, 'test_type'] = test_type
     stats_tests.loc[i, 'p_value'] = test[1]
+
+# Correct for multiple tests
+stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
 
 if (stats.normaltest(learned['n_trials'])[1] < 0.05 or
         stats.normaltest(learned['reaction_time'])[1] < 0.05):

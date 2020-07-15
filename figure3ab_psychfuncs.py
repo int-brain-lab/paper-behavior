@@ -31,7 +31,8 @@ if QUERY is True:
     # query sessions
     use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
                                                              days_from_criterion=[2, 0],
-                                                             as_dataframe=False)
+                                                             as_dataframe=False,
+                                                             force_cutoff=True)
 
     # restrict by list of dicts with uuids for these sessions
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -40,8 +41,7 @@ if QUERY is True:
     # reduce the size of the fetch
     b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
                 'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-                'trial_response_time', 'trial_stim_on_time')
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
 
     # construct pandas dataframe
     bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',

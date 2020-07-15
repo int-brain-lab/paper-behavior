@@ -99,7 +99,8 @@ for i, inst in enumerate(behav.institution_code.unique()):
     tmp_behav = behav[behav['institution_code'].str.contains(inst)]
     plot_psychometric(tmp_behav.signed_contrast, tmp_behav.choice_right,
                       tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
-ax1.set_title('All labs', color='k', fontweight='bold')
+#ax1.set_title('All labs', color='k', fontweight='bold')
+ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
 ax1.set(xlabel='Contrast (%)', ylabel='Rightward choices (%)')
 sns.despine(trim=True)
 plt.tight_layout()

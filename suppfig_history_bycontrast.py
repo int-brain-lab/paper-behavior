@@ -11,7 +11,7 @@ from ibl_pipeline import behavior, subject, reference
 import matplotlib.pyplot as plt
 from dj_tools import dj2pandas, plot_psychometric, fit_psychfunc
 from paper_behavior_functions import (seaborn_style, figpath, query_sessions_around_criterion,
-                                      group_colors, institution_map)
+                                      group_colors, institution_map, FIGURE_HEIGHT, FIGURE_WIDTH)
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import pycircstat
@@ -221,7 +221,7 @@ history_shift.previous_contrast.replace([100], [40], inplace=True)
 # ================================= #
 
 plt.close('all')
-fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/2.2, FIGURE_HEIGHT), sharex=True, sharey=True)
 for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Full task'], axes):
     # # thin labels, per lab
     # sns.lineplot(data=history_shift[(history_shift.task == task)].groupby(['lab_name',

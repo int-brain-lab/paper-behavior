@@ -146,182 +146,55 @@ learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)
 
 # %%
-
-# Plot behavioral metrics per lab
-f, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(1, 6,
-                                                 figsize=(FIGURE_WIDTH*1.1, FIGURE_HEIGHT))
 seaborn_style()
 lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
-sns.swarmplot(y='perf_easy', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax1, marker='.')
-axbox = sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax1)
-ax1.set(ylabel='Performance (%)\n on easy trials', ylim=[70, 101], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax1.get_legend().set_visible(False)
 
-sns.swarmplot(y='threshold', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax2, marker='.')
-axbox = sns.boxplot(y='threshold', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax2)
-ax2.set(ylabel='Visual threshold (% contrast)', ylim=[-1, 30], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax2.get_legend().set_visible(False)
-
-sns.swarmplot(y='bias', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax3, marker='.')
-axbox = sns.boxplot(y='bias', x='lab_number', data=learned_2, color='white', showfliers=False,
-                    ax=ax3)
-ax3.set(ylabel='Bias (% contrast)', ylim=[-30, 30], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
-plt.setp(ax3.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax3.get_legend().set_visible(False)
-
-sns.swarmplot(y='reaction_time', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax4, marker='.')
-axbox = sns.boxplot(y='reaction_time', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax4)
-ax4.set(ylabel='Trial duration (ms)', ylim=[100, 10000], xlabel='', yscale='log')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax4.get_xticklabels()[:-1])]
-plt.setp(ax4.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax4.get_legend().set_visible(False)
-
-sns.swarmplot(y='n_trials', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax5, marker='.')
-axbox = sns.boxplot(y='n_trials', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax5)
-ax5.set(ylabel='Number of trials', ylim=[0, 2000], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
-plt.setp(ax5.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax5.get_legend().set_visible(False)
-
-correlation_coef, correlation_p
-sns.regplot(x='reaction_time', y='n_trials', data=learned_2, color=[0.6, 0.6, 0.6],
-            ci=None, scatter=False, ax=ax6, marker='.')
-sns.scatterplot(y='n_trials', x='reaction_time', hue='lab_number', data=learned,
-                palette=lab_colors, ax=ax6)
-ax6.annotate('Coef =' + ' ' + str(round(correlation_coef, 3)) +
-             ' ' + '**** p < 0.0001', xy=[50, 2000], fontsize=5)
-
-ax6.set(ylabel='Number of trials', ylim=[0, 2000])
-ax6.set(xlabel='Reaction Time (ms)', xlim=[0, 2000])
-ax6.get_legend().remove()
-
-# statistical annotation
-for i, var in enumerate(['perf_easy', 'threshold',
-                         'bias', 'reaction_time', 'n_trials']):
-    def num_star(pvalue):
-        if pvalue < 0.05:
-            stars = '* p < 0.05'
-        if pvalue < 0.01:
-            stars = '** p < 0.01'
-        if pvalue < 0.001:
-            stars = '*** p < 0.001'
-        if pvalue < 0.0001:
-            stars = '**** p < 0.0001'
-        return stars
-
-    pvalue = stats_tests.loc[stats_tests['variable'] == var, 'p_value']
-    if pvalue.to_numpy()[0] < 0.05:
-        axes = [ax1, ax2, ax3, ax4, ax5, ax6]
-        axes[i].annotate(num_star(pvalue.to_numpy()[0]),
-                         xy=[0.1, 0.8], xycoords='axes fraction', fontsize=5)
-
-sns.despine(trim=True)
-plt.tight_layout(w_pad=-0.1)
-plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_basic.pdf'))
-plt.savefig(join(figpath, 'figure3c-e_all_metrics_per_lab_basic.png'), dpi=300)
+def num_star(pvalue):
+    if pvalue < 0.05:
+        stars = '* p < 0.05'
+    if pvalue < 0.01:
+        stars = '** p < 0.01'
+    if pvalue < 0.001:
+        stars = '*** p < 0.001'
+    if pvalue < 0.0001:
+        stars = '**** p < 0.0001'
+    return stars
 
 # %%
-# Plot behavioral metrics per lab
-f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(FIGURE_WIDTH*0.6, FIGURE_HEIGHT))
+vars = ['n_trials', 'perf_easy',  'threshold', 'bias', 'reaction_time']
+ylabels =['Number of trials', 'Performance (%)\non easy trials',
+          'Contrast threshold (%)', 'Bias (%)', 'Trial duration (ms)' ]
+ylims = [[0, 2000],[70, 100], [0, 25], [-25, 25], [0, 2000]]
+for v, ylab, ylim in zip(vars, ylabels, ylims):
 
-lab_colors = group_colors()
-sns.set_palette(lab_colors)
+    f, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
+    sns.swarmplot(y=v, x='lab_number', data=learned_no_all, hue='lab_number',
+                  palette=lab_colors, ax=ax, marker='.')
+    axbox = sns.boxplot(y=v, x='lab_number', data=learned_2, color='white',
+                        showfliers=False, ax=ax)
+    ax.set(ylabel=ylab, ylim=ylim, xlabel='')
+    # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=60)
+    axbox.artists[-1].set_edgecolor('black')
+    for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+        axbox.lines[j].set_color('black')
+    ax.get_legend().set_visible(False)
 
-sns.swarmplot(y='perf_easy', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax1, marker='.')
-axbox = sns.boxplot(y='perf_easy', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax1)
-ax1.set(ylabel='Performance (%)\n on easy trials', ylim=[70, 101], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels()[:-1])]
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax1.get_legend().set_visible(False)
-
-sns.swarmplot(y='threshold', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax2, marker='.')
-axbox = sns.boxplot(y='threshold', x='lab_number', data=learned_2, color='white',
-                    showfliers=False, ax=ax2)
-ax2.set(ylabel='Contrast threshold (%)', ylim=[-1, 25], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax2.get_xticklabels()[:-1])]
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax2.get_legend().set_visible(False)
-
-sns.swarmplot(y='bias', x='lab_number', data=learned_no_all, hue='lab_number',
-              palette=lab_colors, ax=ax3, marker='.')
-axbox = sns.boxplot(y='bias', x='lab_number', data=learned_2, color='white', showfliers=False,
-                    ax=ax3)
-ax3.set(ylabel='Bias (%)', ylim=[-30, 30], xlabel='')
-# [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax3.get_xticklabels()[:-1])]
-plt.setp(ax3.xaxis.get_majorticklabels(), rotation=60)
-axbox.artists[-1].set_edgecolor('black')
-for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
-    axbox.lines[j].set_color('black')
-ax3.get_legend().set_visible(False)
-
-
-# statistical annotation
-for i, var in enumerate(['perf_easy', 'threshold', 'bias']):
-    def num_star(pvalue):
-        if pvalue < 0.05:
-            stars = '* p < 0.05'
-        if pvalue < 0.01:
-            stars = '** p < 0.01'
-        if pvalue < 0.001:
-            stars = '*** p < 0.001'
-        if pvalue < 0.0001:
-            stars = '**** p < 0.0001'
-        return stars
-
-    pvalue = stats_tests.loc[stats_tests['variable'] == var, 'p_value']
+    # statistical annotation
+    pvalue = stats_tests.loc[stats_tests['variable'] == v, 'p_value']
     if pvalue.to_numpy()[0] < 0.05:
-        axes = [ax1, ax2, ax3, ax4, ax5, ax6]
-        axes[i].annotate(num_star(pvalue.to_numpy()[0]),
+        ax.annotate(num_star(pvalue.to_numpy()[0]),
                          xy=[0.1, 0.8], xycoords='axes fraction', fontsize=5)
 
-plt.tight_layout()
-sns.despine(trim=True)
-plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_basic.pdf'))
-plt.savefig(join(figpath, 'figure3c-e_metrics_per_lab_basic.png'), dpi=300)
+    sns.despine(trim=True)
+    plt.tight_layout()
+    plt.savefig(join(figpath, 'figure3_metrics_%s.pdf'%v))
+    plt.savefig(join(figpath, 'figure3_metrics_%s.pdf'%v), dpi=300)
 
 # %%
-
-# Get stats in text
+# Get stats for text
 perf_mean = learned['perf_easy'].mean()
 perf_std = learned['perf_easy'].std()
 thres_mean = learned['threshold'].mean()

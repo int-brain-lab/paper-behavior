@@ -2,7 +2,7 @@
 """
 General functions and queries for the analysis of behavioral data from the IBL task
 
-Guido Meijer, Anne Urai & Alejandro Pan Vazquez
+Guido Meijer, Anne Urai, Alejandro Pan Vazquez & Miles Wells
 16 Jan 2020
 """
 
@@ -24,7 +24,7 @@ FIGURE_HEIGHT = 2  # inch
 FIGURE_WIDTH = 8  # inch
 
 # EXCLUDED SESSIONS 
-EXCLUDED_SESSIONS = ['a9fb578a-9d7d-42b4-8dbc-3b419ce9f424'] # Session UUID
+EXCLUDED_SESSIONS = ['a9fb578a-9d7d-42b4-8dbc-3b419ce9f424']  # Session UUID
 
 
 def group_colors():
@@ -80,52 +80,44 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
 
     Parameters
     ----------
-    as_dataframe: boolean if true returns a pandas dataframe (default is False)
-    from_list: loads files from list uuids (array of uuids objects)
-    criterion: what criterion by the 30th of November - trained (includes
-    a and b), biased, ready4ephysrig
+    as_dataframe:    boolean if true returns a pandas dataframe (default is False)
+    from_list:       loads files from list uuids (array of uuids objects)
+    criterion:       what criterion by the 30th of November - trained (a and b), biased, ephys
+                     (includes ready4ephysrig, ready4delay and ready4recording)
     """
 
     from ibl_pipeline import subject, acquisition, reference
     from ibl_pipeline.analyses import behavior as behavior_analysis
 
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
-    # they were flagged as trained_1a
+    # they reached a given training status
+    all_subjects = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
+                    & 'subject_project = "ibl_neuropixel_brainwide_01"')
+    sessions = acquisition.Session * behavior_analysis.SessionTrainingStatus()
+    fields = ('subject_nickname', 'sex', 'subject_birth_date', 'institution_short')
+
     if criterion == 'trained':
-        subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                      & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-            (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-            & 'training_status="trained_1a" OR training_status="trained_1b"',
-            'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
-            date_trained='min(date(session_start_time))')
+        restriction = 'training_status="trained_1a" OR training_status="trained_1b"'
+    elif criterion == 'biased':
+        restriction = 'task_protocol LIKE "%biased%"'
+    elif criterion == 'ephys':
+        restriction = 'training_status LIKE "ready%"'
+    else:
+        raise ValueError('criterion must be "trained", "biased" or "ephys"')
 
-    if criterion == 'biased':
-        subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                      & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-            (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-            & 'task_protocol LIKE "%biased%"',
-            'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
-            date_trained='min(date(session_start_time))')
-
-    if criterion == 'ready4ephysrig':
-        subj_query = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                      & 'subject_project = "ibl_neuropixel_brainwide_01"').aggr(
-            (acquisition.Session * behavior_analysis.SessionTrainingStatus())
-            & 'training_status="ready4ephysrig"',
-            'subject_nickname', 'sex', 'subject_birth_date', 'institution_short',
-            date_trained='min(date(session_start_time))')
+    subj_query = all_subjects.aggr(
+        sessions & restriction, *fields, date_trained='min(date(session_start_time))')
 
     if from_list is True:
         ids = np.load('uuids_trained1.npy', allow_pickle=True)
         subj_query = subj_query & [{'subject_uuid': u_id} for u_id in ids]
 
-    # Select subjects that reached trained_1a criterion before cutoff date
+    # Select subjects that reached criterion before cutoff date
+    subjects = (subj_query & 'date_trained <= "%s"' % CUTOFF_DATE)
     if as_dataframe is True:
-        subjects = (
-            subj_query & 'date_trained <= "%s"' % CUTOFF_DATE).fetch(format='frame')
+        subjects = subjects.fetch(format='frame')
         subjects = subjects.sort_values(by=['lab_name']).reset_index()
-    else:
-        subjects = (subj_query & 'date_trained <= "%s"' % CUTOFF_DATE)
+
     return subjects
 
 
@@ -143,6 +135,9 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
     as_dataframe:    boolean if True returns a pandas dataframe (default is False)
     force_cutoff:    whether the animal had to reach the criterion by the 30th of Nov. Only
                      applies to biased and ready for ephys criterion
+    criterion:       what criterion by the 30th of November - trained (includes
+                     a and b), biased, ready (includes ready4ephysrig, ready4delay and
+                     ready4recording)
     """
 
     from ibl_pipeline import acquisition
@@ -163,7 +158,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
     elif task == 'ephys':
         sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%ephys%"'
     else:
-        raise Exception('task must be all, training or biased')
+        raise ValueError('task must be "all", "training" or "biased"')
 
     # Only use sessions up until the end of December
     sessions = sessions & 'date(session_start_time) <= "%s"' % CUTOFF_DATE
@@ -184,7 +179,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
     return sessions
 
 
-def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0],
+def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2, 0),
                                     as_dataframe=False, force_cutoff=False):
     """
     Query all sessions for analysis of behavioral data
@@ -196,6 +191,8 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
                             the mouse reached criterium to return, e.g. [3, 2] returns three days
                             before criterium reached up until 2 days after (default: [2, 0])
     as_dataframe:           return sessions as a pandas dataframe
+    force_cutoff:           whether the animal had to reach the criterion by the 30th of Nov. Only
+                            applies to biased and ready for ephys criterion
 
     Returns
     ---------
@@ -205,8 +202,6 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
     days:                   The training days around the criterion day. Can be used in conjunction
                             with tables that have session_date as primary key (such as
                             behavior_analysis.BehavioralSummaryByDate)
-    force_cutoff:           whether the animal had to reach the criterion by the 30th of Nov. Only
-                            applies to biased and ready for ephys criterion
     """
 
     from ibl_pipeline import subject, acquisition
@@ -219,24 +214,18 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
         use_subjects = query_subjects().proj('subject_uuid')
 
     # Query per subject the date at which the criterion is reached
+    sessions = acquisition.Session * behavior_analysis.SessionTrainingStatus
     if criterion == 'trained':
-        subj_crit = (subject.Subject * use_subjects).aggr(
-                        (acquisition.Session * behavior_analysis.SessionTrainingStatus)
-                        & 'training_status="trained_1a" OR training_status="trained_1b"',
-                        'subject_nickname', date_criterion='min(date(session_start_time))')
+        restriction = 'training_status="trained_1a" OR training_status="trained_1b"'
     elif criterion == 'biased':
-        subj_crit = (subject.Subject * use_subjects).aggr(
-                (acquisition.Session * behavior_analysis.SessionTrainingStatus)
-                & 'task_protocol LIKE "%biased%"',
-                'subject_nickname', date_criterion='min(date(session_start_time))')
+        restriction = 'task_protocol LIKE "%biased%"'
     elif criterion == 'ephys':
-        subj_crit = (subject.Subject * use_subjects).aggr(
-                        (acquisition.Session * behavior_analysis.SessionTrainingStatus)
-                        & 'task_protocol LIKE "%biased%" OR task_protocol LIKE "%ephys%"'
-                        & 'training_status="ready4ephysrig" OR training_status="ready4recording"',
-                        'subject_nickname', date_criterion='min(date(session_start_time))')
+        restriction = 'training_status LIKE "ready%"'
     else:
-        raise Exception('criterion must be trained, biased or ephys')
+        raise ValueError('criterion must be "trained", "biased" or "ephys"')
+
+    subj_crit = (subject.Subject * use_subjects).aggr(
+        sessions & restriction, 'subject_nickname', date_criterion='min(date(session_start_time))')
 
     # Query the training day at which criterion is reached
     subj_crit_day = (dj.U('subject_uuid', 'day_of_crit')
@@ -250,7 +239,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
                    'subject_uuid', 'subject_nickname', 'session_date')
 
     # Use dates to query sessions
-    ses_query = (acquisition.Session).aggr(
+    ses_query = acquisition.Session.aggr(
                             days, from_date='min(session_date)', to_date='max(session_date)')
     
     sessions = (acquisition.Session * ses_query & 'date(session_start_time) >= from_date'
@@ -261,12 +250,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=[2,
 
     # Transform to pandas dataframe if necessary
     if as_dataframe is True:
-        sessions = sessions.fetch(format='frame')
-        sessions = sessions.reset_index()
-        days = days.fetch(format='frame')
-        days = days.reset_index()
-        
-    
-    
+        sessions = sessions.fetch(format='frame').reset_index()
+        days = days.fetch(format='frame').reset_index()
 
     return sessions, days

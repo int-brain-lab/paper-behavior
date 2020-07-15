@@ -45,7 +45,7 @@ print('3. Number of mice that are still in training (exclude from 1 and 2): %d' 
 
 trained = query_subjects(criterion='trained')
 print('4. Number of mice that reached trained: %d' % len(trained))
-print('5. Number of mice that reached ready4ephysrig: %d' % len(query_subjects(criterion='ready4ephysrig')))
+print('5. Number of mice that reached ready4ephys: %d' % len(query_subjects(criterion='ephys')))
 
 # ==================================================
 # Trained mice yet to meet final criterion at the cut off date.  These mice did not quite reach

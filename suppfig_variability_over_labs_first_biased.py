@@ -73,6 +73,9 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'bias_n': neutral_fit['bias'],
                               'nickname': nickname, 'lab': lab})
     biased_fits = biased_fits.append(fits, sort=False)
+    
+    # Remove mice that did not have a 50:50 block
+    biased_fits = biased_fits[biased_fits['threshold_n'].notnull()]
 
 # %% Statistics
     

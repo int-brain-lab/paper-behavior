@@ -36,8 +36,9 @@ from sklearn.metrics import f1_score, confusion_matrix
 DECODER = 'forest'          # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
-METRICS = ['perf_easy', 'threshold_l', 'threshold_r', 'bias_l', 'bias_r']
-METRICS_CONTROL = ['perf_easy', 'threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'time_zone']
+METRICS = ['perf_easy', 'threshold_l', 'threshold_r', 'threshold_n', 'bias_l', 'bias_r', 'bias_n']
+METRICS_CONTROL = ['perf_easy', 'threshold_l', 'threshold_r', 'threshold_n',
+                   'bias_l', 'bias_r', 'bias_n', 'time_zone']
 
 
 # Decoding function with n-fold cross validation
@@ -95,19 +96,28 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     elif time_zone == 'America/Los_Angeles':
         time_zone_number = -7
 
-    # Fit psychometric curve
+     # Fit psychometric curve
     left_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
                                    & (behav['probabilityLeft'] == 80)])
     right_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
                                     & (behav['probabilityLeft'] == 20)])
+    neutral_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
+                                    & (behav['probabilityLeft'] == 50)])
     perf_easy = (behav.loc[behav['subject_nickname'] == nickname, 'correct_easy'].mean()) * 100
+    
     fits = pd.DataFrame(data={'perf_easy': perf_easy,
                               'threshold_l': left_fit['threshold'],
                               'threshold_r': right_fit['threshold'],
+                              'threshold_n': neutral_fit['threshold'],
                               'bias_l': left_fit['bias'],
                               'bias_r': right_fit['bias'],
-                              'nickname': nickname, 'lab': lab, 'time_zone': time_zone_number})
+                              'bias_n': neutral_fit['bias'],
+                              'time_zone': time_zone_number,
+                              'nickname': nickname, 'lab': lab})
     biased_fits = biased_fits.append(fits, sort=False)
+    
+    # Remove mice that did not have a 50:50 block
+    biased_fits = biased_fits[biased_fits['threshold_n'].notnull()]
 
 # %% Do decoding
 

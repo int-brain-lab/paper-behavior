@@ -106,6 +106,14 @@ for i, var in enumerate(['threshold_l', 'threshold_r', 'lapselow_l', 'lapselow_r
 # Correct for multiple tests
 stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
 
+# Test between left/right blocks
+for i, var in enumerate(['threshold', 'lapselow', 'lapsehigh', 'bias']):
+    stats_tests.loc[stats_tests.shape[0] + 1, 'variable'] = '%s_blocks' % var
+    stats_tests.loc[stats_tests.shape[0], 'test_type'] = 'wilcoxon'
+    _, stats_tests.loc[stats_tests.shape[0], 'p_value'] = stats.wilcoxon(
+                                    biased_fits['%s_l' % var], biased_fits['%s_r' % var])
+
+
 # %% Plot metrics
     
 f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(FIGURE_WIDTH*0.8, FIGURE_HEIGHT))

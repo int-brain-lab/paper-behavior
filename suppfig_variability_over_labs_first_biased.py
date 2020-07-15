@@ -79,23 +79,29 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
 stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
 posthoc_tests = {}
 
-for i, var in enumerate(['perf_easy', 'threshold_l', 'threshold_r', 'bias_l', 'bias_r']):
-    _, normal = stats.normaltest(biased_fits[var])
+for i, var in enumerate(['perf_easy', 'threshold_l', 'threshold_r', 'threshold_n',
+                         'bias_l', 'bias_r', 'bias_n']):
+    
+    # Remove any animals with NaNs
+    test_fits = biased_fits[biased_fits[var].notnull()]
+    
+    # Test for normality
+    _, normal = stats.normaltest(test_fits[var])
 
     if normal < 0.05:
         test_type = 'kruskal'
         test = stats.kruskal(*[group[var].values
-                               for name, group in biased_fits.groupby('lab')])
+                               for name, group in test_fits.groupby('lab')])
         if test[1] < 0.05:  # Proceed to posthocs
-            posthoc = sp.posthoc_dunn(biased_fits, val_col=var, group_col='lab')
+            posthoc = sp.posthoc_dunn(test_fits, val_col=var, group_col='lab')
         else:
             posthoc = np.nan
     else:
         test_type = 'anova'
         test = stats.f_oneway(*[group[var].values
-                                for name, group in biased_fits.groupby('lab')])
+                                for name, group in test_fits.groupby('lab')])
         if test[1] < 0.05:
-            posthoc = sp.posthoc_tukey(biased_fits, val_col=var, group_col='lab')
+            posthoc = sp.posthoc_tukey(test_fits, val_col=var, group_col='lab')
         else:
             posthoc = np.nan
 

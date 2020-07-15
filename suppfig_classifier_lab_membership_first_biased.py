@@ -33,7 +33,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Settings
-DECODER = 'bayes'          # forest, bayes or regression
+DECODER = 'forest'          # forest, bayes or regression
 NUM_SPLITS = 3              # n in n-fold cross validation
 ITERATIONS = 2000           # how often to decode
 METRICS = ['perf_easy', 'threshold_l', 'threshold_r', 'threshold_n', 'bias_l', 'bias_r', 'bias_n']
@@ -112,7 +112,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'bias_l': left_fit['bias'],
                               'bias_r': right_fit['bias'],
                               'bias_n': neutral_fit['bias'],
-                              'time_zone': time_zone,
+                              'time_zone': time_zone_number,
                               'nickname': nickname, 'lab': lab})
     biased_fits = biased_fits.append(fits, sort=False)
     

@@ -31,7 +31,7 @@ if QUERY is True:
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior
     use_sessions, _ = query_sessions_around_criterion(criterion='biased',
-                                                      days_from_criterion=[1, 3])
+                                                      days_from_criterion=[4, 6])
     use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
@@ -75,7 +75,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     biased_fits = biased_fits.append(fits, sort=False)
     
     # Remove mice that did not have a 50:50 block
-    biased_fits = biased_fits[biased_fits['threshold_n'].notnull()]
+    # biased_fits = biased_fits[biased_fits['threshold_n'].notnull()]
 
 # %% Statistics
     

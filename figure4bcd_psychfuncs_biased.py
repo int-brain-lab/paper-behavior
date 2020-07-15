@@ -40,7 +40,8 @@ sns.set_palette(cmap)  # palette for water types
 if query is True:
     # query sessions
     use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
-                                                      days_from_criterion=[2, 0])
+                                                      days_from_criterion=[2, 0],
+                                                      force_cutoff=True)
     use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
 
     # restrict by list of dicts with uuids for these sessions

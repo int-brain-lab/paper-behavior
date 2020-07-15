@@ -34,19 +34,24 @@ if QUERY is True:
                                                              as_dataframe=False,
                                                              force_cutoff=True)
 
-    # restrict by list of dicts with uuids for these sessions
-    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-         * behavior.TrialSet.Trial)
+    trial_fields = ('trial_stim_contrast_left',
+                    'trial_stim_contrast_right',
+                    'trial_response_time',
+                    'trial_stim_prob_left',
+                    'trial_feedback_type',
+                    'trial_stim_on_time',
+                    'trial_response_choice')
+    # query trial data for sessions and subject name and lab info
+    trials = use_sessions.proj('task_protocol') * behavior.TrialSet.Trial.proj(*trial_fields)
+    subject_info = subject.Subject.proj('subject_nickname') * \
+        (subject.SubjectLab * reference.Lab).proj('institution_short')
 
-    # reduce the size of the fetch
-    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
-
-    # construct pandas dataframe
-    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                    format='frame').reset_index()
-    behav = dj2pandas(bdat)
+    # Fetch, join and sort data as a pandas DataFrame
+    behav = dj2pandas(trials.fetch(format='frame')
+                      .join(subject_info.fetch(format='frame'))
+                      .sort_values(by=['institution_short', 'subject_nickname',
+                                       'session_start_time', 'trial_id'])
+                      .reset_index())
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
     behav = pd.read_csv(join('data', 'Fig3'))

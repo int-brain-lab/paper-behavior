@@ -429,10 +429,10 @@ if load_model ==  False:
     model_to_save = behav[['rchoice', 'uchoice','6','12','25','100', 
                              'block', 'intercept', 'simulation_prob']]
     
-    model_to_save.to_pickle('./model_results/model_to_save_biased.pkl')
+    model_to_save.to_csv('./model_results/model_to_save_biased.csv')
     
 if load_model ==  True:
-    model_to_save = pd.read_pickle('./model_results/model_to_save_biased.pkl')
+    model_to_save = pd.read_csv('./model_results/model_to_save_biased.csv')
     behav = pd.concat([behav,model_to_save], axis =1)
     
 #*****************************Unbiased Task**********************************#
@@ -449,10 +449,10 @@ if load_model ==  False:
     model_to_save_unbiased = tbehav[['rchoice', 'uchoice','6','12','25','100', 
                              'intercept', 'simulation_prob']]
     
-    model_to_save_unbiased.to_pickle('./model_results/model_to_save_unbiased.pkl')
+    model_to_save_unbiased.to_csv('./model_results/model_to_save_unbiased.csv')
     
 if load_model ==  True:
-    model_to_save_unbiased = pd.read_pickle('./model_results/model_to_save_unbiased.pkl')
+    model_to_save_unbiased = pd.read_csv('./model_results/model_to_save_unbiased.csv')
     tbehav = pd.concat([tbehav,model_to_save_unbiased], axis =1)
 
 #*****************************Summary information****************************#
@@ -518,10 +518,10 @@ bebehav_model_data, index = data_2_X_test (bebehav, correction = \
 if load_model == False:  
     bebehav.loc[bebehav['index'].isin(index) ,'simulation_prob'] = \
         example_model.predict(bebehav_model_data).to_numpy() # Run simulation
-    bebehav.to_pickle('./model_results/bebehav.pkl')
+    bebehav.to_csv('./model_results/bebehav.csv')
     
 if load_model ==  True:
-    bebehav = pd.read_pickle('./model_results/bebehav.pkl')
+    bebehav = pd.read_csv('./model_results/bebehav.csv')
 
 
 
@@ -551,10 +551,10 @@ tebehav_model_data, index = data_2_X_test (tebehav, correction = correction,
 if load_model == False:  
     tebehav.loc[tebehav['index'].isin(index) ,'simulation_prob'] = \
         example_model_t.predict(tebehav_model_data).to_numpy() # Run simulation
-    tebehav.to_pickle('./model_results/tebehav.pkl')
+    tebehav.to_csv('./model_results/tebehav.csv')
     
 if load_model ==  True:
-    tebehav = pd.read_pickle('./model_results/tebehav.pkl')
+    tebehav = pd.read_csv('./model_results/tebehav.csv')
 
 
 # Run simulation

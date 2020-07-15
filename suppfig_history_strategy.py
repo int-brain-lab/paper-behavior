@@ -11,7 +11,7 @@ from ibl_pipeline import behavior, subject, reference
 import matplotlib.pyplot as plt
 from dj_tools import dj2pandas, plot_psychometric, fit_psychfunc
 from paper_behavior_functions import (seaborn_style, figpath, query_sessions_around_criterion,
-                                      group_colors, institution_map)
+                                      group_colors, institution_map, FIGURE_WIDTH, FIGURE_HEIGHT)
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import pycircstat
@@ -33,8 +33,7 @@ institution_map, col_names = institution_map()
 # ================================= #
 
 use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[
-                                                             2, 3],
+                                                         days_from_criterion=[2, 3],
                                                          as_dataframe=False)
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -84,16 +83,17 @@ behav = behav[~behav.signed_contrast.isin(removecontrasts)]
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col='task', hue='previous_name',
-                    sharex=True, sharey=True, aspect=0.7, palette='Paired',
+                    sharex=True, sharey=True, palette='Paired',
                     hue_order=['post_error, right', 'post_correct, right',
-                               'post_error, left', 'post_correct, left'])
+                               'post_error, left', 'post_correct, left'],
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/5)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname")
 tasks = ['Unbiased task\n(level 1)', 'Biased task\n(level 2)']
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(tasks[axidx], color='k', fontweight='bold')
 # fig._legend.set_title('Previous choice')
-fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
+fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5a_history_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure5a_history_psychfuncs.png"), dpi=600)
@@ -101,16 +101,17 @@ plt.close('all')
 
 fig = sns.FacetGrid(behav,
                     col='task', hue='next_name',
-                    sharex=True, sharey=True, aspect=0.7, palette='Paired',
+                    sharex=True, sharey=True, palette='Paired',
                     hue_order=['pre_error, right', 'pre_correct, right',
-                               'pre_error, left', 'pre_correct, left'])
+                               'pre_error, left', 'pre_correct, left'],
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/5)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname")
 tasks = ['Unbiased task\n(level 1)', 'Biased task\n(level 2)']
 for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(tasks[axidx], color='k', fontweight='bold')
 # fig._legend.set_title('Previous choice')
-fig.set_axis_labels('Signed contrast (%)', 'Rightward choice (%)')
+fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5a_future_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure5a_future_psychfuncs.png"), dpi=600)
@@ -183,10 +184,12 @@ sjs = num_dp.loc[num_dp.post_error == 2, 'subject_nickname'].to_list()
 which_plots = [['post_correct', 'post_error', 'History strategy, uncorrected'],
                ['pre_correct', 'pre_error', 'Future, uncorrected'],
                ['post_correct_corr', 'post_error_corr', 'History strategy, corrected']]
+axes_lims = [[-25, 60], [-25, 60], [-45, 40]]
 
 for wi, w in enumerate(which_plots):
     plt.close('all')
-    fig, axes = plt.subplots(1, 2, figsize=[6,3], sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/2, FIGURE_HEIGHT),
+                             sharex=True, sharey=True)
     for task, taskname, ax in zip(['traini', 'biased'], ['Basic task', 'Full task'], axes):
 
         # bivariate KDE
@@ -226,21 +229,25 @@ for wi, w in enumerate(which_plots):
 
         ax.set_xlabel("Choice updating (%) \nafter rewarded")
         ax.set_ylabel("Choice updating (%) \nafter unrewarded")
+        ax.set(xticks=[-60, -40, -20, 0, 20, 40, 60],
+               yticks=[-60, -40, -20, 0, 20, 40, 60],
+               xlim=axes_lims[wi], ylim=axes_lims[wi])
 
         ax.axhline(linestyle='-', color='black', linewidth=0.5, zorder=-100)
         ax.axvline(linestyle='-', color='black', linewidth=0.5, zorder=-100)
         ax.set_title(taskname)
         ax.set_aspect('equal', 'box')
-        ax.set_xticks(ax.get_yticks())
+        # ax.set_xticks(ax.get_yticks())
 
-        # set the limits to be tight
-        ax_min = min([min(history_shift[w[0]]), min(history_shift[w[1]])]) - 2
-        ax_max = max([max(history_shift[w[0]]), max(history_shift[w[1]])]) + 2
-        ax.set(xlim=[ax_min, ax_max], ylim=[ax_min, ax_max])
+        # # set the limits to be tight
+        # ax_min = min([min(history_shift[w[0]]), min(history_shift[w[1]])]) - 2
+        # ax_max = max([max(history_shift[w[0]]), max(history_shift[w[1]])]) + 2
+        # ax.set(xlim=[ax_min, ax_max], ylim=[ax_min, ax_max])
 
     sns.despine(trim=True)
-    fig.suptitle(w[2] + '\n')
+    #fig.suptitle(w[2] + '\n')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+
     fig.savefig(os.path.join(figpath, "figure5b_history_strategy_%d.pdf" % wi))
     fig.savefig(os.path.join(figpath, "figure5b_history_strategy_%d.png" % wi), dpi=600)
     plt.close("all")

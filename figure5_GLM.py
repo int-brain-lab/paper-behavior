@@ -39,22 +39,6 @@ figpath = figpath()
 #******************************* Functions **********************************#
 ##############################################################################
 
-def model_psychometric_history(behav):
-    select =  behav.copy()
-    select['t-1'] = select['trial_feedback_type'].shift(periods=1).to_numpy()
-    select.loc[select['choice'] == -1, 'choice'] = 0 
-    select = select.iloc[1:,:]
-    #select['t-1'].fillna(0,  inplace=True)
-    select['t-1']  = select['t-1'].astype(int)
-    
-    plot_psychometric(select.loc[select['signed_contrast'],
-                     select.loc[select['probabilityLeft'] ==i, 'signed_contrast']], 
-                     palette = ['red', 'green'], 
-                     ci = 68)
-
-    sns.lineplot(data = select_50, hue = 't-1', x = select_50['signed_contrast'],
-                     y = select_50['simulation_prob'], palette = ['red', 'green'], ci = 68)
-
 
 def run_glm(behav, example, correction = True,  bias = False, cross_validation = True):
     for i, nickname in enumerate(np.unique(behav['subject_nickname'])):
@@ -364,6 +348,7 @@ def plot_psychometric(x, y, col, point = False, mark = 'o', al =1):
     g.set_ylim([0, 1])
     g.set_yticks([0, 0.25, 0.5, 0.75, 1])
     g.set_yticklabels(['0', '25', '50', '75', '100'])
+    
 
 # %%
 ##############################################################################
@@ -380,22 +365,37 @@ correction = False
 if query is True:
     # Query sessions biased data 
     use_sessions, _ = query_sessions_around_criterion(criterion='biased',
-                                                      days_from_criterion=[2, 3])
+                                                      days_from_criterion=[2, 3],
+                                                       as_dataframe=False,
+                                                       force_cutoff=True)
     institution_map, col_names = institution_map()
     
-    # restrict by list of dicts with uuids for these sessions
-    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-         * behavior.TrialSet.Trial)
     
-    # reduce the size of the fetch
-    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-                'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-                'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
-                'trial_feedback_type')
-    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                    format='frame').reset_index()
-    behav_merged = dj2pandas(bdat)
+    
+    trial_fields = ('trial_stim_contrast_left',
+                    'trial_stim_contrast_right',
+                    'trial_response_time',
+                    'trial_stim_prob_left',
+                    'trial_feedback_type',
+                    'trial_stim_on_time',
+                    'trial_response_choice')
+    
+    
+    
+    
+    # query trial data for sessions and subject name and lab info
+    trials = use_sessions.proj('task_protocol') * behavior.TrialSet.Trial.proj(*trial_fields)
+    subject_info = subject.Subject.proj('subject_nickname') * \
+        (subject.SubjectLab * reference.Lab).proj('institution_short')
+
+    # Fetch, join and sort data as a pandas DataFrame
+    behav_merged = dj2pandas(trials.fetch(format='frame')
+                      .join(subject_info.fetch(format='frame'))
+                      .sort_values(by=['institution_short', 'subject_nickname',
+                                       'session_start_time', 'trial_id'])
+                      .reset_index())
     behav_merged['institution_code'] = behav_merged.institution_short.map(institution_map)
+
 else:
     behav_merged = pd.read_csv(join('data', 'Fig5.csv'))
 
@@ -424,7 +424,7 @@ behav = behav.reset_index()
 
 if load_model ==  False:
     behav, example_model = run_glm(behav, EXAMPLE_MOUSE, correction = correction,
-                                   bias = True, cross_validation  = True)
+                                   bias = True, cross_validation  = False)
     
     model_to_save = behav[['rchoice', 'uchoice','6','12','25','100', 
                              'block', 'intercept', 'simulation_prob']]
@@ -444,7 +444,7 @@ tbehav = tbehav.reset_index()
 
 if load_model ==  False:
     tbehav , example_model_t = run_glm(tbehav, EXAMPLE_MOUSE, correction = correction,
-                                       bias = False, cross_validation  = True)
+                                       bias = False, cross_validation  = False)
     
     model_to_save_unbiased = tbehav[['rchoice', 'uchoice','6','12','25','100', 
                              'intercept', 'simulation_prob']]
@@ -502,16 +502,7 @@ for i in tbehav['institution_code'].unique():
 #**************************** Run simulation ********************************#
 ##############################################################################
 
-
-b = (subject.Subject * behavior.TrialSet.Trial * acquisition.Session
-  & 'subject_nickname="%s"' % EXAMPLE_MOUSE & 'task_protocol LIKE "%biased%"')
-
-bdat = b.fetch(order_by='session_start_time, trial_id',
-               format='frame').reset_index()
-
-ebehav = dj2pandas(bdat)
-ebehav = ebehav.reset_index()
-bebehav = ebehav.loc[ebehav['subject_nickname'] ==  EXAMPLE_MOUSE]
+bebehav = behav.loc[behav['subject_nickname'] ==  EXAMPLE_MOUSE].reset_index()
 bebehav_model_data, index = data_2_X_test (bebehav, correction = \
                                            correction, bias = True)
     
@@ -524,26 +515,10 @@ if load_model ==  True:
     bebehav = pd.read_csv('./model_results/bebehav.csv')
 
 
-
 # Data for examples
-use_sessions, use_days = query_sessions_around_criterion(criterion='ephys',
-                                                         days_from_criterion=[
-                                                            2, 0],
-                                                         as_dataframe=False)
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
 
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
-            'trial_feedback_type')
-bdat1 = b2.fetch(order_by=
-        'institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
+tebehav = tbehav.loc[tbehav['subject_nickname'] ==  EXAMPLE_MOUSE]
 
-etbehav = dj2pandas(bdat1)
-etbehav = etbehav.reset_index()
-tebehav = etbehav.loc[etbehav['subject_nickname'] ==  EXAMPLE_MOUSE]
 tebehav_model_data, index = data_2_X_test (tebehav, correction = correction,
                                            bias = False)
 
@@ -558,7 +533,7 @@ if load_model ==  True:
 
 
 # Run simulation
-simulation_size = 1
+simulation_size = 100
 tsimulation = tebehav[tebehav['simulation_prob'].notnull()].copy()
 tsimulation = tsimulation[tsimulation['subject_nickname'] == EXAMPLE_MOUSE].copy()
 
@@ -779,8 +754,5 @@ ax[1].set_ylabel('Model Accuracy %')
 sns.despine(trim=True)
 fig.savefig(os.path.join(figpath, 'figure5_accuracy.pdf'), dpi=600)
 
-
-
-
-
-    
+brsimulation['simulation_run'] = 0
+brsimulation.loc[brsimulation['simulation_prob']>0.5, 'simulation_run']=1

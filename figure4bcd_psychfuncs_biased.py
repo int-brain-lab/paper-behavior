@@ -62,10 +62,6 @@ if query is True:
 else:
     behav = pd.read_csv(join('data', 'Fig4.csv'))
 
-# hack! TODO: ask Guido about query change
-behav.drop(behav['probabilityLeft'][~behav['probabilityLeft'].isin(
-    [50, 20, 80])].index, inplace=True)
-
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
 behav['n_mice'] = behav.institution_code.map(N)

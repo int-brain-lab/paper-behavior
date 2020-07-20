@@ -127,9 +127,16 @@ def fit_glm(behav, prior_blocks=False, folds=5):
         # fit again
         logit_model = sm.Logit(y_train, X_train)
         res = logit_model.fit_regularized(disp=False)  # run silently
-        # compute the accuracy on held-out data
-        acc = np.append(acc,
-                        np.mean(y_test['choice'] == np.round(res.predict(X_test))))
+
+        # compute the accuracy on held-out data [from Luigi]:
+        # suppose you are predicting Pr(Left), let's call it p,
+        # the % match is p if the actual choice is left, or 1-p if the actual choice is right
+        # if you were to simulate it, in the end you would get these numbers
+        y_test['pred'] = res.predict(X_test)
+        y_test.loc[y_test['choice'] == 0, 'pred'] = 1 - y_test.loc[y_test['choice'] == 0, 'pred']
+        acc = np.append(acc, y_test['pred'].mean())
+
+    # average prediction accuracy over the K folds
     params['accuracy'] = np.mean(acc)
 
     return params  # wide df

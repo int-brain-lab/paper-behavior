@@ -72,14 +72,21 @@ behav['block_id'] = behav['probabilityLeft'].map({80:-1, 50:0, 20:1})
 # ========================================== #
 
 # DEFINE THE MODEL
-def fit_glm(behav, prior_blocks=False):
+def fit_glm(behav, prior_blocks=False, n_sim=1000):
+
+    # drop trials with contrast-level 50, only rarely present (should not be its own regressor)
+    behav = behav[np.abs(behav.signed_contrast) != 50]
 
     # use patsy to easily build design matrix
     if not prior_blocks:
+        behav = behav.dropna(subset=['trial_feedback_type', 'choice',
+                                  'previous_choice', 'previous_outcome']).reset_index()
         endog, exog = patsy.dmatrices('choice ~ 1 + stimulus_side:C(contrast, Treatment)'
                                       '+ previous_choice:C(previous_outcome)',
                                data=behav, return_type='dataframe')
     else:
+        behav = behav.dropna(subset=['trial_feedback_type', 'choice',
+                                  'previous_choice', 'previous_outcome', 'block_id']).reset_index()
         endog, exog = patsy.dmatrices('choice ~ 1 + stimulus_side:C(contrast, Treatment)'
                                       '+ previous_choice:C(previous_outcome) '
                                       '+ block_id',
@@ -104,16 +111,36 @@ def fit_glm(behav, prior_blocks=False):
              inplace=True)
 
     # NOW FIT THIS WITH STATSMODELS - ignore NaN choices
-    logit_model = sm.Logit(endog, exog, missing='drop')
+    logit_model = sm.Logit(endog, exog)
     res = logit_model.fit_regularized(disp=False)  # run silently
 
     # what do we want to keep?
     params = pd.DataFrame(res.params).T
 
-    # NOW SIMULATE THIS MODEL MANY TIMES!
-    cval = cross_val_score(res, endog, exog)
+    # USE INVERSE HESSIAN TO CONSTRUCT MULTIVARIATE GAUSSIAN
+    cov = -np.linalg.inv(logit_model.hessian(res.params))
+    samples = np.random.multivariate_normal(res.params, cov, n_sim)
 
-    return params, cval # wide df
+    # sanity check: the mean of those samples should not be too different from the params
+    assert(np.allclose(params, np.mean(samples, axis=0), atol=0.1))
+
+    # NOW SIMULATE THE MODEL X TIMES
+    simulated_choices = []
+    for n in range(n_sim):
+        # plug sampled parameters into the model - predict sequence of choices
+        z = np.dot(exog, samples[n])
+
+        # then compute the mean choice fractions at each contrast, save and append
+        behav['simulated_choice'] = 1 / (1 + np.exp(-z))
+        if not prior_blocks:
+            simulated_choices.append(behav.groupby(['signed_contrast'])['simulated_choice'].mean().values)
+        else:
+            gr = behav.groupby(['probabilityLeft', 'signed_contrast'])['simulated_choice'].mean().reset_index()
+            simulated_choices.append([gr.loc[gr.probabilityLeft == 20, 'simulated_choice'].values,
+                                      gr.loc[gr.probabilityLeft == 50, 'simulated_choice'].values,
+                                      gr.loc[gr.probabilityLeft == 80, 'simulated_choice'].values])
+
+    return params, simulated_choices  # wide df
 
 # ========================================== #
 #%% 3. FIT
@@ -129,24 +156,50 @@ params_full, simulation_full = fit_glm(behav.loc[behav.task == 'biased', :], pri
 #%% 4. PLOT PSYCHOMETRIC FUNCTIONS
 # ========================================== #
 
+# for plotting, replace 100 with -35
+behav['signed_contrast'] = behav['signed_contrast'].replace(-100, -35)
+behav['signed_contrast'] = behav['signed_contrast'].replace(100, 35)
+
 # BASIC TASK
 plt.close('all')
+# prep the figure with psychometric layout
 fig = sns.FacetGrid(behav.loc[behav.task == 'traini', :],
                     sharex=True, sharey=True,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
-fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_start_time",
-        color='k', linewidth=0)
-fig.set_axis_labels('', 'Rightward choices (%)')
+fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname",
+        color='k', linewidth=0) # this will be empty, hack
+# now plot the datapoints, no errorbars
+sns.lineplot(data=behav.loc[behav.task == 'traini', :],
+             x='signed_contrast', y='choice2', marker='o', err_style='bars',
+             color='k', linewidth=0, ci=95, ax=fig.ax)# overlay the simulated
+# confidence intervals from the model - shaded regions
+fig.ax.fill_between(sorted(behav.signed_contrast.unique()),
+                    np.quantile(np.array(simulation_basic), q=0.025, axis=0),
+                    np.quantile(np.array(simulation_basic), q=0.975, axis=0),
+                    alpha=0.5, facecolor='k')
+fig.set_axis_labels(' ', 'Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5b_basic_psychfunc.pdf"))
 
 # FULL TASK
+plt.close('all')
 fig = sns.FacetGrid(behav.loc[behav.task == 'biased', :],
                     hue="probabilityLeft", palette=cmap,
                     sharex=True, sharey=True,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
-fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_start_time",
-        linewidth=0)
+fig.map(plot_psychometric, "signed_contrast", "choice_right", "subject_nickname", linewidth=0) # just for axis layout,
+# hack
+# now plot the datapoints, no errorbars
+sns.lineplot(data=behav.loc[behav.task == 'biased', :],
+             x='signed_contrast', y='choice2', marker='o', err_style='bars',
+             hue='probabilityLeft', palette=cmap, linewidth=0, ci=95, ax=fig.ax, legend=None)# overlay the simulated
+# confidence intervals from the model - shaded regions
+for cidx, c in enumerate(cmap):
+    simulation_full_perblock = [sim[cidx] for sim in simulation_full] # grab what we need, not super elegant
+    fig.ax.fill_between(sorted(behav.signed_contrast.unique()),
+                    np.quantile(np.array(simulation_full_perblock), q=0.025, axis=0),
+                    np.quantile(np.array(simulation_full_perblock), q=0.975, axis=0),
+                    alpha=0.5, facecolor=cmap[cidx])
 fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5b_full_psychfunc.pdf"))

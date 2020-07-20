@@ -104,7 +104,7 @@ for didx, day in enumerate(days):
         continue
 
     # PSYCHOMETRIC FUNCTIONS
-    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
+    fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT*0.9))
     dj_tools.plot_psychometric(behavtmp.signed_contrast,
                                behavtmp.choice_right,
                                behavtmp.trial_id,
@@ -135,19 +135,22 @@ for didx, day in enumerate(days):
     # running median overlaid
     sns.lineplot(x='trial_start_time', y='rt', color='black', ci=None,
                  data=behavtmp[['trial_start_time', 'rt']].rolling(20).median(), ax=ax[0])
-    ax[0].set(xlabel="", ylabel="RT (s)", ylim=[0.1, 60])
+    ax[0].set(xlabel="", ylabel="RT (s)", ylim=[0.1, 20])
     ax[0].set_yscale("log")
-    ax[0].set(yticks=[0.1, 1, 10, 60],
-              yticklabels=['0.1', '1', '10', ''],
-              xlim=[ax[0].get_xlim()[0]-2, ax[0].get_xlim()[1]])
 
-    # remove the x axis
-    # ax[0].tick_params(axis='x', colors='white')
-    # ax[0].spines['bottom'].set_color('white')
-    # ax[0].get_xaxis().set_visible(False)
-    # ax[0].yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda y, pos:
-    #                                                       ('{{:.{:1d}f}}'.format(int(np.maximum(
-    #                                                           -np.log10(y), 0)))).format(y)))
+    # fix xlims
+    if didx == 0:
+        xlim = [0, 60]
+    elif didx == 1:
+        xlim = [0, 80]
+    elif didx == 2:
+        xlim = [0, 60]
+    elif didx == 3:
+        xlim = [0, 60]
+
+    ax[0].set(yticks=[0.1, 1, 10, 20],
+              yticklabels=['0.1', '1', '10', ''], xlim=xlim)
+
     if didx == 0:
         ax[0].set(ylabel="Trial duration (s)")
     else:
@@ -170,8 +173,8 @@ for didx, day in enumerate(days):
     else:
         ax[1].set(ylabel=" ", yticklabels=[])
 
-    ax[1].set(xlabel='Time (min)', ylim=[0, 110], yticks=[0, 50, 100],
-              xlim=ax[0].get_xlim(), xticks=[0, 20, 40, 60])
+    ax[1].set(xlabel='Time (min)', ylim=[25, 110], yticks=[25, 50, 75, 100],
+              xlim=ax[0].get_xlim(), xticks=[0, 20, 40, 60, 80])
 
     #ax[1].yaxis.label.set_color("deepskyblue")
     #ax[1].tick_params(axis='y', colors='deepskyblue')

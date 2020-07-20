@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 12 16:49:07 2020
-
+Created on 2020-07-20
 @author: Anne Urai
 """
 import datajoint as dj
@@ -31,6 +30,32 @@ cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 print('loading model from disk...')
 params_basic = pd.read_csv('./model_results/params_basic.csv')
 params_full = pd.read_csv('./model_results/params_full.csv')
+combined = params_basic.merge(params_full, on=['institution_code', 'subject_nickname'])
+
+# ========================================== #
+# PRINT SUMMARY AND STATS
+# ========================================== #
+
+vars = ['6.25', '12.5', '25', '100', 'rewarded','unrewarded',  'bias']
+for v in vars:
+    print('basic task, %s: mean %.2f, %f : %f'%(v, params_basic[v].mean(),
+                                           params_basic[v].min(),
+                                           params_basic[v].max()))
+
+    print('full task, %s: mean %.2f, %f : %f'%(v, params_full[v].mean(),
+                                           params_full[v].min(),
+                                           params_full[v].max()))
+
+    # DO STATS BETWEEN THE TWO TASK TYPES
+    test = stats.ttest_rel(combined[v + '_y'],
+                           combined[v + '_x'],
+                           axis=0, nan_policy='omit')
+    print(test)
+
+# just show the average block bias in the full task
+print('full task, block_id: mean %.2f, %f: %f'%(params_full['block_id'].mean(),
+                                       params_full['block_id'].min(),
+                                       params_full['block_id'].max()))
 
 # ========================================== #
 #%% 2. PLOT WEIGHTS ACROSS MICE AND LABS
@@ -51,20 +76,20 @@ fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.swarmplot(data = basic_summ_visual,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['6.25', '12.5', '25', '100'],
-              palette = pal, marker='.', ax=ax[0], zorder=0)
+              palette = pal, marker='o', ax=ax[0], zorder=0, edgecolors='white')
 ax[0].plot(basic_summ_visual.groupby(['variable'])['value'].mean()[['6.25', '12.5', '25', '100']],
-             color='black', linewidth=0, marker='_', markersize=10)
+             color='black', linewidth=0, marker='_', markersize=13)
 ax[0].get_legend().set_visible(False)
-ax[0].set(xlabel='  ', ylabel='Weight', ylim=[0,5])
+ax[0].set(xlabel='  ', ylabel='Weight', ylim=[0,5.5])
 
 sns.swarmplot(data = basic_summ_bias,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['rewarded', 'unrewarded', 'bias'],
-              palette = pal, marker='.', ax=ax[1], zorder=0)
+              palette = pal, marker='o', ax=ax[1], zorder=0, edgecolors='white')
 ax[1].plot(basic_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'unrewarded', 'bias']],
-             color='black', linewidth=0, marker='_', markersize=10)
+             color='black', linewidth=0, marker='_', markersize=13)
 ax[1].get_legend().set_visible(False)
-ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1], yticks=[-0.5, 0, 0.5, 1],
+ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1.2], yticks=[-0.5, 0, 0.5, 1],
           xticks=[0,1,2,3], xlim=[-0.5, 3.5])
 ax[1].set_xticklabels([], ha='right', rotation=20)
 sns.despine(trim=True)
@@ -85,26 +110,26 @@ full_summ_bias = pd.melt(params_full,
                      value_vars=['unrewarded', 'rewarded',
                                  'bias', 'block_id']).groupby(['institution_code',
                                                      'variable']).mean().reset_index()
-# WEIGHTS IN THE BASIC TASK
+# WEIGHTS IN THE FULL TASK
 plt.close('all')
 fig, ax  = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.swarmplot(data = full_summ_visual,
               order=['6.25', '12.5', '25', '100'],
               hue = 'institution_code', x = 'variable', y= 'value',
-              palette = pal, marker='.', ax=ax[0], zorder=0)
+              palette = pal, marker='o', ax=ax[0], zorder=0, edgecolor='white')
 ax[0].plot(full_summ_visual.groupby(['variable'])['value'].mean()[['6.25', '12.5', '25', '100']],
-             color='black', linewidth=0, marker='_', markersize=10)
+             color='black', linewidth=0, marker='_', markersize=13)
 ax[0].get_legend().set_visible(False)
-ax[0].set(xlabel=' ', ylabel='Weight', ylim=[0,5])
+ax[0].set(xlabel=' ', ylabel='Weight', ylim=[0,5.5])
 
 sns.swarmplot(data = full_summ_bias,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['rewarded', 'unrewarded', 'bias', 'block_id'],
-              palette = pal, marker='.', ax=ax[1], zorder=0)
+              palette = pal, marker='o', ax=ax[1], zorder=0, edgecolor='white')
 ax[1].plot(full_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'unrewarded', 'bias', 'block_id']],
-             color='black', linewidth=0, marker='_', markersize=10)
+             color='black', linewidth=0, marker='_', markersize=13)
 ax[1].get_legend().set_visible(False)
-ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1], yticks=[-0.5, 0, 0.5, 1])
+ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1.2], yticks=[-0.5, 0, 0.5, 1])
 ax[1].set_xticklabels([], ha='right', rotation=20)
 
 sns.despine(trim=True)

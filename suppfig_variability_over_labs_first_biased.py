@@ -149,7 +149,7 @@ ylabels =['Performance (%)\non easy trials',
           'Contrast threshold (%)\n20:80 blocks',
           'Contrast threshold (%)\n80:20 blocks']
 ylims = [[70, 101], [-30, 30], [-30, 30], [-30, 30],
-         [0, 50], [0, 50], [0, 50]]
+         [0, 45], [0, 45], [0, 45]]
 
 plt.close('all')
 for v, ylab, ylim in zip(vars, ylabels, ylims):

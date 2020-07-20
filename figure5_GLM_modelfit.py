@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 12 16:49:07 2020
-
+Created on 2020-07-20
 @author: Anne Urai
 """
 import datajoint as dj
@@ -12,10 +11,13 @@ from paper_behavior_functions import (query_sessions_around_criterion,
                                       EXAMPLE_MOUSE, institution_map)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
-import statsmodels.api as sm
-import patsy # to build design matrix
 import os
 from tqdm.auto import tqdm
+from sklearn.model_selection import KFold
+
+# for modelling
+import patsy # to build design matrix
+import statsmodels.api as sm
 
 # progress bar
 tqdm.pandas(desc="model fitting")
@@ -66,8 +68,12 @@ else: # load from disk
 #%% 2. DEFINE THE GLM
 # ========================================== #
 
+
 # DEFINE THE MODEL
-def fit_glm(behav, prior_blocks=False):
+def fit_glm(behav, prior_blocks=False, folds=5):
+
+    # remove missing data
+    behav = behav.dropna().reset_index()
 
     # use patsy to easily build design matrix
     if not prior_blocks:
@@ -106,7 +112,25 @@ def fit_glm(behav, prior_blocks=False):
     params = pd.DataFrame(res.params).T
     params['pseudo_rsq'] = res.prsquared # https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.LogitResults.prsquared.html?highlight=pseudo
 
-    return params # wide df
+    # ===================================== #
+    # ADD MODEL ACCURACY - cross-validate
+    kf = KFold(n_splits=folds)
+    acc = np.array([])
+    for train, test in kf.split(endog):
+
+        X_train, X_test, y_train, y_test = exog.loc[train], exog.loc[test], \
+                                           endog.loc[train], endog.loc[test]
+        # fit again
+        logit_model = sm.Logit(y_train, X_train, missing='drop')
+        res = logit_model.fit_regularized(disp=False)  # run silently
+
+        # compute the accuracy on held-out data
+        acc = np.append(acc,
+                        np.mean(y_test['choice'] == np.round(res.predict(X_test))))
+    params['accuracy'] = np.mean(acc)
+
+    return params  # wide df
+
 
 # ========================================== #
 #%% 3. FIT FOR EACH MOUSE

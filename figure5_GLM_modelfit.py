@@ -72,19 +72,20 @@ else: # load from disk
 # DEFINE THE MODEL
 def fit_glm(behav, prior_blocks=False, folds=5):
 
-    # remove missing data
-    behav = behav.dropna().reset_index()
-
     # use patsy to easily build design matrix
     if not prior_blocks:
         endog, exog = patsy.dmatrices('choice ~ 1 + stimulus_side:C(contrast, Treatment)'
                                       '+ previous_choice:C(previous_outcome)',
-                               data=behav, return_type='dataframe')
+                               data=behav.dropna(subset=['trial_feedback_type', 'choice',
+                                  'previous_choice', 'previous_outcome']).reset_index(),
+                                      return_type='dataframe')
     else:
         endog, exog = patsy.dmatrices('choice ~ 1 + stimulus_side:C(contrast, Treatment)'
                                       '+ previous_choice:C(previous_outcome) '
                                       '+ block_id',
-                               data=behav, return_type='dataframe')
+                               data=behav.dropna(subset=['trial_feedback_type', 'choice',
+                                  'previous_choice', 'previous_outcome', 'block_id']).reset_index(),
+                                      return_type='dataframe')
 
     # remove the one column (with 0 contrast) that has no variance
     if 'stimulus_side:C(contrast, Treatment)[0.0]' in exog.columns:
@@ -105,7 +106,7 @@ def fit_glm(behav, prior_blocks=False, folds=5):
              inplace=True)
 
     # NOW FIT THIS WITH STATSMODELS - ignore NaN choices
-    logit_model = sm.Logit(endog, exog, missing='drop')
+    logit_model = sm.Logit(endog, exog)
     res = logit_model.fit_regularized(disp=False) # run silently
 
     # what do we want to keep?
@@ -114,16 +115,15 @@ def fit_glm(behav, prior_blocks=False, folds=5):
 
     # ===================================== #
     # ADD MODEL ACCURACY - cross-validate
-    kf = KFold(n_splits=folds)
+
+    kf = KFold(n_splits=folds, shuffle=True)
     acc = np.array([])
     for train, test in kf.split(endog):
-
         X_train, X_test, y_train, y_test = exog.loc[train], exog.loc[test], \
                                            endog.loc[train], endog.loc[test]
         # fit again
-        logit_model = sm.Logit(y_train, X_train, missing='drop')
+        logit_model = sm.Logit(y_train, X_train)
         res = logit_model.fit_regularized(disp=False)  # run silently
-
         # compute the accuracy on held-out data
         acc = np.append(acc,
                         np.mean(y_test['choice'] == np.round(res.predict(X_test))))

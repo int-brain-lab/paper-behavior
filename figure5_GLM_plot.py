@@ -152,12 +152,14 @@ params_full_all['institution_code'] = 'All'
 params_full_all = params_full.append(params_full_all)
 
 # which variables to plot?
-vars = ['6.25', '12.5', '25', '100', 'unrewarded', 'rewarded', 'bias', 'block_id', 'pseudo_rsq']
+vars = ['6.25', '12.5', '25', '100', 'unrewarded', 'rewarded', 'bias', 'block_id', 'pseudo_rsq', 'accuracy']
 ylabels =['Contrast: 6.25', 'Contrast: 12.5', 'Contrast: 25', ' Contrast: 100',
           'Past choice: unrewarded', 'Past choice: rewarded', 'Bias: constant',
-          'Bias: block prior', 'Pseudo-R$^2$']
-ylims = [[0, 6.5], [0, 6.5], [0, 6.5], [0, 6.5], [-1, 1.5], [-1, 1.5], [-2, 2], [-0.5, 1], [0, 1]]
+          'Bias: block prior', 'Pseudo-R$^2$', 'Model accuracy (5-fold c.v.)']
+ylims = [[0, 6.5], [0, 6.5], [0, 6.5], [0, 6.5], [-1, 1.5], [-1, 1.5],
+         [-2, 2], [-0.5, 1], [0, 1], [0.6, 1.02]]
 
+plt.close('all')
 for params, modelname in zip([[params_basic, params_basic_all],
                               [params_full, params_full_all]], ['basic', 'full']):
     for v, ylab, ylim in zip(vars, ylabels, ylims):

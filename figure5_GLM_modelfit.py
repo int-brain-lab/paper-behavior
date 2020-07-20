@@ -72,6 +72,9 @@ else: # load from disk
 # DEFINE THE MODEL
 def fit_glm(behav, prior_blocks=False, folds=5):
 
+    # drop trials with contrast-level 50, only rarely present (should not be its own regressor)
+    behav = behav[np.abs(behav.signed_contrast) != 50]
+
     # use patsy to easily build design matrix
     if not prior_blocks:
         endog, exog = patsy.dmatrices('choice ~ 1 + stimulus_side:C(contrast, Treatment)'

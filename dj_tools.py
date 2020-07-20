@@ -241,3 +241,15 @@ def dj2pandas(behav):
 
     return behav
 
+
+def num_star(pvalue):
+    if pvalue < 0.05:
+        stars = '* p < 0.05'
+    if pvalue < 0.01:
+        stars = '** p < 0.01'
+    if pvalue < 0.001:
+        stars = '*** p < 0.001'
+    if pvalue < 0.0001:
+        stars = '**** p < 0.0001'
+
+    return stars

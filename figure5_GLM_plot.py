@@ -10,12 +10,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from paper_behavior_functions import (query_sessions_around_criterion,
-                                      seaborn_style, institution_map, 
+from paper_behavior_functions import (seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
                                       FIGURE_WIDTH, FIGURE_HEIGHT)
-from dj_tools import dj2pandas, fit_psychfunc
+from dj_tools import num_star
 import os
+from scipy import stats
 
 # Load some things from paper_behavior_functions
 figpath = figpath()
@@ -116,3 +116,63 @@ fig.savefig(os.path.join(figpath, 'figure5c_full_weights.pdf'))
 # EACH PARAMETER ACROSS LABS
 # ========================================== #
 
+# add the data for all labs combined
+params_basic_all = params_basic.copy()
+params_basic_all['institution_code'] = 'All'
+params_basic_all = params_basic.append(params_basic_all)
+
+# add the data for all labs combined
+params_full_all = params_full.copy()
+params_full_all['institution_code'] = 'All'
+params_full_all = params_full.append(params_full_all)
+
+# which variables to plot?
+vars = ['6.25', '12.5', '25', '100', 'unrewarded', 'rewarded', 'bias', 'block_id', 'pseudo_rsq']
+ylabels =['Contrast: 6.25', 'Contrast: 12.5', 'Contrast: 25', ' Contrast: 100',
+          'Past choice: unrewarded', 'Past choice: rewarded', 'Bias: constant',
+          'Bias: block prior', 'Pseudo-R$^2$']
+ylims = [[0, 6.5], [0, 6.5], [0, 6.5], [0, 6.5], [-1, 1.5], [-1, 1.5], [-2, 2], [-0.5, 1], [0, 1]]
+
+for params, modelname in zip([[params_basic, params_basic_all],
+                              [params_full, params_full_all]], ['basic', 'full']):
+    for v, ylab, ylim in zip(vars, ylabels, ylims):
+
+        if v in params[0].columns: # skip bias for the basic task
+
+            print(modelname)
+            print(v)
+            f, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
+            sns.swarmplot(y=v, x='institution_code', data=params[0], hue='institution_code',
+                          palette=pal, ax=ax, marker='.')
+            axbox = sns.boxplot(y=v, x='institution_code', data=params[1], color='white',
+                                showfliers=False, ax=ax)
+            ax.set(ylabel=ylab, xlabel='', ylim=ylim)
+            # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=60)
+            axbox.artists[-1].set_edgecolor('black')
+            for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
+                axbox.lines[j].set_color('black')
+            ax.get_legend().set_visible(False)
+
+            # DO STATISTICS
+            _, normal = stats.normaltest(params[0][v], nan_policy='omit')
+
+            if normal < 0.05:
+                test_type = 'kruskal'
+                test = stats.kruskal(*[group[v].values
+                                       for name, group in params[0].groupby('institution_code')],
+                                     nan_policy='omit')
+            else:
+                test_type = 'anova'
+                test = stats.f_oneway(*[group[v].values
+                                        for name, group in params[0].groupby('institution_code')])
+
+            # statistical annotation
+            pvalue = test[1]
+            if pvalue < 0.05:
+                ax.annotate(num_star(pvalue),
+                                 xy=[0.1, 0.8], xycoords='axes fraction', fontsize=5)
+
+            sns.despine(trim=True)
+            plt.tight_layout()
+            plt.savefig(os.path.join(figpath, 'suppfig_model_%s_metrics_%s.pdf'%(modelname, v)))

@@ -16,6 +16,7 @@ import statsmodels.api as sm
 import patsy # to build design matrix
 import os
 from tqdm.auto import tqdm
+
 # progress bar
 tqdm.pandas(desc="model fitting")
 
@@ -97,7 +98,7 @@ def fit_glm(behav, prior_blocks=False):
              'previous_choice:C(previous_outcome)[1.0]': 'rewarded'},
              inplace=True)
 
-    # NOW FIT THIS WITH STATSMODELS
+    # NOW FIT THIS WITH STATSMODELS - ignore NaN choices
     logit_model = sm.Logit(endog, exog, missing='drop')
     res = logit_model.fit_regularized(disp=False) # run silently
 

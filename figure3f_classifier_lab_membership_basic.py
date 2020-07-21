@@ -62,16 +62,21 @@ def decoding(resp, labels, clf, NUM_SPLITS, random_state):
 if QUERY is True:
     use_sessions, _ = query_sessions_around_criterion(criterion='trained',
                                                       days_from_criterion=[2, 0])
-    use_sessions = use_sessions & 'task_protocol LIKE "%training%"'  # only get training sessions   
-    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-         * behavior.TrialSet.Trial)
-    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-                'trial_response_time', 'trial_stim_on_time', 'time_zone')
-    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                    format='frame').reset_index()
-    behav = dj2pandas(bdat)
+    behav = dj2pandas(
+        ((use_sessions & 'task_protocol LIKE "%training%"')  # only get training sessions
+         * subject.Subject * subject.SubjectLab * reference.Lab * behavior.TrialSet.Trial)
+
+        # Query only the fields we require
+        .proj('institution_short', 'subject_nickname', 'task_protocol',
+              'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+              'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+              'trial_response_time', 'trial_stim_on_time', 'time_zone')
+
+        # Fetch as a pandas DataFrame, ordered by institute
+        .fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+               format='frame')
+        .reset_index()
+    )
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
 else:
     behav = pd.read_csv('data', 'Fig3.csv')

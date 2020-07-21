@@ -33,7 +33,7 @@ if QUERY is True:
                                                              days_from_criterion=[2, 0],
                                                              as_dataframe=False,
                                                              force_cutoff=True)
-
+    # Trial data to fetch
     trial_fields = ('trial_stim_contrast_left',
                     'trial_stim_contrast_right',
                     'trial_response_time',
@@ -41,7 +41,8 @@ if QUERY is True:
                     'trial_feedback_type',
                     'trial_stim_on_time',
                     'trial_response_choice')
-    # query trial data for sessions and subject name and lab info
+
+    # Query trial data for sessions and subject name and lab info
     trials = use_sessions.proj('task_protocol') * behavior.TrialSet.Trial.proj(*trial_fields)
     subject_info = subject.Subject.proj('subject_nickname') * \
         (subject.SubjectLab * reference.Lab).proj('institution_short')
@@ -56,7 +57,6 @@ if QUERY is True:
 else:
     behav = pd.read_csv(join('data', 'Fig3'))
 
-# %%
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS
@@ -110,7 +110,6 @@ fig.savefig(os.path.join(figpath, "figure3b_psychfuncs_all_labs.png"), dpi=300)
 # ================================= #
 # single summary panel
 # ================================= #
-# %%
 
 # Plot all labs
 fig, ax1 = plt.subplots(1, 2, figsize=(8, 4))

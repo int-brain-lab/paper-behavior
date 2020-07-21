@@ -16,7 +16,7 @@ from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
                                       institution_map, group_colors, figpath,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY, num_star)
 from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior, subject, reference
 import scikit_posthocs as sp
@@ -153,18 +153,6 @@ learned_2 = learned.append(learned_2)
 seaborn_style()
 lab_colors = group_colors()
 sns.set_palette(lab_colors)
-
-
-def num_star(pvalue):
-    if pvalue < 0.05:
-        stars = '* p < 0.05'
-    if pvalue < 0.01:
-        stars = '** p < 0.01'
-    if pvalue < 0.001:
-        stars = '*** p < 0.001'
-    if pvalue < 0.0001:
-        stars = '**** p < 0.0001'
-    return stars
 
 # %%
 vars = ['n_trials', 'perf_easy',  'threshold', 'bias', 'reaction_time']

@@ -13,7 +13,7 @@ from scipy import stats
 import scikit_posthocs as sp
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
                                       FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
-from dj_tools import fit_psychfunc, dj2pandas
+from dj_tools import fit_psychfunc, dj2pandas, num_star
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
 
@@ -138,17 +138,6 @@ lab_colors = group_colors()
 sns.set_palette(lab_colors)
 seaborn_style()
 
-def num_star(pvalue):
-    if pvalue < 0.05:
-        stars = '* p < 0.05'
-    if pvalue < 0.01:
-        stars = '** p < 0.01'
-    if pvalue < 0.001:
-        stars = '*** p < 0.001'
-    if pvalue < 0.0001:
-        stars = '**** p < 0.0001'
-    return stars
-
 vars = ['perf_easy',
         'bias_n', 'bias_l', 'bias_r',
         'threshold_n', 'threshold_l', 'threshold_r']
@@ -160,7 +149,7 @@ ylabels =['Performance (%)\non easy trials',
           'Contrast threshold (%)\n20:80 blocks',
           'Contrast threshold (%)\n80:20 blocks']
 ylims = [[70, 101], [-30, 30], [-30, 30], [-30, 30],
-         [0, 50], [0, 50], [0, 50]]
+         [0, 45], [0, 45], [0, 45]]
 
 plt.close('all')
 for v, ylab, ylim in zip(vars, ylabels, ylims):

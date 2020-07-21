@@ -102,9 +102,11 @@ def plot_psychometric(x, y, subj, **kwargs):
 
     # plot datapoints with errorbars on top
     if df['subject_nickname'].nunique() > 1:
-        sns.lineplot(df3['signed_contrast'], df3['choice'], err_style="bars",
-                     linewidth=0, linestyle='None', mew=0.5,
-                     marker='o', ci=68, **kwargs)
+        # put the kwargs into a merged dict, so that overriding does not cause an error
+        sns.lineplot(df3['signed_contrast'], df3['choice'],
+                     **{**{'err_style':"bars",
+                     'linewidth':0, 'linestyle':'None', 'mew':0.5,
+                     'marker':'o', 'ci':68}, **kwargs})
 
     if brokenXaxis:
         g.set_xticks([-35, -25, -12.5, 0, 12.5, 25, 35])
@@ -241,3 +243,15 @@ def dj2pandas(behav):
 
     return behav
 
+
+def num_star(pvalue):
+    if pvalue < 0.05:
+        stars = '* p < 0.05'
+    if pvalue < 0.01:
+        stars = '** p < 0.01'
+    if pvalue < 0.001:
+        stars = '*** p < 0.001'
+    if pvalue < 0.0001:
+        stars = '**** p < 0.0001'
+
+    return stars

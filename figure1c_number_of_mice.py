@@ -30,6 +30,7 @@ print('1. Total # of mice in brainwide project: %d' % len(all_mice))
 # reached any learned criteria
 # ==================================================
 
+all_mice = query_subjects(criterion=None)  # Mice that started the training task protocol
 still_training = all_mice * subject.Subject.aggr(behavior_analysis.SessionTrainingStatus,
                                                  session_start_time='max(session_start_time)') \
                    * behavior_analysis.SessionTrainingStatus - subject.Death \

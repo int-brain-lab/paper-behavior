@@ -15,7 +15,7 @@ import seaborn as sns
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
-from ibl_pipeline.analyses import behavior as behavior_analyses
+from ibl_pipeline.analyses import behavior as behavior_analysis
 from scipy import stats
 import scikit_posthocs as sp
 
@@ -26,10 +26,11 @@ seaborn_style()
 if QUERY is True:
     # Query sessions
     use_subjects = query_subjects()
-    ses = (use_subjects * behavior_analyses.SessionTrainingStatus * behavior_analyses.PsychResults
-           & 'training_status = "in_training" OR training_status = "untrainable"').proj(
-                   'subject_nickname', 'n_trials_stim', 'institution_short').fetch(format='frame')
-    ses = ses.reset_index()
+    ses = ((use_subjects * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResults
+            & 'training_status = "in_training" OR training_status = "untrainable"')
+           .proj('subject_nickname', 'n_trials_stim', 'institution_short')
+           .fetch(format='frame')
+           .reset_index())
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
     
     # Construct dataframe

@@ -83,7 +83,9 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
     as_dataframe:    boolean if true returns a pandas dataframe (default is False)
     from_list:       loads files from list uuids (array of uuids objects)
     criterion:       what criterion by the 30th of November - trained (a and b), biased, ephys
-                     (includes ready4ephysrig, ready4delay and ready4recording)
+                     (includes ready4ephysrig, ready4delay and ready4recording).  If None,
+                     all mice that completed a training session are returned, with date_trained
+                     being the date of their first training session.
     """
 
     from ibl_pipeline import subject, acquisition, reference
@@ -96,17 +98,21 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
     sessions = acquisition.Session * behavior_analysis.SessionTrainingStatus()
     fields = ('subject_nickname', 'sex', 'subject_birth_date', 'institution_short')
 
-    if criterion == 'trained':
-        restriction = 'training_status="trained_1a" OR training_status="trained_1b"'
-    elif criterion == 'biased':
-        restriction = 'task_protocol LIKE "%biased%"'
-    elif criterion == 'ephys':
-        restriction = 'training_status LIKE "ready%"'
-    else:
-        raise ValueError('criterion must be "trained", "biased" or "ephys"')
-
-    subj_query = all_subjects.aggr(
-        sessions & restriction, *fields, date_trained='min(date(session_start_time))')
+    if criterion is None:
+        # Find first session of all mice; date_trained = date of first training session
+        subj_query = all_subjects.aggr(
+            sessions, *fields, date_trained='min(date(session_start_time))')
+    else:  # date_trained = date of first session when criterion was reached
+        if criterion == 'trained':
+            restriction = 'training_status="trained_1a" OR training_status="trained_1b"'
+        elif criterion == 'biased':
+            restriction = 'task_protocol LIKE "%biased%"'
+        elif criterion == 'ephys':
+            restriction = 'training_status LIKE "ready%"'
+        else:
+            raise ValueError('criterion must be "trained", "biased" or "ephys"')
+        subj_query = all_subjects.aggr(
+            sessions & restriction, *fields, date_trained='min(date(session_start_time))')
 
     if from_list is True:
         ids = np.load('uuids_trained1.npy', allow_pickle=True)

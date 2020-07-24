@@ -32,17 +32,18 @@ if QUERY is True:
            .fetch(format='frame')
            .reset_index())
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
-    
-    # Construct dataframe
-    training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
-    training_time['trials'] = ses.groupby('subject_nickname').sum()
-    training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
-    
-    # Change lab name into lab number
-    training_time['lab_number'] = training_time.lab.map(institution_map()[0])
-    training_time = training_time.sort_values('lab_number')
 else:
-    behav = pd.read_csv(join('data', 'Fig2d.csv'))
+    ses = pd.read_csv(join('data', 'Fig2d.csv'))
+    use_subjects = ses['subject_uuid'].unique()  # For counting the number of subjects
+
+# Construct dataframe
+training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
+training_time['trials'] = ses.groupby('subject_nickname').sum()
+training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
+
+# Change lab name into lab number
+training_time['lab_number'] = training_time.lab.map(institution_map()[0])
+training_time = training_time.sort_values('lab_number')
 
 # Number of sessions to trained for example mouse
 example_training_time = \

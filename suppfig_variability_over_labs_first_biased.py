@@ -13,7 +13,7 @@ from scipy import stats
 import scikit_posthocs as sp
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
                                       FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
-from dj_tools import fit_psychfunc, dj2pandas, num_star
+from dj_tools import fit_psychfunc, dj2pandas
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
 
@@ -31,7 +31,7 @@ if QUERY is True:
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior
     use_sessions, _ = query_sessions_around_criterion(criterion='biased',
-                                                      days_from_criterion=[4, 6])
+                                                      days_from_criterion=[-1, 3])
     use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
@@ -52,8 +52,9 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
         print('Processing data of subject %d of %d' % (i+1,
                                                        len(behav['subject_nickname'].unique())))
 
-    # Get lab
+    # Get lab and subject uuid
     lab = behav.loc[behav['subject_nickname'] == nickname, 'institution_code'].unique()[0]
+    uuid = behav.loc[behav['subject_nickname'] == nickname, 'subject_uuid'].unique()[0]
 
     # Fit psychometric curve
     left_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
@@ -71,7 +72,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'bias_l': left_fit['bias'],
                               'bias_r': right_fit['bias'],
                               'bias_n': neutral_fit['bias'],
-                              'nickname': nickname, 'lab': lab})
+                              'nickname': nickname, 'lab': lab, 'subject_uuid': uuid})
     biased_fits = biased_fits.append(fits, sort=False)
     
     # Remove mice that did not have a 50:50 block

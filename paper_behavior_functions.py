@@ -224,7 +224,7 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2,
     if criterion == 'trained':
         restriction = 'training_status="trained_1a" OR training_status="trained_1b"'
     elif criterion == 'biased':
-        restriction = 'task_protocol LIKE "%biased%"'
+        restriction = 'task_protocol LIKE "%biased%" AND training_status="trained_1b"'
     elif criterion == 'ephys':
         restriction = 'training_status LIKE "ready%"'
     else:

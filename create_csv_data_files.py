@@ -141,10 +141,6 @@ bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_tim
 behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
-# exclude contrasts that were part of a pilot with a different contrast set
-behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -4)
-               & (behav['signed_contrast'] != 4) & (behav['signed_contrast'] != 8))]
-
 # save to disk
 behav.to_csv(join('data', 'Fig4.csv'))
 
@@ -171,9 +167,32 @@ bdat = b2.fetch(order_by=
 behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
-# exclude contrasts that were part of a pilot with a different contrast set
-behav = behav[((behav['signed_contrast'] != -8) & (behav['signed_contrast'] != -4)
-               & (behav['signed_contrast'] != 4) & (behav['signed_contrast'] != 8))]
-
 # save to disk
 behav.to_csv(join('data', 'Fig5.csv'))
+
+# %%=============================== #
+# FIGURE 3 - SUPPLEMENT 2
+# ================================= #
+print('Starting figure 3 - supplement 2..')
+
+# Query sessions biased data 
+use_sessions, _ = query_sessions_around_criterion(criterion='biased', days_from_criterion=[-1, 3])
+use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
+
+# restrict by list of dicts with uuids for these sessions
+b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+     * behavior.TrialSet.Trial)
+
+# reduce the size of the fetch
+b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
+            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+            'trial_feedback_type')
+bdat = b2.fetch(order_by=
+        'institution_short, subject_nickname, session_start_time, trial_id',
+                format='frame').reset_index()
+behav = dj2pandas(bdat)
+behav['institution_code'] = behav.institution_short.map(institution_map)
+
+# save to disk
+behav.to_csv(join('data', 'Fig3-supp2.csv'))

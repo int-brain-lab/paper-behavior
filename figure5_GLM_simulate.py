@@ -71,8 +71,9 @@ behav['block_id'] = behav['probabilityLeft'].map({80:-1, 50:0, 20:1})
 #%% 2. DEFINE THE GLM
 # ========================================== #
 
+
 # DEFINE THE MODEL
-def fit_glm(behav, prior_blocks=False, n_sim=1000):
+def fit_glm(behav, prior_blocks=False, n_sim=10000):
 
     # drop trials with contrast-level 50, only rarely present (should not be its own regressor)
     behav = behav[np.abs(behav.signed_contrast) != 50]
@@ -134,7 +135,7 @@ def fit_glm(behav, prior_blocks=False, n_sim=1000):
         behav['simulated_choice'] = 1 / (1 + np.exp(-z))
         if not prior_blocks:
             simulated_choices.append(behav.groupby(['signed_contrast'])['simulated_choice'].mean().values)
-        else:
+        else: # split by probabilityLeft block
             gr = behav.groupby(['probabilityLeft', 'signed_contrast'])['simulated_choice'].mean().reset_index()
             simulated_choices.append([gr.loc[gr.probabilityLeft == 20, 'simulated_choice'].values,
                                       gr.loc[gr.probabilityLeft == 50, 'simulated_choice'].values,
@@ -147,10 +148,12 @@ def fit_glm(behav, prior_blocks=False, n_sim=1000):
 # ========================================== #
 
 print('fitting GLM to BASIC task...')
-params_basic, simulation_basic = fit_glm(behav.loc[behav.task == 'traini', :], prior_blocks=False)
+params_basic, simulation_basic = fit_glm(behav.loc[behav.task == 'traini', :],
+                                         prior_blocks=False)
 
 print('fitting GLM to FULL task...')
-params_full, simulation_full = fit_glm(behav.loc[behav.task == 'biased', :], prior_blocks=True)
+params_full, simulation_full = fit_glm(behav.loc[behav.task == 'biased', :],
+                                       prior_blocks=True)
 
 # ========================================== #
 #%% 4. PLOT PSYCHOMETRIC FUNCTIONS

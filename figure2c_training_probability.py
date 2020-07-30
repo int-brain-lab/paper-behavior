@@ -6,17 +6,18 @@ Quantify the variability of the time to trained over labs.
 @author: Guido Meijer
 16 Jan 2020
 """
+from os.path import join
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from os.path import join
 import seaborn as sns
-from ibl_pipeline import subject, reference, acquisition
+
+from ibl_pipeline import subject
+from ibl_pipeline.analyses import behavior as behavior_analysis
 from paper_behavior_functions import (seaborn_style, institution_map, query_subjects,
                                       group_colors, figpath, CUTOFF_DATE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
-from ibl_pipeline.analyses import behavior as behavior_analysis
 from lifelines import KaplanMeierFitter
 
 # Settings
@@ -31,7 +32,7 @@ if QUERY is True:
                       & 'training_status = "in_training"'
                       & 'session_start_time > "%s"' % CUTOFF_DATE)
     use_subjects = mice_started_training - still_training
-    
+
     # Get training status and training time in number of sessions and trials
     ses = ((use_subjects * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResults)
            .proj('subject_nickname', 'training_status', 'n_trials_stim', 'institution_short')

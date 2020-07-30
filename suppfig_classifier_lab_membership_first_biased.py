@@ -59,13 +59,13 @@ def decoding(resp, labels, clf, NUM_SPLITS, random_state):
 
 
 # %% query sessions
-    
+
 if QUERY is True:
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior
     use_sessions, _ = query_sessions_around_criterion(criterion='biased',
                                                       days_from_criterion=[1, 3])
-    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
     b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
@@ -76,7 +76,6 @@ if QUERY is True:
                     format='frame').reset_index()
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
-    
 else:
     behav = pd.read_csv('data', 'Fig4.csv')
 
@@ -104,7 +103,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     neutral_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
                                     & (behav['probabilityLeft'] == 50)])
     perf_easy = (behav.loc[behav['subject_nickname'] == nickname, 'correct_easy'].mean()) * 100
-    
+
     fits = pd.DataFrame(data={'perf_easy': perf_easy,
                               'threshold_l': left_fit['threshold'],
                               'threshold_r': right_fit['threshold'],
@@ -115,7 +114,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'time_zone': time_zone_number,
                               'nickname': nickname, 'lab': lab})
     biased_fits = biased_fits.append(fits, sort=False)
-    
+
     # Remove mice that did not have a 50:50 block
     biased_fits = biased_fits[biased_fits['threshold_n'].notnull()]
 

@@ -2,16 +2,17 @@
 HISTOGRAM OF SESSION END STATUSES DURING TRAINING
 Miles  Wells, UCL, 2019
 """
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 
 import datajoint as dj
 from ibl_pipeline import acquisition
 from paper_behavior_functions import \
     (figpath, query_sessions, query_subjects, group_colors, seaborn_style,
      FIGURE_HEIGHT, FIGURE_WIDTH)
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import seaborn as sns
 
 # Set default figure size.
 save_path = figpath()  # Our figure save path
@@ -29,7 +30,7 @@ session_num = (sessions * subj_crit).proj(n='DATEDIFF(session_start_date, first_
 df = (endcriteria.SessionEndCriteriaImplemented * session_num).fetch(format='frame')  # Fetch data
 
 # Convert statuses to numerical
-fig, ax = plt.subplots(1,1,figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
+fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
 ids = {k: v for v, k in enumerate(df['end_status'].unique())}
 df['end_status_id'] = df['end_status'].map(ids)
 bins = [0, 6, 13, 20, 27, 34]
@@ -40,7 +41,7 @@ ax.set_xlabel('Session #')
 ax.set_ylabel('Frequency')
 plt.gcf().savefig(os.path.join(save_path, "suppfig_end_status_histogram.png"))
 
-#%% Unity plot
+# Unity plot
 max_n_days = 40
 normalize = True
 df = df.reset_index()
@@ -58,7 +59,7 @@ bar_l = range(1, counts.shape[1]+1)
 #  bottom = np.zeros_like(bar_l).astype('float')
 bottom = np.vstack((np.zeros((1, counts.shape[1])), np.cumsum(counts, axis=0)[:-1, :]))
 
-fig, ax = plt.subplots(1,1,figsize=(FIGURE_WIDTH/2, FIGURE_HEIGHT))
+fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH / 2, FIGURE_HEIGHT))
 for i in range(counts.shape[0]):
     ax.bar(bar_l, counts[i, :], bottom=bottom[i, :], width=1, label=list(ids.keys())[i],
            color=colors[i])

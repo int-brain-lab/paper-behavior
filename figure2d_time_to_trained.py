@@ -6,18 +6,19 @@ Quantify the variability of the time to trained over labs.
 @author: Guido Meijer
 16 Jan 2020
 """
+from os.path import join
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from os.path import join
 import seaborn as sns
+from scipy import stats
+import scikit_posthocs as sp
+
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavior_analysis
-from scipy import stats
-import scikit_posthocs as sp
 
 # Settings
 fig_path = figpath()

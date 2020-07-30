@@ -3,11 +3,7 @@
 Query the number of mice at different timepoints of the pipeline
 @author 22 April 2020, Anne Urai
 """
-
-from paper_behavior_functions import query_subjects
-from ibl_pipeline import subject, acquisition, reference, behavior
-from ibl_pipeline.analyses import behavior as behavior_analysis
-import pandas as pd
+from ibl_pipeline import subject, reference, behavior
 
 
 dates = ['2019-01-01', '2019-03-01', '2020-01-01', '2020-04-01']

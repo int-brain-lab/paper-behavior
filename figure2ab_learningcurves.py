@@ -4,13 +4,14 @@ Learning curves for all labs
 @author: Anne Urai
 15 January 2020
 """
+import os
 
 import pandas as pd
 import numpy as np
 from scipy.signal import medfilt
-import os
 import seaborn as sns
 import matplotlib.pyplot as plt
+
 from paper_behavior_functions import (query_subjects, figpath, group_colors,
                                       institution_map, seaborn_style, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)

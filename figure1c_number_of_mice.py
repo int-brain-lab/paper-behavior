@@ -71,4 +71,3 @@ trained_not_ready = (trained.aggr(session_training_status,
 
 print('6. Number of mice that remain in training at the time of writing: %d' %
       len(trained_not_ready & 'alive = True AND unfinished = True'))
-

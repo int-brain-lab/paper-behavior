@@ -1,35 +1,33 @@
 """
 Training progression for an example mouse
 
-@author: Anne Urai, Gaelle Chapuis
+@author: Anne Urai, Gaelle Chapuis, Miles Wells
 21 April 2020
 """
+import os
 
-import numpy as np
 import pandas as pd
-import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datajoint as dj
-import os
-import matplotlib as mpl
 
 # import wrappers etc
 from paper_behavior_functions import EXAMPLE_MOUSE
 from ibl_pipeline import subject, behavior, acquisition
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 endcriteria = dj.create_virtual_module(
-    'SessionEndCriteriaImplemented', 'group_shared_end_criteria')  # from Miles
+    'SessionEndCriteriaImplemented', 'group_shared_end_criteria')
 
 # grab some plotting functions from datajoint
-# (this is a tricky dependency, as is it can not be run in a python shell, it makes the whole file 
+# (this is a tricky dependency, as is it can not be run in a python shell, it makes the whole file
 # need to run as an executable eg. >>> python figure1_training.py in windows command prompt)
+# import sys
 # sys.path.append(os.path.join(os.path.dirname(__file__),
 #                              '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
 # import ibl_pipeline.prelim_analyses.behavioral_snapshots.behavior_plots  # noqa
 
 # this only works if conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/ has been added to iblenv
-import load_mouse_data_datajoint, behavior_plots
+import behavior_plots
 import dj_tools
 from paper_behavior_functions import seaborn_style, figpath, \
     FIGURE_HEIGHT, FIGURE_WIDTH
@@ -38,9 +36,9 @@ from paper_behavior_functions import seaborn_style, figpath, \
 # INITIALIZE A FEW THINGS
 # ================================= #
 
-seaborn_style()   # noqa
-figpath = figpath()   # noqa
-plt.close('all' )
+seaborn_style()  # noqa
+figpath = figpath()  # noqa
+plt.close('all')
 # FIGURE_WIDTH = 6 # make narrower
 
 # ================================= #
@@ -56,14 +54,14 @@ days = [2, 7, 10, 14]
 # ================================= #
 
 plt.close('all')
-fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/2, FIGURE_HEIGHT))
+fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH / 2, FIGURE_HEIGHT))
 ax[1].axis('off')
 xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
 behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[0].set(ylabel='Contrast (%)', xlabel='Training day',
-       xticks= [d + 1.5 for d in days], xticklabels=days,
-       yticklabels=['-100', '-50', '-25', '-12.5', '-6.25', '0',
-                    '6', '12.5', '25', '50', '100'])
+          xticks=[d + 1.5 for d in days], xticklabels=days,
+          yticklabels=['-100', '-50', '-25', '-12.5', '-6.25', '0',
+                       '6.25', '12.5', '25', '50', '100'])
 for item in ax[0].get_xticklabels():
     item.set_rotation(-0)
 plt.tight_layout()
@@ -176,26 +174,22 @@ for didx, day in enumerate(days):
     ax[1].set(xlabel='Time (min)', ylim=[25, 110], yticks=[25, 50, 75, 100],
               xlim=ax[0].get_xlim(), xticks=[0, 20, 40, 60, 80])
 
-    #ax[1].yaxis.label.set_color("deepskyblue")
-    #ax[1].tick_params(axis='y', colors='deepskyblue')
-    # ax2.spines['right'].set_color('deepskyblue')
-
     # INDICATE THE REASON AND TRIAL AT WHICH SESSION SHOULD HAVE ENDED
-    end_x = behavtmp.loc[behavtmp.trial_id == behavtmp.end_status_index.unique()[
-        0], 'trial_start_time'].values.item()
+    idx = behavtmp.trial_id == behavtmp.end_status_index.unique()[0]
+    end_x = behavtmp.loc[idx, 'trial_start_time'].values.item()
     ax[0].axvline(x=end_x, color='darkgrey', linestyle=':')
     ax[1].axvline(x=end_x, color='darkgrey', linestyle=':')
     # ax2.annotate(behavtmp.end_status.unique()[0], xy=(end_x, 100), xytext=(end_x, 105),
     #              arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
     print(behavtmp.end_status.unique()[0])
 
-    ax[0].set(title='Day %d' % (day))
+    ax[0].set(title='Day %d' % day)
     sns.despine(trim=True)
     plt.tight_layout(h_pad=-0.05)
     fig.savefig(os.path.join(
-        figpath, "figure1_example_disengagement_day%d.pdf" % (day)))
+        figpath, "figure1_example_disengagement_day%d.pdf" % day))
     fig.savefig(os.path.join(
-        figpath, "figure1_example_disengagement_day%d.png" % (day)), dpi=600)
+        figpath, "figure1_example_disengagement_day%d.png" % day), dpi=600)
 
     print(didx)
     print(thisdate)

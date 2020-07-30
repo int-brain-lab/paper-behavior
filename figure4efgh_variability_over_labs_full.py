@@ -31,8 +31,9 @@ if QUERY is True:
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior
     use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
-                                                      days_from_criterion=[2, 0])
-    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
+                                                      days_from_criterion=[2, 0],
+                                                      force_cutoff=True)
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
     b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
@@ -43,7 +44,7 @@ if QUERY is True:
                     format='frame').reset_index()
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map)
-    
+
 else:
     behav = pd.read_csv(join('data', 'Fig4.csv'))
 
@@ -73,7 +74,6 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     biased_fits = biased_fits.append(fits, sort=False)
 
 # %% Statistics
-    
 stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
 posthoc_tests = {}
 
@@ -115,7 +115,6 @@ for i, var in enumerate(['threshold', 'lapselow', 'lapsehigh', 'bias']):
 
 
 # %% Plot metrics
-    
 f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(FIGURE_WIDTH*0.8, FIGURE_HEIGHT))
 lab_colors = group_colors()
 

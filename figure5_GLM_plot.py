@@ -91,6 +91,7 @@ ax[1].plot(basic_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'u
 ax[1].get_legend().set_visible(False)
 ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1.2], yticks=[-0.5, 0, 0.5, 1],
           xticks=[0,1,2,3], xlim=[-0.5, 3.5])
+ax[1].axhline(color='darkgray', linestyle=':')
 ax[1].set_xticklabels([], ha='right', rotation=20)
 sns.despine(trim=True)
 plt.tight_layout(w_pad=-0.1)
@@ -128,6 +129,7 @@ sns.swarmplot(data = full_summ_bias,
               palette = pal, marker='o', ax=ax[1], zorder=0, edgecolor='white')
 ax[1].plot(full_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'unrewarded', 'bias', 'block_id']],
              color='black', linewidth=0, marker='_', markersize=13)
+ax[1].axhline(color='darkgray', linestyle=':')
 ax[1].get_legend().set_visible(False)
 ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1.2], yticks=[-0.5, 0, 0.5, 1])
 ax[1].set_xticklabels([], ha='right', rotation=20)

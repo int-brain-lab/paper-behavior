@@ -35,3 +35,16 @@ All the scripts start with the name of the figure they produce. The figure panel
 
 ### Questions?
 If you have any problems running this code, please open an issue or get in touch with the code's authors (written at the top of each script).
+
+### Known issues
+The data used in this paper have a number of issues.  The authors are confident that these issues
+do not affect the results of the paper but nevertheless users should be aware of these
+shortcomings.
+  
+1. NaN values may be found throughout the data.  These resulted from failures to either produce
+ an event (for example the go cue tone wasn't played) or to record an event (e.g. the stimulus was
+ produced but the photodiode failed to detect it).
+2. Some events violated the task structure outlined in the paper.  For example during some sessions
+ the go cue tone happened much later than the stimulus onset.  Although this conceivably
+ affected the reaction time on some trials, it did not occur frequently enough to
+ significantly affect the median reaction times.

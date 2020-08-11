@@ -93,10 +93,13 @@ training_time.to_csv(join('data', 'Fig2d.csv'))
 print('Starting figure 3..')
 
 # query sessions
-use_sessions, _ = query_sessions_around_criterion(criterion='trained', days_from_criterion=[2, 0])
+use_sessions, _ = query_sessions_around_criterion(criterion='trained',
+                                                  days_from_criterion=[2, 0],
+                                                  as_dataframe=False,
+                                                  force_cutoff=True)
 use_sessions = use_sessions & 'task_protocol LIKE "%training%"'  # only get training sessions
 
-# query all trials for these sessions, it's split in two because otherwise the query would become 
+# query all trials for these sessions, it's split in two because otherwise the query would become
 # too big to handle in one go
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
      * behavior.TrialSet.Trial)
@@ -122,7 +125,9 @@ behav.to_csv(join('data', 'Fig3.csv'))
 print('Starting figure 4..')
 
 # query sessions
-use_sessions, _ = query_sessions_around_criterion(criterion='ephys', days_from_criterion=[2, 0])
+use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
+                                                  days_from_criterion=[2, 0],
+                                                  force_cutoff=True)
 use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
 
 # restrict by list of dicts with uuids for these sessions
@@ -149,8 +154,12 @@ behav.to_csv(join('data', 'Fig4.csv'))
 # ================================= #
 print('Starting figure 5..')
 
-# Query sessions biased data 
-use_sessions, _ = query_sessions_around_criterion(criterion='biased', days_from_criterion=[2, 3])
+# Query sessions biased data
+use_sessions, _ = query_sessions_around_criterion(criterion='biased',
+                                                  days_from_criterion=[2, 3],
+                                                  as_dataframe=False,
+                                                  force_cutoff=True)
+
 
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -158,11 +167,10 @@ b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+            'trial_stim_contrast_left', 'trial_stim_contrast_right',
+            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left',
             'trial_feedback_type')
-bdat = b2.fetch(order_by=
-        'institution_short, subject_nickname, session_start_time, trial_id',
+bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                 format='frame').reset_index()
 behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
@@ -175,9 +183,12 @@ behav.to_csv(join('data', 'Fig5.csv'))
 # ================================= #
 print('Starting figure 3 - supplement 2..')
 
-# Query sessions biased data 
-use_sessions, _ = query_sessions_around_criterion(criterion='biased', days_from_criterion=[-1, 3])
-use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
+# Query sessions biased data
+use_sessions, _ = query_sessions_around_criterion(
+    criterion='biased',
+    days_from_criterion=[-1, 3],
+    force_cutoff=True)
+use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
 
 # restrict by list of dicts with uuids for these sessions
 b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
@@ -185,11 +196,10 @@ b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
 
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left', 
+            'trial_stim_contrast_left', 'trial_stim_contrast_right',
+            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left',
             'trial_feedback_type')
-bdat = b2.fetch(order_by=
-        'institution_short, subject_nickname, session_start_time, trial_id',
+bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                 format='frame').reset_index()
 behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)

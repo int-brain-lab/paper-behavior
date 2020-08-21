@@ -1,20 +1,21 @@
 category_order,credit_task,"Aguillon Rodriguez, Valeria","Angelaki, Dora E.","Bayer, Hannah M.","Bonacchi, Niccolò","Carandini, Matteo","Cazettes, Fanny","Chapuis, Gaelle A.","Churchand, Anne K.","Dan, Yang","DeWitt, Eric E.","Faulkner, Mayo","Forrest, Hamish","Haetzel, Laura M.","Hausser, Michael","Hofer, Sonja B.","Hu, Fei","Khanal, Anup","Krasniak, Christopher S.","Laranjeira, Inês C.","Mainen, Zachary F.","Meijer, Guido T.","Miska, Nathaniel J.","Mrsic-Flogel, Thomas D.","Murakami, Masayoshi","Noel, Jean Paul","Pan-Vazquez, Alejandro","Rossant, Cyrille","Sanders, Joshua I.","Socha, Karolina Z.","Terry, Rebecca","Urai, Anne E.","Vergara, Hernando M.","Wells, Miles J.","Wilson, Christian J.","Witten, Ilana B.","Wool, Lauren E.","Zador, Anthony M."
 0.0,CONCEPTUALIZATION: defined composition and scope of the paper,0,0,0,0,3,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,2,0,0,0,0,2,0,2,0,0,0,0
-1.0,"METHODOLOGY: built, designed and tested behavioral rigs",2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,1,0,0,0,2,1,0,1,0,1,0,0,3,0
+1.0,"METHODOLOGY: built, designed and tested rig assembly",2,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,1,0,0,0,2,1,0,1,0,1,0,0,3,0
 1.0,METHODOLOGY: design and delivery of rig components,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0
+1.0,METHODOLOGY: designed and delivered rig components,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 1.0,METHODOLOGY: developed final behavioral task,0,0,0,2,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,2,0,0,2,0
 1.0,"METHODOLOGY: developed protocols for surgery, husbandry and animal training",2,0,0,1,0,1,3,0,0,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,1,0,0,2,0,2,0,0,0,0,1,0
-1.0,METHODOLOGY: piloted candidate behavioral tasks,0,0,0,0,0,3,0,0,0,2,0,0,0,0,0,0,0,2,2,0,0,0,0,1,0,0,0,0,0,0,2,0,3,0,0,0,0
-1.0,METHODOLOGY: standardized licenses and experimental protocols across institutions,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,2,0,0,0,0,2,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0
+1.0,METHODOLOGY: piloted candidate behavioral tasks,0,0,0,2,0,3,0,0,0,2,0,0,0,0,0,0,0,2,2,0,0,0,0,1,0,0,0,0,0,0,2,0,3,0,0,0,0
+1.0,METHODOLOGY: standardized licenses and experimental protocols across institutions,0,0,0,2,0,0,3,0,0,0,0,0,0,0,0,2,0,0,0,0,2,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0
 2.0,SOFTWARE: developed data acquisition software and infrastructure,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-3.0,VALIDATION: maintained and validated analysis code,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1,0,0,0,0,2,0,2,0,0,0,0
-4.0,FORMAL ANALYSIS: analyzed data,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,1,3,0,0,0,0,3,0,2,0,0,0,0
-5.0,"INVESTIGATION: built and maintained rigs, performed surgeries, collected behavioral data",2,0,0,0,0,2,0,0,0,0,2,1,2,0,0,2,1,2,2,0,2,2,0,0,2,2,0,0,2,1,2,1,0,1,0,0,0
+3.0,VALIDATION: maintained and validated analysis code,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1,0,0,0,0,2,0,2,0,0,0,0
+4.0,FORMAL ANALYSIS: analyzed data,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,1,3,0,0,0,0,3,0,2,0,0,0,0
+5.0,"INVESTIGATION: built and maintained rigs, performed surgeries, collected behavioral data",2,0,0,1,0,2,0,0,0,0,2,1,2,0,0,2,1,2,2,0,2,2,0,0,2,2,0,0,2,1,2,1,0,1,0,0,0
 6.0,RESOURCES: hosted the research,0,2,0,0,2,0,0,2,2,0,0,0,0,2,2,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,2,0,2
 7.0,DATA CURATION: curated data and metadata,0,0,0,2,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,3,0,0,0,0
 10.0,VISUALIZATION: created data visualizations,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,1,0,0,0,0
 10.0,VISUALIZATION: designed and created figures,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,2,0,0,0,0,3,0,1,0,0,0,0
 11.0,SUPERVISION: managed and coordinated team,0,0,1,1,3,1,3,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2
 11.0,SUPERVISION: supervised local laboratory research,0,2,0,0,2,0,0,2,2,0,0,0,0,2,2,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,2,0,2
-12.0,PROJECT ADMINISTRATION: managed and coordinated research outputs,0,0,0,0,3,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0
-13.0,FUNDING ACQUISITION: acquired funding,0,1,0,1,2,0,1,3,1,0,0,0,0,3,1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,2
+12.0,PROJECT ADMINISTRATION: managed and coordinated research outputs,0,0,0,1,3,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0
+13.0,FUNDING ACQUISITION: acquired funding,0,1,0,1,2,0,1,3,1,0,0,0,0,3,1,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,2

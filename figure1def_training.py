@@ -60,8 +60,8 @@ xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
 behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[0].set(ylabel='Contrast (%)', xlabel='Training day',
           xticks=[d + 1.5 for d in days], xticklabels=days,
-          yticklabels=['-100', '-50', '-25', '-12.5', '-6.25', '0',
-                       '6.25', '12.5', '25', '50', '100'])
+          yticklabels=['100', '50', '25', '12.5', '6.25', '0',
+                       '-6.25', '-12.5', '-25', '-50', '-100'])
 for item in ax[0].get_xticklabels():
     item.set_rotation(-0)
 plt.tight_layout()
@@ -74,7 +74,6 @@ fig.savefig(os.path.join(
 # ================================================================== #
 
 # make these a bit more narrow
-
 b = ((subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE)
      * (subject.SubjectLab & 'lab_name="%s"' % lab)
      * behavioral_analyses.BehavioralSummaryByDate)
@@ -142,7 +141,7 @@ for didx, day in enumerate(days):
     elif didx == 1:
         xlim = [0, 80]
     elif didx == 2:
-        xlim = [0, 60]
+        xlim = [0, 45]
     elif didx == 3:
         xlim = [0, 60]
 
@@ -183,7 +182,7 @@ for didx, day in enumerate(days):
     #              arrowprops={'arrowstyle': "->", 'connectionstyle': "arc3"})
     print(behavtmp.end_status.unique()[0])
 
-    ax[0].set(title='Day %d' % day)
+    ax[0].set(title='Day %d: %d trials' % (day, behavtmp.shape[0]))
     sns.despine(trim=True)
     plt.tight_layout(h_pad=-0.05)
     fig.savefig(os.path.join(

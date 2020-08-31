@@ -38,15 +38,17 @@ for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
 
     # Plot
     f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
-    sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control']], axis=1),
+    sns.violinplot(data=pd.concat([decoding_result['original'], decoding_result['control'],
+                                   decoding_result['original_shuffled']], axis=1),
                    color=[0.6, 0.6, 0.6], ax=ax1)
-    ax1.plot([-1, 2], [chance_level, chance_level], 'r--', zorder=-10)
-    ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.8, 1.4], ylim=[0, 0.62],
-            xticklabels=['Decoding   \nof lab   ', '   Positive\n   control\n   (w. time zone)'])
+    ax1.plot([-1, 3], [chance_level, chance_level], 'r--', zorder=-10)
+    ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.8, 2.4], ylim=[0, 0.62])
+    ax1.set_xticklabels(['Decoding\nof lab', 'Positive\ncontrol', 'Shuffle'],
+                        rotation=90, ha='center')
     # ax1.text(0, 0.6, 'n.s.', fontsize=12, ha='center')
     # ax1.text(1, 0.6, '***', fontsize=15, ha='center', va='center')
-    plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.1,
-             'Chance\nlevel', color='r', fontsize=6)
+    # plt.text(0.7, np.mean(decoding_result['original_shuffled'])-0.1,
+    #          'Chance\nlevel', color='r', fontsize=6)
     # plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
     plt.tight_layout()
     sns.despine(trim=True)

@@ -37,7 +37,7 @@ QUERY = True
 if QUERY is True:
     # query sessions
     use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
-                                                             days_from_criterion=[2, 0],
+                                                             days_from_criterion=[1, 3],
                                                              as_dataframe=False,
                                                              force_cutoff=True)
     # Trial data to fetch
@@ -119,11 +119,17 @@ ax1.get_legend().set_visible(False)
 sns.violinplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
               y=np.concatenate((np.empty((nshuf))*np.nan, choice_variability_shuffled)),
                color=[0.6, 0.6, 0.6], ax=ax1)
-sns.stripplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
-              y=np.concatenate((np.empty((nshuf))*np.nan, choice_variability_shuffled)),
-               color='k', marker='.', ax=ax1)
+# sns.stripplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
+#               y=np.concatenate((np.empty((nshuf))*np.nan, choice_variability_shuffled)),
+#                color='k', marker='.', ax=ax1)
 ax1.set(ylabel='Choice variability\nacross mice', xlabel='', yticks=[0.01, 0.02, 0.03])
 ax1.set_xticklabels(['Data', 'Shuffle'], ha='center')
 plt.tight_layout()
 sns.despine(trim=True)
 f.savefig(os.path.join(figpath, "across_mouse_var.pdf"))
+
+
+# WHAT IS THE P-VALUE COMPARED TO THE  NULL DISTRIBUTION?
+pval = np.min([np.mean(choice_variability_shuffled > choice_variability_perlab['choice_var'].mean()),
+               np.mean(choice_variability_shuffled < choice_variability_perlab['choice_var'].mean())])
+print('p-value = %.4f'%pval)

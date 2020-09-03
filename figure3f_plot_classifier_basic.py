@@ -27,7 +27,7 @@ for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
                                           'classification_results_basic_%s.pkl' % DECODER))
 
     # Calculate if decoder performs above chance
-    chance_level = decoding_result['original_shuffled'].mean()
+    chance_level = 1/7 # there are 7 labs so chance is 1 over 7
     significance = np.percentile(decoding_result['original'], 2.5)
     sig_control = np.percentile(decoding_result['control'], 0.001)
     if chance_level > significance:
@@ -45,7 +45,7 @@ for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
                                        decoding_result['original']], axis=1),
                        palette=colors, ax=ax1)
         ax1.plot([-1, 3.5], [chance_level, chance_level], '--', color='k', zorder=-10)
-        ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.8, 2.4], ylim=[-0.1, 0.62])
+        ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.6, 2.6], ylim=[-0.1, 0.62])
         ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Decoding\nof lab'],
                             rotation=90, ha='center')
         plt.tight_layout()

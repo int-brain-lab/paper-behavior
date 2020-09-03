@@ -5,20 +5,24 @@ Decode in which lab a mouse was trained based on its behavioral metrics during t
 of the full task variant in which the mouse was determined to be ready for ephys.
 
 As a positive control, the time zone in which the mouse was trained is included in the dataset
-since the timezone provides geographical information. Decoding is performed using cross-validated
-classification. Chance level is determined by shuffling the lab labels and decoding again.
+since the timezone provides geographical information. Decoding is performed using leave-one-out
+cross-validation. To control for the imbalance in the dataset (some labs have more mice than 
+others) a fixed number of mice is randomly sub-sampled from each lab. This random sampling is
+repeated for a large number of repetitions. A shuffled nul-distribution is obtained by shuffling
+the lab labels and decoding again for each iteration.
 
 --------------
 Parameters
 DECODER:            Which decoder to use: 'bayes', 'forest', or 'regression'
-NUM_SPLITS:         The N in N-fold cross validation
-ITERATIONS:         Number of times to split the dataset in test and train and decode
+N_MICE:             How many mice per lab to randomly sub-sample 
+                    (must be lower than the lab with the least mice)
+ITERATIONS:         Number of times to randomly sub-sample
 METRICS:            List of strings indicating which behavioral metrics to include
                     during decoding of lab membership
 METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
 
 Guido Meijer
-June 22, 2020
+September 3, 2020
 """
 
 import numpy as np
@@ -29,13 +33,13 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import KFold
+from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Settings
-DECODER = 'forest'          # forest, bayes or regression
-NUM_SPLITS = 3              # n in n-fold cross validation
-ITERATIONS = 2000           # how often to decode
+DECODER = 'bayes'           # bayes, forest or regression
+N_MICE = 5                  # how many mice per lab to randomply sub-sample
+ITERATIONS = 2000           # how often to decode with random sub-samples
 METRICS = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
            'lapsehigh_l', 'lapsehigh_r']
 METRICS_CONTROL = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
@@ -43,23 +47,18 @@ METRICS_CONTROL = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l
 
 
 # Decoding function with n-fold cross validation
-def decoding(resp, labels, clf, NUM_SPLITS, random_state):
-    kf = KFold(n_splits=NUM_SPLITS, shuffle=True, random_state=random_state)
-    y_pred = np.array([])
-    y_true = np.array([])
-    for train_index, test_index in kf.split(resp):
-        train_resp = resp[train_index]
-        test_resp = resp[test_index]
-        clf.fit(train_resp, [labels[j] for j in train_index])
-        y_pred = np.append(y_pred, clf.predict(test_resp))
-        y_true = np.append(y_true, [labels[j] for j in test_index])
-    f1 = f1_score(y_true, y_pred, labels=np.unique(labels), average='micro')
-    unique_labels, label_counts = np.unique(labels, return_counts=True)
-    cm = confusion_matrix(y_true, y_pred, labels=unique_labels)
+def decoding(data, labels, clf):
+    kf = LeaveOneOut()
+    y_pred = np.empty(len(labels), dtype='<U5')
+    for train_index, test_index in kf.split(data):
+        clf.fit(data[train_index], labels[train_index])
+        y_pred[test_index] = clf.predict(data[test_index])
+    f1 = f1_score(labels, y_pred, average='micro')
+    cm = confusion_matrix(labels, y_pred)
     return f1, cm
 
 
-# %% query sessions
+# %% Query sessions
     
 if QUERY is True:
     from paper_behavior_functions import query_sessions_around_criterion
@@ -110,9 +109,9 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'lapselow_r': right_fit['lapselow'],
                               'lapsehigh_l': left_fit['lapsehigh'],
                               'lapsehigh_r': right_fit['lapsehigh'],
-                              'nickname': nickname, 'lab': lab, 'time_zone': time_zone_number})
+                              'nickname': nickname, 'lab_number': lab,
+                              'time_zone': time_zone_number})
     biased_fits = biased_fits.append(fits, sort=False)
-
 
 # %% Do decoding
 
@@ -127,33 +126,56 @@ elif DECODER == 'regression':
 else:
     raise Exception('DECODER must be forest, bayes or regression')
 
-# Generate random states for each iteration with a fixed seed
-np.random.seed(424242)
-random_states = np.random.randint(10000, 99999, ITERATIONS)
-
-# Perform decoding of lab membership
-result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
-                               'control', 'control_shuffled', 'control_cm'])
+# Prepare decoding data
+decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
+                                        'control', 'control_shuffled', 'control_cm'])
 decod = biased_fits.copy()
 decoding_set = decod[METRICS].values
 control_set = decod[METRICS_CONTROL].values
+
+# Prepare lab labels for subselection of a fixed amount of mice per lab
+labels = np.array(decod['lab_number'])
+labels_nr = np.arange(labels.shape[0])
+labels_decod = np.ravel([[lab] * N_MICE for i, lab in enumerate(np.unique(labels))])
+labels_shuffle = np.ravel([[lab] * N_MICE for i, lab in enumerate(np.unique(labels))])
+
+# Generate random states for each iteration with a fixed seed
+np.random.seed(424242)
+
+# Loop over iterations of random draws of mice
 for i in range(ITERATIONS):
     if np.mod(i+1, 100) == 0:
         print('Iteration %d of %d' % (i+1, ITERATIONS))
+        
+    # Randomly select N mice from each lab to equalize classes
+    use_index = np.empty(0, dtype=int)
+    for j, lab in enumerate(np.unique(labels)):
+        use_index = np.concatenate([use_index, np.random.choice(labels_nr[labels == lab],
+                                                               N_MICE, replace=False)])
+        
+    # Original data
+    decoding_result.loc[i, 'original'], conf_matrix = decoding(decoding_set[use_index],
+                                                               labels_decod, clf)
+    decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
+                                                  / conf_matrix.sum(axis=1)[:, np.newaxis])
+    
+    # Shuffled data
+    np.random.shuffle(labels_shuffle)
+    decoding_result.loc[i, 'original_shuffled'], _ = decoding(decoding_set[use_index],
+                                                              labels_shuffle, clf)
+    
+    # Positive control data
+    decoding_result.loc[i, 'control'], conf_matrix = decoding(control_set[use_index],
+                                                              labels_decod, clf)
+    decoding_result.loc[i, 'control_cm'] = (conf_matrix
+                                            / conf_matrix.sum(axis=1)[:, np.newaxis])
 
-    # Original dataset
-    result.loc[i, 'original'], conf_matrix = decoding(decoding_set, list(decod['lab']),
-                                                      clf, NUM_SPLITS, random_states[i])
-    result.loc[i, 'confusion_matrix'] = conf_matrix / conf_matrix.sum(axis=1)[:, np.newaxis]
-    result.loc[i, 'original_shuffled'] = decoding(decoding_set, list(decod['lab'].sample(frac=1)),
-                                                  clf, NUM_SPLITS, random_states[i])[0]
+    # Shuffled positive control data
+    np.random.shuffle(labels_shuffle)
+    decoding_result.loc[i, 'control_shuffled'], _ = decoding(control_set[use_index],
+                                                             labels_shuffle, clf)
 
-    # Positive control dataset
-    result.loc[i, 'control'], conf_matrix = decoding(control_set, list(decod['lab']),
-                                                     clf, NUM_SPLITS, random_states[i])
-    result.loc[i, 'control_cm'] = conf_matrix / conf_matrix.sum(axis=1)[:, np.newaxis]
-    result.loc[i, 'control_shuffled'] = decoding(control_set, list(decod['lab'].sample(frac=1)),
-                                                 clf, NUM_SPLITS, random_states[i])[0]
 # Save to csv
-result.to_pickle(join('classification_results',
-                      'classification_results_full_%s.pkl' % DECODER))
+decoding_result.to_pickle(join('classification_results',
+                               'classification_results_full_%s.pkl' % DECODER))
+

@@ -5,20 +5,24 @@ Decode in which lab a mouse was trained based on its behavioral metrics during t
 of the basic task variant in which the mouse was determined to be trained.
 
 As a positive control, the time zone in which the mouse was trained is included in the dataset
-since the timezone provides geographical information. Decoding is performed using cross-validated
-classification. Chance level is determined by shuffling the lab labels and decoding again.
+since the timezone provides geographical information. Decoding is performed using leave-one-out
+cross-validation. To control for the imbalance in the dataset (some labs have more mice than 
+others) a fixed number of mice is randomly sub-sampled from each lab. This random sampling is
+repeated for a large number of repetitions. A shuffled nul-distribution is obtained by shuffling
+the lab labels and decoding again for each iteration.
 
 --------------
 Parameters
 DECODER:            Which decoder to use: 'bayes', 'forest', or 'regression'
-NUM_SPLITS:         The N in N-fold cross validation
-ITERATIONS:         Number of times to split the dataset in test and train and decode
+N_MICE:             How many mice per lab to randomly sub-sample 
+                    (must be lower than the lab with the least mice)
+ITERATIONS:         Number of times to randomly sub-sample
 METRICS:            List of strings indicating which behavioral metrics to include
                     during decoding of lab membership
 METRICS_CONTROL:    List of strings indicating which metrics to use for the positive control
 
 Guido Meijer
-16 Jan 2020
+September 3, 2020
 """
 
 import pandas as pd
@@ -31,34 +35,31 @@ from ibl_pipeline import behavior
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import KFold
+from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-DECODER = 'forest'           # forest, bayes or regression
-NUM_SPLITS = 3              # n in n-fold cross validation
+DECODER = 'bayes'           # bayes, forest or regression
+N_MICE = 10                 # how many mice per lab to sub-sample
 ITERATIONS = 2000           # how often to decode
 METRICS = ['perf_easy', 'threshold', 'bias']
-METRIS_CONTROL = ['perf_easy', 'threshold', 'bias', 'time_zone']
+METRICS_CONTROL = ['perf_easy', 'threshold', 'bias', 'time_zone']
 
 
 # Decoding function with n-fold cross validation
-def decoding(resp, labels, clf, NUM_SPLITS, random_state):
-    kf = KFold(n_splits=NUM_SPLITS, shuffle=True, random_state=random_state)
-    y_pred = np.array([])
-    y_true = np.array([])
-    for train_index, test_index in kf.split(resp):
-        train_resp = resp[train_index]
-        test_resp = resp[test_index]
-        clf.fit(train_resp, [labels[j] for j in train_index])
-        y_pred = np.append(y_pred, clf.predict(test_resp))
-        y_true = np.append(y_true, [labels[j] for j in test_index])
-    f1 = f1_score(y_true, y_pred, labels=np.unique(labels), average='micro')
-    unique_labels, label_counts = np.unique(labels, return_counts=True)
-    cm = confusion_matrix(y_true, y_pred, labels=unique_labels)
+def decoding(data, labels, clf):
+    kf = LeaveOneOut()
+    y_pred = np.empty(len(labels), dtype='<U5')
+    for train_index, test_index in kf.split(data):
+        clf.fit(data[train_index], labels[train_index])
+        y_pred[test_index] = clf.predict(data[test_index])
+    f1 = f1_score(labels, y_pred, average='micro')
+    cm = confusion_matrix(labels, y_pred)
     return f1, cm
 
 
+# %% Query sessions
+    
 if QUERY is True:
     use_sessions, _ = query_sessions_around_criterion(criterion='trained',
                                                       days_from_criterion=[2, 0])
@@ -101,7 +102,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     # Get RT, performance and number of trials
     reaction_time = trials['rt'].median()*1000
     perf_easy = trials['correct_easy'].mean()*100
-    ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
+    ntrials_perday = trials.groupby('session_start_time').count()['trial_id'].mean()
     
      # Get timezone
     time_zone = trials['time_zone'][0]
@@ -129,6 +130,8 @@ learned = learned[learned['reaction_time'].notnull()]
 learned['lab_number'] = learned.lab.map(institution_map()[0])
 learned = learned.sort_values('lab_number')
 
+# %% Do decoding
+
 # Initialize decoders
 print('\nDecoding of lab membership..')
 if DECODER == 'forest':
@@ -140,36 +143,54 @@ elif DECODER == 'regression':
 else:
     raise Exception('DECODER must be forest, bayes or regression')
 
-# Generate random states for each iteration with a fixed seed
-np.random.seed(424242)
-random_states = np.random.randint(10000, 99999, ITERATIONS)
-
-# Perform decoding of lab membership
+# Prepare decoding data
 decoding_result = pd.DataFrame(columns=['original', 'original_shuffled', 'confusion_matrix',
                                         'control', 'control_shuffled', 'control_cm'])
 decod = learned.copy()
 decoding_set = decod[METRICS].values
-control_set = decod[METRIS_CONTROL].values
+control_set = decod[METRICS_CONTROL].values
+
+# Prepare lab labels for subselection of a fixed amount of mice per lab
+labels = np.array(decod['lab_number'])
+labels_nr = np.arange(labels.shape[0])
+labels_decod = np.ravel([[lab] * N_MICE for i, lab in enumerate(np.unique(labels))])
+labels_shuffle = np.ravel([[lab] * N_MICE for i, lab in enumerate(np.unique(labels))])
+
+# Generate random states for each iteration with a fixed seed
+np.random.seed(424242)
+
+# Loop over iterations of random draws of mice
 for i in range(ITERATIONS):
     if np.mod(i+1, 100) == 0:
         print('Iteration %d of %d' % (i+1, ITERATIONS))
-    # Original dataset
-    decoding_result.loc[i, 'original'], conf_matrix = decoding(
-            decoding_set, list(decod['lab_number']), clf, NUM_SPLITS, random_states[i])
+        
+    # Randomly select N mice from each lab to equalize classes
+    use_index = np.empty(0, dtype=int)
+    for j, lab in enumerate(np.unique(labels)):
+        use_index = np.concatenate([use_index, np.random.choice(labels_nr[labels == lab],
+                                                               N_MICE, replace=False)])
+        
+    # Original data
+    decoding_result.loc[i, 'original'], conf_matrix = decoding(decoding_set[use_index],
+                                                               labels_decod, clf)
     decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
                                                   / conf_matrix.sum(axis=1)[:, np.newaxis])
-    decoding_result.loc[i, 'original_shuffled'] = decoding(decoding_set,
-                                                           list(
-                                                              decod['lab_number'].sample(frac=1)),
-                                                           clf, NUM_SPLITS, random_states[i])[0]
-    # Positive control dataset
-    decoding_result.loc[i, 'control'], conf_matrix = decoding(
-            control_set, list(decod['lab_number']), clf, NUM_SPLITS, random_states[i])
+    
+    # Shuffled data
+    np.random.shuffle(labels_shuffle)
+    decoding_result.loc[i, 'original_shuffled'], _ = decoding(decoding_set[use_index],
+                                                              labels_shuffle, clf)
+    
+    # Positive control data
+    decoding_result.loc[i, 'control'], conf_matrix = decoding(control_set[use_index],
+                                                              labels_decod, clf)
     decoding_result.loc[i, 'control_cm'] = (conf_matrix
                                             / conf_matrix.sum(axis=1)[:, np.newaxis])
-    decoding_result.loc[i, 'control_shuffled'] = decoding(control_set,
-                                                          list(decod['lab_number'].sample(frac=1)),
-                                                          clf, NUM_SPLITS, random_states[i])[0]
+
+    # Shuffled positive control data
+    np.random.shuffle(labels_shuffle)
+    decoding_result.loc[i, 'control_shuffled'], _ = decoding(control_set[use_index],
+                                                             labels_shuffle, clf)
 
 # Save to csv
 decoding_result.to_pickle(join('classification_results',

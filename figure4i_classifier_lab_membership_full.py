@@ -38,7 +38,7 @@ from sklearn.metrics import f1_score, confusion_matrix
 
 # Settings
 DECODER = 'bayes'           # bayes, forest or regression
-N_MICE = 5                  # how many mice per lab to randomply sub-sample
+N_MICE = 8                  # how many mice per lab to randomply sub-sample
 ITERATIONS = 2000           # how often to decode with random sub-samples
 METRICS = ['threshold_l', 'threshold_r', 'bias_l', 'bias_r', 'lapselow_l', 'lapselow_r',
            'lapsehigh_l', 'lapsehigh_r']

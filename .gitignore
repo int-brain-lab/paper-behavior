@@ -110,18 +110,3 @@ venv.bak/
 # macOS stuff
 .DS_store
 dj_local_conf.json
-
-
-data/Fig2ab.csv
-
-data/Fig2c.csv
-
-data/Fig2d.csv
-
-data/Fig3.csv
-
-data/Fig4.csv
-
-data/Fig5.csv
-
-data/Fig3-supp2.csv

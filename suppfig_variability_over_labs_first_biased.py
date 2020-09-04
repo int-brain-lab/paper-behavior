@@ -75,8 +75,6 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'nickname': nickname, 'lab': lab, 'subject_uuid': uuid})
     biased_fits = biased_fits.append(fits, sort=False)
     
-    # Remove mice that did not have a 50:50 block
-    # biased_fits = biased_fits[biased_fits['threshold_n'].notnull()]
 
 # %% Statistics
     
@@ -117,14 +115,16 @@ for i, var in enumerate(['perf_easy', 'threshold_l', 'threshold_r', 'threshold_n
 # Correct for multiple tests
 stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
 
-# %%
+# %% Prepare for plotting
+
+# Sort by lab number
+biased_fits = biased_fits.sort_values('lab')
 
 # Convert to float
-biased_fits[['perf_easy',
-        'bias_l', 'bias_r', 'bias_n',
-        'threshold_l', 'threshold_r', 'threshold_n']] = biased_fits[['perf_easy',
-        'bias_l', 'bias_r', 'bias_n',
-        'threshold_l', 'threshold_r', 'threshold_n']].astype(float)
+biased_fits[['perf_easy', 'bias_l', 'bias_r', 'bias_n',
+             'threshold_l', 'threshold_r', 'threshold_n']] = biased_fits[
+                     ['perf_easy', 'bias_l', 'bias_r', 'bias_n', 'threshold_l',
+                      'threshold_r', 'threshold_n']].astype(float)
 
 # Add all mice to dataframe seperately for plotting
 learned_no_all = biased_fits.copy()

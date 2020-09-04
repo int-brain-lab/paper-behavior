@@ -25,7 +25,7 @@ decoding_result = pd.read_pickle(join('classification_results',
                                       'classification_results_full_bayes.pkl'))
 
 # Calculate if decoder performs above chance
-chance_level = 1/7 # there are 7 labs so chance is 1 over 7
+chance_level = decoding_result['original_shuffled'].mean()
 significance = np.percentile(decoding_result['original'], 2.5)
 sig_control = np.percentile(decoding_result['control'], 0.001)
 if chance_level > significance:

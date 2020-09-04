@@ -27,7 +27,7 @@ for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
                                           'classification_results_basic_%s.pkl' % DECODER))
 
     # Calculate if decoder performs above chance
-    chance_level = 1/7 # there are 7 labs so chance is 1 over 7
+    chance_level = decoding_result['original_shuffled'].mean()
     significance = np.percentile(decoding_result['original'], 2.5)
     sig_control = np.percentile(decoding_result['control'], 0.001)
     if chance_level > significance:

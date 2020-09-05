@@ -9,12 +9,9 @@ See also https://elifesciences.org/articles/49834
 # import wrappers etc
 from ibl_pipeline import behavior, subject, reference
 import matplotlib.pyplot as plt
-from dj_tools import dj2pandas, fit_psychfunc
 from paper_behavior_functions import (seaborn_style, figpath, query_sessions_around_criterion,
-                                      group_colors, institution_map, FIGURE_HEIGHT, FIGURE_WIDTH)
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
-import pycircstat
+                                      group_colors, institution_map, FIGURE_HEIGHT, FIGURE_WIDTH,
+                                      dj2pandas, fit_psychfunc)
 import seaborn as sns
 import pandas as pd
 import numpy as np

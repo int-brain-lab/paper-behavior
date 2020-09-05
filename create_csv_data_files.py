@@ -11,10 +11,9 @@ from os import mkdir
 from os.path import join, isdir
 import pandas as pd
 from paper_behavior_functions import (query_subjects, query_sessions_around_criterion,
-                                      institution_map, CUTOFF_DATE)
+                                      institution_map, CUTOFF_DATE, dj2pandas)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 from ibl_pipeline import reference, subject, behavior, acquisition
-from dj_tools import dj2pandas
 
 # Get map of lab number to institute
 institution_map, _ = institution_map()

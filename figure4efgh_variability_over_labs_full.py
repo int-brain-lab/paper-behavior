@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import scikit_posthocs as sp
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
-from dj_tools import fit_psychfunc, dj2pandas
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY,
+                                      fit_psychfunc, dj2pandas)
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
 

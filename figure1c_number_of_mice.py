@@ -10,7 +10,6 @@ from paper_behavior_functions import query_subjects, CUTOFF_DATE
 from ibl_pipeline import subject, acquisition, reference
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
-
 # =========================
 # 1. Query all mice on brainwide map project which began training before the paper's cutoff date
 # =========================

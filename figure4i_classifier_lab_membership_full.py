@@ -27,8 +27,7 @@ September 3, 2020
 
 import numpy as np
 from os.path import join
-from paper_behavior_functions import institution_map, QUERY
-from dj_tools import fit_psychfunc, dj2pandas
+from paper_behavior_functions import institution_map, QUERY, fit_psychfunc, dj2pandas
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB

@@ -16,8 +16,8 @@ from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
                                       institution_map, group_colors, figpath,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY)
-from dj_tools import dj2pandas, fit_psychfunc, num_star
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY,
+                                      dj2pandas, fit_psychfunc, num_star)
 from ibl_pipeline import behavior, subject, reference
 import scikit_posthocs as sp
 from statsmodels.stats.multitest import multipletests

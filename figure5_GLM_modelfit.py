@@ -8,8 +8,8 @@ import datajoint as dj
 import pandas as pd
 import numpy as np
 from paper_behavior_functions import (query_sessions_around_criterion,
-                                      EXAMPLE_MOUSE, institution_map)
-from dj_tools import dj2pandas, fit_psychfunc
+                                      EXAMPLE_MOUSE, institution_map,
+                                      dj2pandas, fit_psychfunc)
 from ibl_pipeline import behavior, subject, reference
 import os
 from tqdm.auto import tqdm

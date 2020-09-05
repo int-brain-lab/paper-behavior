@@ -11,8 +11,7 @@ import numpy as np
 import seaborn as sns
 from paper_behavior_functions import (seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT)
-from dj_tools import num_star
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, num_star)
 import os
 from scipy import stats
 

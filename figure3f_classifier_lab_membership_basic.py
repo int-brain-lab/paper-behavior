@@ -28,9 +28,9 @@ September 3, 2020
 import pandas as pd
 import numpy as np
 from os.path import join
-from paper_behavior_functions import query_sessions_around_criterion, institution_map, QUERY
+from paper_behavior_functions import (query_sessions_around_criterion, institution_map, QUERY,
+                                        dj2pandas, fit_psychfunc)
 from ibl_pipeline import subject, reference
-from dj_tools import dj2pandas, fit_psychfunc
 from ibl_pipeline import behavior
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB

@@ -11,8 +11,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import datajoint as dj
 
+from paper_behavior_functions import seaborn_style, figpath, \
+    FIGURE_HEIGHT, FIGURE_WIDTH, EXAMPLE_MOUSE, dj2pandas, plot_psychometric
+
 # import wrappers etc
-from paper_behavior_functions import EXAMPLE_MOUSE
 from ibl_pipeline import subject, behavior, acquisition
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 endcriteria = dj.create_virtual_module(
@@ -28,9 +30,6 @@ endcriteria = dj.create_virtual_module(
 
 # this only works if conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/ has been added to iblenv
 import behavior_plots
-import dj_tools
-from paper_behavior_functions import seaborn_style, figpath, \
-    FIGURE_HEIGHT, FIGURE_WIDTH
 
 # ================================= #
 # INITIALIZE A FEW THINGS
@@ -93,7 +92,7 @@ for didx, day in enumerate(days):
            'session_date = "%s"' % thisdate) \
         * behavior.TrialSet.Trial() \
         * endcriteria.SessionEndCriteriaImplemented()
-    behavtmp = dj_tools.dj2pandas(b.fetch(format='frame').reset_index())
+    behavtmp = dj2pandas(b.fetch(format='frame').reset_index())
     behavtmp['trial_start_time'] = behavtmp.trial_start_time / 60  # in minutes
 
     # unclear how this can be empty - but if it happens, skip
@@ -102,7 +101,7 @@ for didx, day in enumerate(days):
 
     # PSYCHOMETRIC FUNCTIONS
     fig, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT*0.9))
-    dj_tools.plot_psychometric(behavtmp.signed_contrast,
+    plot_psychometric(behavtmp.signed_contrast,
                                behavtmp.choice_right,
                                behavtmp.trial_id,
                                ax=ax, color='k')

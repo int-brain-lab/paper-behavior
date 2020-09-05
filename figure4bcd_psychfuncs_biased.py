@@ -5,7 +5,6 @@ Psychometric function and choice shifts in the biased task
 15 January 2020
 """
 
-from dj_tools import dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric
 import pandas as pd
 import numpy as np
 import os
@@ -16,7 +15,8 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH)
+                                      FIGURE_HEIGHT, FIGURE_WIDTH,
+                                      dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from ibl_pipeline.utils import psychofit as psy

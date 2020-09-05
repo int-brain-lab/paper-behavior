@@ -12,10 +12,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, EXAMPLE_MOUSE,
                                       query_sessions_around_criterion, institution_map,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY,
+                                      plot_psychometric, dj2pandas, plot_chronometric)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
-from dj_tools import plot_psychometric, dj2pandas, plot_chronometric
 from sklearn.utils import shuffle
 
 # progress bar

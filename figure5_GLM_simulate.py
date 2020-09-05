@@ -12,17 +12,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import patsy # to build design matrix
-from sklearn.base import BaseEstimator, RegressorMixin
-import statsmodels.formula.api as smf
 import statsmodels.api as sm
-from sklearn.model_selection import cross_val_score
-
 from ibl_pipeline import behavior, subject, reference
-from dj_tools import dj2pandas, fit_psychfunc, plot_psychometric
 from paper_behavior_functions import (query_sessions_around_criterion,
                                       seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT)
+                                      FIGURE_WIDTH, FIGURE_HEIGHT,
+                                      dj2pandas, fit_psychfunc, plot_psychometric)
 
 # Load some things from paper_behavior_functions
 figpath = figpath()

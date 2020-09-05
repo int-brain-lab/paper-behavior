@@ -11,8 +11,7 @@ import os
 import seaborn as sns
 import numpy as np
 from paper_behavior_functions import (seaborn_style, figpath, EXAMPLE_MOUSE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH)
-from dj_tools import dj2pandas
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, dj2pandas)
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 

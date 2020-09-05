@@ -75,7 +75,7 @@ fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.swarmplot(data = basic_summ_visual,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['6.25', '12.5', '25', '100'],
-              palette = pal, marker='o', ax=ax[0], zorder=0, edgecolors='white')
+              palette = pal, marker='.', ax=ax[0], zorder=0, edgecolors='white')
 ax[0].plot(basic_summ_visual.groupby(['variable'])['value'].mean()[['6.25', '12.5', '25', '100']],
              color='black', linewidth=0, marker='_', markersize=13)
 ax[0].get_legend().set_visible(False)
@@ -84,7 +84,7 @@ ax[0].set(xlabel='  ', ylabel='Weight', ylim=[0,5.5])
 sns.swarmplot(data = basic_summ_bias,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['rewarded', 'unrewarded', 'bias'],
-              palette = pal, marker='o', ax=ax[1], zorder=0, edgecolors='white')
+              palette = pal, marker='.', ax=ax[1], zorder=0, edgecolors='white')
 ax[1].plot(basic_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'unrewarded', 'bias']],
              color='black', linewidth=0, marker='_', markersize=13)
 ax[1].get_legend().set_visible(False)
@@ -116,7 +116,7 @@ fig, ax  = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.swarmplot(data = full_summ_visual,
               order=['6.25', '12.5', '25', '100'],
               hue = 'institution_code', x = 'variable', y= 'value',
-              palette = pal, marker='o', ax=ax[0], zorder=0, edgecolor='white')
+              palette = pal, marker='.', ax=ax[0], zorder=0, edgecolor='white')
 ax[0].plot(full_summ_visual.groupby(['variable'])['value'].mean()[['6.25', '12.5', '25', '100']],
              color='black', linewidth=0, marker='_', markersize=13)
 ax[0].get_legend().set_visible(False)
@@ -125,7 +125,7 @@ ax[0].set(xlabel=' ', ylabel='Weight', ylim=[0,5.5])
 sns.swarmplot(data = full_summ_bias,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['rewarded', 'unrewarded', 'bias', 'block_id'],
-              palette = pal, marker='o', ax=ax[1], zorder=0, edgecolor='white')
+              palette = pal, marker='.', ax=ax[1], zorder=0, edgecolor='white')
 ax[1].plot(full_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'unrewarded', 'bias', 'block_id']],
              color='black', linewidth=0, marker='_', markersize=13)
 ax[1].axhline(color='darkgray', linestyle=':')

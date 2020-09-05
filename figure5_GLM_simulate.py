@@ -25,7 +25,9 @@ figpath = figpath()
 seaborn_style()
 institution_map, col_names = institution_map()
 pal = group_colors()
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
+#cmap = sns.diverging_palette(20, 220, n=3, center="dark")
+cmap = sns.color_palette([[0.8984375,0.37890625,0.00390625],
+                          [0.3, 0.3, 0.3], [0.3671875,0.234375,0.59765625]])
 
 # ========================================== #
 #%% 1. LOAD DATA - just from example mouse
@@ -199,6 +201,10 @@ for cidx, c in enumerate(cmap):
                     np.quantile(np.array(simulation_full_perblock), q=0.025, axis=0),
                     np.quantile(np.array(simulation_full_perblock), q=0.975, axis=0),
                     alpha=0.5, facecolor=cmap[cidx])
+
+fig.ax.annotate('20:80', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
+fig.ax.annotate('80:20', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
+
 fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5b_full_psychfunc.pdf"))

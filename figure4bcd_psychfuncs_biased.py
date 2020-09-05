@@ -15,14 +15,11 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY,
                                       dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from ibl_pipeline.utils import psychofit as psy
-
-# whether to query data from DataJoint (True), or load from disk (False)
-query = True
 
 # Initialize
 seaborn_style()
@@ -30,14 +27,17 @@ figpath = figpath()
 pal = group_colors()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
-cmap = sns.diverging_palette(20, 220, n=3, center="dark")
-sns.set_palette(cmap)  # palette for water types
+
+# colors for biased blocks
+cmap = sns.color_palette([[0.8984375,0.37890625,0.00390625],
+                          [0.3, 0.3, 0.3], [0.3671875,0.234375,0.59765625]])
+sns.set_palette(cmap)
 
 # ================================= #
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-if query is True:
+if QUERY is True:
     # query sessions
     use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
                                                       days_from_criterion=[2, 0],

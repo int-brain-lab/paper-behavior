@@ -58,7 +58,7 @@ ax[1].axis('off')
 xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
 behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[0].set(ylabel='Contrast (%)', xlabel='Training day',
-          xticks=[d + 1.5 for d in days], xticklabels=days,
+          xticks=[d + 1.5 for d in [2,8,11,17]], xticklabels=days,
           yticklabels=['100', '50', '25', '12.5', '6.25', '0',
                        '-6.25', '-12.5', '-25', '-50', '-100'])
 for item in ax[0].get_xticklabels():

@@ -4,16 +4,17 @@ Choice variability across contrasts within each lab and across labs
 @author: Anne Urai
 2 September 2020
 """
+
 import numpy as np
 import seaborn as sns
 import os
 from os.path import join
 import pandas as pd
 import matplotlib.pyplot as plt
-from paper_behavior_functions import (figpath, seaborn_style, group_colors, EXAMPLE_MOUSE,
+from paper_behavior_functions import (figpath, seaborn_style, group_colors,
                                       query_sessions_around_criterion, institution_map,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY,
-                                      plot_psychometric, dj2pandas, plot_chronometric)
+                                      dj2pandas)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from sklearn.utils import shuffle
@@ -33,11 +34,10 @@ col_names = col_names[:-1]
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
-QUERY = True
 if QUERY is True:
     # query sessions
     use_sessions, use_days = query_sessions_around_criterion(criterion='trained',
-                                                             days_from_criterion=[1, 3],
+                                                             days_from_criterion=[2,0],
                                                              as_dataframe=False,
                                                              force_cutoff=True)
     # Trial data to fetch
@@ -69,6 +69,7 @@ df = behav.groupby(['institution_code', 'subject_nickname', 'signed_contrast']).
     {'choice2': 'mean'}).reset_index()
 df.drop(df[ df['signed_contrast'].isin([50., -50])].index, inplace=True)
 
+
 # DEFINE ACROSS-MOUSE CHOICE VARIABILITY
 def choice_variability(df):
 
@@ -93,7 +94,7 @@ choice_variability_perlab['choice_var'] = choice_variability_perlab[0]
 # SAME, BUT ON SHUFFLED DATA
 # ================================================================== #
 
-nshuf = 10000
+nshuf = 1000
 choice_variability_shuffled = []
 
 for s in tqdm(range(nshuf)):
@@ -110,7 +111,8 @@ for s in tqdm(range(nshuf)):
 f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH / 5, FIGURE_HEIGHT))
 # first, data
 sns.swarmplot(data = choice_variability_perlab,
-              hue = 'institution_code', x ='x', y='choice_var',
+              x ='x', y='choice_var', hue_order=col_names,
+              hue = 'institution_code',
               palette = pal, marker='.', ax=ax1, zorder=0)
 ax1.plot(0, choice_variability_perlab['choice_var'].mean(),
              color='black', linewidth=0, marker='_', markersize=13)
@@ -118,16 +120,12 @@ ax1.get_legend().set_visible(False)
 # then, shuffled distribution next to it
 sns.violinplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
               y=np.concatenate((np.empty((nshuf))*np.nan, choice_variability_shuffled)),
-               color=[0.6, 0.6, 0.6], ax=ax1)
-# sns.stripplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
-#               y=np.concatenate((np.empty((nshuf))*np.nan, choice_variability_shuffled)),
-#                color='k', marker='.', ax=ax1)
-ax1.set(ylabel='Choice variability\nacross mice', xlabel='', yticks=[0.01, 0.02, 0.03])
+               palette=[[1,1,1]], ax=ax1)
+ax1.set(ylabel='Choice variability\nacross mice', xlabel='', yticks=[0, 0.01, 0.02, 0.03])
 ax1.set_xticklabels(['Data', 'Shuffle'], ha='center')
 plt.tight_layout()
 sns.despine(trim=True)
 f.savefig(os.path.join(figpath, "across_mouse_var.pdf"))
-
 
 # WHAT IS THE P-VALUE COMPARED TO THE  NULL DISTRIBUTION?
 pval = np.min([np.mean(choice_variability_shuffled > choice_variability_perlab['choice_var'].mean()),

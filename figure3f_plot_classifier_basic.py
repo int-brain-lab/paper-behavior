@@ -20,7 +20,7 @@ FIG_PATH = figpath()
 colors = [[1, 1, 1], [1, 1, 1], [0.6, 0.6, 0.6]]
 seaborn_style()
 
-for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
+for DECODER in ['bayes', 'forest', 'regression']:  
 
     # Load in results from csv file
     decoding_result = pd.read_pickle(join('classification_results',
@@ -31,9 +31,13 @@ for DECODER in ['forest', 'bayes', 'regression']:  # forest, bayes or regression
     significance = np.percentile(decoding_result['original'], 2.5)
     sig_control = np.percentile(decoding_result['control'], 0.001)
     if chance_level > significance:
-        print('Classification performance not significanlty above chance')
+        print('\n%s classifier did not perform above chance' % DECODER)
+        print('Chance level: %.2f (F1 score)' % chance_level)
     else:
-        print('Above chance classification performance!')
+        print('\n%s classifier did not perform above chance' % DECODER)    
+        print('Chance level: %.2f (F1 score)' % chance_level)
+    print('F1 score: %.2f ± %.3f' % (decoding_result['original'].mean(),
+                                     decoding_result['original'].std()))
 
     # %%
 

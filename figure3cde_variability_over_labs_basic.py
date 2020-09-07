@@ -121,13 +121,18 @@ for i, var in enumerate(['perf_easy', 'reaction_time', 'n_trials', 'threshold', 
         else:
             posthoc = np.nan
 
+    # Test for difference in variance
+    _, p_var = stats.levene(*[group[var].values for name, group in learned.groupby('lab_number')])
+
     posthoc_tests['posthoc_'+str(var)] = posthoc
     stats_tests.loc[i, 'variable'] = var
     stats_tests.loc[i, 'test_type'] = test_type
     stats_tests.loc[i, 'p_value'] = test[1]
+    stats_tests.loc[i, 'p_value_variance'] = p_var
 
 # Correct for multiple tests
 stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
+stats_tests['p_value_variance'] = multipletests(stats_tests['p_value_variance'])[1]
 
 if (stats.normaltest(learned['n_trials'])[1] < 0.05 or
         stats.normaltest(learned['reaction_time'])[1] < 0.05):

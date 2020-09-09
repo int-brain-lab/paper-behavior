@@ -41,7 +41,7 @@ if QUERY is True:
         .proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
               'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
               'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-              'trial_response_time', 'trial_stim_on_time')
+              'trial_response_time', 'trial_stim_on_time', 'session_end_time')
 
         # Fetch as a pandas DataFrame, ordered by institute
         .fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
@@ -55,7 +55,7 @@ else:
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
                                 'threshold', 'bias', 'reaction_time',
-                                'lapse_low', 'lapse_high'])
+                                'lapse_low', 'lapse_high', 'trials_per_minute'])
 
 for i, nickname in enumerate(behav['subject_nickname'].unique()):
     if np.mod(i+1, 10) == 0:
@@ -74,12 +74,18 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     perf_easy = trials['correct_easy'].mean()*100
     ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
 
+    # average trials/minute to normalise by session length
+    trials['session_length'] = (trials.session_end_time - trials.session_start_time).astype('timedelta64[m]')
+    total_session_length = trials.groupby('session_uuid')['session_length'].mean().sum()
+    total_n_trials = trials['trial_id'].count()
+
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
     learned.loc[i, 'lab'] = trials['institution_short'][0]
     learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'reaction_time'] = reaction_time
+    learned.loc[i, 'trials_per_minute'] = total_n_trials / total_session_length
     learned.loc[i, 'threshold'] = fit_result.loc[0, 'threshold']
     learned.loc[i, 'bias'] = fit_result.loc[0, 'bias']
     learned.loc[i, 'lapse_low'] = fit_result.loc[0, 'lapselow']
@@ -94,14 +100,14 @@ learned = learned.sort_values('lab_number')
 
 # Convert to float
 float_fields = ['perf_easy', 'reaction_time', 'threshold',
-                'n_trials', 'bias', 'lapse_low', 'lapse_high']
+                'n_trials', 'bias', 'lapse_low', 'lapse_high', 'trials_per_minute']
 learned[float_fields] = learned[float_fields].astype(float)
 
 # %% Stats
 stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
 posthoc_tests = {}
 
-for i, var in enumerate(['perf_easy', 'reaction_time', 'n_trials', 'threshold', 'bias']):
+for i, var in enumerate(['perf_easy', 'reaction_time', 'n_trials', 'threshold', 'bias', 'trials_per_minute']):
     _, normal = stats.normaltest(learned[var])
 
     if normal < 0.05:
@@ -158,10 +164,10 @@ lab_colors = group_colors()
 sns.set_palette(lab_colors)
 
 # %%
-vars = ['n_trials', 'perf_easy',  'threshold', 'bias', 'reaction_time']
+vars = ['n_trials', 'perf_easy',  'threshold', 'bias', 'reaction_time', 'trials_per_minute']
 ylabels =['Number of trials', 'Performance (%)\non easy trials',
-          'Contrast threshold (%)', 'Bias (%)', 'Trial duration (ms)' ]
-ylims = [[0, 2000],[70, 100], [0, 25], [-25, 25], [0, 2000]]
+          'Contrast threshold (%)', 'Bias (%)', 'Trial duration (ms)', 'Trials / minute']
+ylims = [[0, 2000],[70, 100], [0, 25], [-25, 25], [0, 2000], [0, 25]]
 for v, ylab, ylim in zip(vars, ylabels, ylims):
 
     f, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))

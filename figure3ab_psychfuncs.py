@@ -76,14 +76,20 @@ fig = sns.FacetGrid(behav,
 fig.map(plot_psychometric, "signed_contrast", "choice_right",
         "subject_nickname", color='gray', alpha=0.7)
 fig.set_titles("{col_name}")
-for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(sorted(behav.institution_name.unique())[axidx],
-                 color=pal[axidx])
 
 # overlay the example mouse
 tmpdat = behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_psychometric(tmpdat.signed_contrast, tmpdat.choice_right, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
+
+# add lab means on top
+for axidx, ax in enumerate(fig.axes.flat):
+    tmp_behav = behav.loc[behav.institution_name == behav.institution_name.unique()[axidx], :]
+    plot_psychometric(tmp_behav.signed_contrast, tmp_behav.choice_right,
+                      tmp_behav.institution_name, ax=ax, legend=False, color=pal[axidx], linewidth=2)
+    ax.set_title(sorted(behav.institution_name.unique())[axidx],
+                 color=pal[axidx])
+
 fig.despine(trim=True)
 fig.set_axis_labels("Contrast (%)", 'Rightward choices (%)')
 plt.tight_layout(w_pad=-1.7)

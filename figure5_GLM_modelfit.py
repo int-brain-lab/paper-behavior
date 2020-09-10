@@ -115,7 +115,8 @@ def fit_glm(behav, prior_blocks=False, folds=5):
     # what do we want to keep?
     params = pd.DataFrame(res.params).T
     params['pseudo_rsq'] = res.prsquared # https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.LogitResults.prsquared.html?highlight=pseudo
-
+    params['condition_number'] = np.linalg.cond(exog)
+    
     # ===================================== #
     # ADD MODEL ACCURACY - cross-validate
 
@@ -150,11 +151,13 @@ print('fitting GLM to BASIC task...')
 params_basic = behav.loc[behav.task == 'traini', :].groupby(
     ['institution_code', 'subject_nickname']).progress_apply(fit_glm,
                                                      prior_blocks=False).reset_index()
-
+print('The mean condition number for the basic model is', params_basic['condition_number'].mean())
+                                                             
 print('fitting GLM to FULL task...')
 params_full = behav.loc[behav.task == 'biased', :].groupby(
     ['institution_code', 'subject_nickname']).progress_apply(fit_glm,
                                                      prior_blocks=True).reset_index()
+print('The mean condition number for the full model is', params_full['condition_number'].mean())
 
 # ========================================== #
 # SAVE FOR NEXT TIME

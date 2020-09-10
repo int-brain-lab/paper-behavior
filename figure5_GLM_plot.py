@@ -63,35 +63,41 @@ print('full task, block_id: mean %.2f, %f: %f'%(params_full['block_id'].mean(),
 # reshape the data and average across labs for easy plotting
 basic_summ_visual = pd.melt(params_basic,
                      id_vars=['institution_code', 'subject_nickname'],
-                     value_vars=['6.25', '12.5', '25', '100']).groupby(['institution_code',
-                                                     'variable']).mean().reset_index()
+                     value_vars=['6.25', '12.5', '25', '100']).groupby(['subject_nickname',
+                    'institution_code', 'variable']).mean().reset_index()
+
 basic_summ_bias = pd.melt(params_basic,
                      id_vars=['institution_code', 'subject_nickname'],
-                     value_vars=['unrewarded', 'rewarded', 'bias']).groupby(['institution_code',
-                                                     'variable']).mean().reset_index()
+                     value_vars=['unrewarded', 'rewarded', 'bias']).groupby(['subject_nickname',
+                    'institution_code', 'variable']).mean().reset_index()                                                                             
 # WEIGHTS IN THE BASIC TASK
 plt.close('all')
 fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
-sns.swarmplot(data = basic_summ_visual,
+sns.pointplot(data = basic_summ_visual,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['6.25', '12.5', '25', '100'],
-              palette = pal, marker='.', ax=ax[0], zorder=0, edgecolors='white')
+              palette = pal, marker='.', ax=ax[0], zorder=0, edgecolors='white',
+              join = False, dodge = 0.6, ci = 95, errwidth=1)
+plt.setp(ax[0].collections, sizes=[3])
 ax[0].plot(basic_summ_visual.groupby(['variable'])['value'].mean()[['6.25', '12.5', '25', '100']],
-             color='black', linewidth=0, marker='_', markersize=13)
+             color='black', linewidth=0, marker='_', markersize=13, zorder=100)
 ax[0].get_legend().set_visible(False)
 ax[0].set(xlabel='  ', ylabel='Weight', ylim=[0,5.5])
 
-sns.swarmplot(data = basic_summ_bias,
+
+sns.pointplot(data = basic_summ_bias,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['rewarded', 'unrewarded', 'bias'],
-              palette = pal, marker='.', ax=ax[1], zorder=0, edgecolors='white')
+              palette = pal, marker='.', ax=ax[1], zorder=0, edgecolors='white',
+              join = False, dodge = 0.6, ci = 95, errwidth=1)
+plt.setp(ax[1].collections, sizes=[3])
 ax[1].plot(basic_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'unrewarded', 'bias']],
-             color='black', linewidth=0, marker='_', markersize=13)
+             color='black', linewidth=0, marker='_', markersize=13, zorder=100)
 ax[1].get_legend().set_visible(False)
-ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1.2], yticks=[-0.5, 0, 0.5, 1],
+ax[1].set(xlabel='', ylabel='', ylim=[-1,1.2], yticks=[-1, -0.5, 0, 0.5, 1],
           xticks=[0,1,2,3], xlim=[-0.5, 3.5])
 ax[1].axhline(color='darkgray', linestyle=':')
-ax[1].set_xticklabels([], ha='right', rotation=20)
+ax[1].set_xticklabels([], ha='right', rotation=15)
 sns.despine(trim=True)
 plt.tight_layout(w_pad=-0.1)
 fig.savefig(os.path.join(figpath, 'figure5c_basic_weights.pdf'))
@@ -104,33 +110,37 @@ fig.savefig(os.path.join(figpath, 'figure5c_basic_weights.pdf'))
 full_summ_visual = pd.melt(params_full,
                      id_vars=['institution_code', 'subject_nickname'],
                      value_vars=['6.25', '12.5', '25', '100']).groupby(['institution_code',
-                                                     'variable']).mean().reset_index()
+                                  'subject_nickname', 'variable']).mean().reset_index()
 full_summ_bias = pd.melt(params_full,
                      id_vars=['institution_code', 'subject_nickname'],
                      value_vars=['unrewarded', 'rewarded',
                                  'bias', 'block_id']).groupby(['institution_code',
-                                                     'variable']).mean().reset_index()
+                                 'subject_nickname', 'variable']).mean().reset_index()
 # WEIGHTS IN THE FULL TASK
 plt.close('all')
 fig, ax  = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
-sns.swarmplot(data = full_summ_visual,
+sns.pointplot(data = full_summ_visual,
               order=['6.25', '12.5', '25', '100'],
               hue = 'institution_code', x = 'variable', y= 'value',
-              palette = pal, marker='.', ax=ax[0], zorder=0, edgecolor='white')
+              palette = pal, marker='.', ax=ax[0], zorder=0, edgecolor='white',
+              join = False, dodge = 0.6, ci = 95, errwidth=1)
+plt.setp(ax[0].collections, sizes=[3])
 ax[0].plot(full_summ_visual.groupby(['variable'])['value'].mean()[['6.25', '12.5', '25', '100']],
-             color='black', linewidth=0, marker='_', markersize=13)
+             color='black', linewidth=0, marker='_',  markersize=13, zorder=100)
 ax[0].get_legend().set_visible(False)
 ax[0].set(xlabel=' ', ylabel='Weight', ylim=[0,5.5])
 
-sns.swarmplot(data = full_summ_bias,
+sns.pointplot(data = full_summ_bias,
               hue = 'institution_code', x = 'variable', y= 'value',
               order=['rewarded', 'unrewarded', 'bias', 'block_id'],
-              palette = pal, marker='.', ax=ax[1], zorder=0, edgecolor='white')
+              palette = pal, marker='.', ax=ax[1], zorder=0, edgecolor='white',
+              join = False, dodge = 0.6, ci = 95, errwidth=1)
+plt.setp(ax[1].collections, sizes=[3])
 ax[1].plot(full_summ_bias.groupby(['variable'])['value'].mean()[['rewarded', 'unrewarded', 'bias', 'block_id']],
-             color='black', linewidth=0, marker='_', markersize=13)
+             color='black', linewidth=0, marker='_',  markersize=13, zorder=100)
 ax[1].axhline(color='darkgray', linestyle=':')
 ax[1].get_legend().set_visible(False)
-ax[1].set(xlabel='', ylabel='', ylim=[-0.5,1.2], yticks=[-0.5, 0, 0.5, 1])
+ax[1].set(xlabel='', ylabel='', ylim=[-1,1.2], yticks=[-1,-0.5, 0, 0.5, 1])
 ax[1].set_xticklabels([], ha='right', rotation=20)
 
 sns.despine(trim=True)

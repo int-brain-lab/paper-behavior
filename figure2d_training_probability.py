@@ -40,7 +40,7 @@ if QUERY is True:
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
     ses = ses.drop('n_trials_stim', axis=1)
 else:
-    ses = pd.read_csv(join('data', 'Fig2c.csv'))
+    ses = pd.read_csv(join('data', 'Fig2d.csv'))
 
 # Construct dataframe from query
 training_time = pd.DataFrame()
@@ -88,7 +88,7 @@ for i, lab in enumerate(np.unique(training_time['lab_number'])):
              color=lab_colors[i])
 kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
 ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values, color='black')
-ax1.set(ylabel='Cumulative probability of\nreaching trained criterion', xlabel='Training day',
+ax1.set(ylabel='Reached proficiency', xlabel='Training day',
         xlim=[0, 60], ylim=[0, 1.02])
 ax1.set_title('All labs: %d mice'%training_time['nickname'].nunique())
 
@@ -101,5 +101,5 @@ ax1.set_title('All labs: %d mice'%training_time['nickname'].nunique())
 sns.despine(trim=True, offset=5)
 plt.tight_layout()
 seaborn_style()
-plt.savefig(join(fig_path, 'figure2c_probability_trained.pdf'))
-plt.savefig(join(fig_path, 'figure2c_probability_trained.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2d_probability_trained.pdf'))
+plt.savefig(join(fig_path, 'figure2d_probability_trained.png'), dpi=300)

@@ -34,7 +34,7 @@ if QUERY is True:
            .reset_index())
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
 else:
-    ses = pd.read_csv(join('data', 'Fig2d.csv'))
+    ses = pd.read_csv(join('data', 'Fig2c.csv'))
     use_subjects = ses['subject_uuid'].unique()  # For counting the number of subjects
 
 # Construct dataframe
@@ -101,8 +101,8 @@ ax1.get_legend().set_visible(False)
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 sns.despine(trim=True)
 plt.tight_layout()
-plt.savefig(join(fig_path, 'figure2d_time_to_trained.pdf'))
-plt.savefig(join(fig_path, 'figure2d_time_to_trained.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2c_time_to_trained.pdf'))
+plt.savefig(join(fig_path, 'figure2c_time_to_trained.png'), dpi=300)
 
 
 # SAME FOR TRIALS TO TRAINED
@@ -121,8 +121,8 @@ ax1.get_legend().set_visible(False)
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 sns.despine(trim=True)
 plt.tight_layout()
-plt.savefig(join(fig_path, 'figure2d_trials_to_trained.pdf'))
-plt.savefig(join(fig_path, 'figure2d_trials_to_trained.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2c_trials_to_trained.pdf'))
+plt.savefig(join(fig_path, 'figure2c_trials_to_trained.png'), dpi=300)
 
 
 # sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all,

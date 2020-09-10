@@ -32,19 +32,7 @@ subjects.to_csv(join('data', 'subjects.csv'))
 # ================================= #
 print('Starting figure 2..')
 
-# Query list of subjects to use
-use_subjects = query_subjects()
-
-# Figure 2ab
-b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
-behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
-                format='frame').reset_index()
-behav['institution_code'] = behav.institution_short.map(institution_map)
-
-# Save to csv
-behav.to_csv(join('data', 'Fig2ab.csv'))
-
-# Figure 2c
+# Figure 2d
 all_mice = (subject.Subject * subject.SubjectLab * reference.Lab
             * subject.SubjectProject() & 'subject_project = "ibl_neuropixel_brainwide_01"')
 mice_started_training = (all_mice & (acquisition.Session() & 'task_protocol LIKE "%training%"'))
@@ -65,9 +53,9 @@ ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
 ses = ses.drop('n_trials_stim', axis=1)
 
 # Save to csv
-ses.to_csv(join('data', 'Fig2c.csv'))
+ses.to_csv(join('data', 'Fig2d.csv'))
 
-# Figure 2d
+# Figure 2c
 ses = (use_subjects * behavioral_analyses.SessionTrainingStatus * behavioral_analyses.PsychResults
        & 'training_status = "in_training" OR training_status = "untrainable"').proj(
                'subject_nickname', 'n_trials_stim', 'institution_short').fetch(format='frame')
@@ -84,7 +72,20 @@ training_time['lab_number'] = training_time.lab.map(institution_map)
 training_time = training_time.sort_values('lab_number')
 
 # Save to csv
-training_time.to_csv(join('data', 'Fig2d.csv'))
+training_time.to_csv(join('data', 'Fig2c.csv'))
+
+# Figure 2ab
+
+# Query list of subjects to use
+use_subjects = query_subjects()
+
+b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects)
+behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
+                format='frame').reset_index()
+behav['institution_code'] = behav.institution_short.map(institution_map)
+
+# Save to csv
+behav.to_csv(join('data', 'Fig2ab.csv'))
 
 # %%=============================== #
 # FIGURE 3

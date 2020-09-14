@@ -208,4 +208,3 @@ fig.ax.annotate('80:20', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize
 fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5b_full_psychfunc.pdf"))
-

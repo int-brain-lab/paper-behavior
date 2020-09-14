@@ -15,7 +15,7 @@ from scipy import stats
 from os.path import join
 import seaborn as sns
 from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath,
+                                      institution_map, group_colors, figpath, datapath,
                                       FIGURE_WIDTH, FIGURE_HEIGHT, QUERY,
                                       dj2pandas, fit_psychfunc, num_star)
 from ibl_pipeline import behavior, subject, reference
@@ -50,7 +50,7 @@ if QUERY is True:
     )
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join('data', 'Fig3.csv'))
+    behav = pd.read_csv(join(datapath(), 'Fig3.csv'))
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',

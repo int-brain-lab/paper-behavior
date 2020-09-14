@@ -4,14 +4,13 @@
 Created on 2020-07-20
 @author: Anne Urai
 """
-import datajoint as dj
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 from paper_behavior_functions import (query_sessions_around_criterion,
-                                      EXAMPLE_MOUSE, institution_map,
-                                      dj2pandas, fit_psychfunc)
+                                      institution_map, dj2pandas, datapath)
 from ibl_pipeline import behavior, subject, reference
-import os
 from tqdm.auto import tqdm
 from sklearn.model_selection import KFold
 
@@ -61,8 +60,8 @@ if query is True:
     behav['stimulus_side'] = np.sign(behav.signed_contrast)
     behav['block_id'] = behav['probabilityLeft'].map({80:-1, 50:0, 20:1})
 
-else: # load from disk
-    behav = pd.read_csv(os.path.join('data', 'Fig5.csv'))
+else:  # load from disk
+    behav = pd.read_csv(Path(datapath(), 'Fig5.csv'))
 
 # ========================================== #
 #%% 2. DEFINE THE GLM
@@ -116,7 +115,7 @@ def fit_glm(behav, prior_blocks=False, folds=5):
     params = pd.DataFrame(res.params).T
     params['pseudo_rsq'] = res.prsquared # https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.LogitResults.prsquared.html?highlight=pseudo
     params['condition_number'] = np.linalg.cond(exog)
-    
+
     # ===================================== #
     # ADD MODEL ACCURACY - cross-validate
 
@@ -152,7 +151,7 @@ params_basic = behav.loc[behav.task == 'traini', :].groupby(
     ['institution_code', 'subject_nickname']).progress_apply(fit_glm,
                                                      prior_blocks=False).reset_index()
 print('The mean condition number for the basic model is', params_basic['condition_number'].mean())
-                                                             
+
 print('fitting GLM to FULL task...')
 params_full = behav.loc[behav.task == 'biased', :].groupby(
     ['institution_code', 'subject_nickname']).progress_apply(fit_glm,
@@ -163,6 +162,6 @@ print('The mean condition number for the full model is', params_full['condition_
 # SAVE FOR NEXT TIME
 # ========================================== #
 
-params_basic.to_csv('./model_results/params_basic.csv')
-params_full.to_csv('./model_results/params_full.csv')
-
+data_path = Path(datapath(), 'model_results')
+params_basic.to_csv(data_path / 'params_basic.csv')
+params_full.to_csv(data_path / 'params_full.csv')

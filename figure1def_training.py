@@ -5,9 +5,13 @@ Training progression for an example mouse
 21 April 2020
 """
 import os
+import copy
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import seaborn as sns
 import datajoint as dj
 
@@ -20,16 +24,64 @@ from ibl_pipeline.analyses import behavior as behavioral_analyses
 endcriteria = dj.create_virtual_module(
     'SessionEndCriteriaImplemented', 'group_shared_end_criteria')
 
-# grab some plotting functions from datajoint
-# (this is a tricky dependency, as is it can not be run in a python shell, it makes the whole file
-# need to run as an executable eg. >>> python figure1_training.py in windows command prompt)
-# import sys
-# sys.path.append(os.path.join(os.path.dirname(__file__),
-#                              '../IBL-pipeline/prelim_analyses/behavioral_snapshots/'))
-# import ibl_pipeline.prelim_analyses.behavioral_snapshots.behavior_plots  # noqa
 
-# this only works if conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/ has been added to iblenv
-import behavior_plots
+def plot_contrast_heatmap(mouse, lab, ax, xlims):
+    """
+    This function is copied from
+    IBL-pipeline/prelim_analyses/behavioral_snapshots/behavior_plots.py
+    # TODO To become ibl-pipeline-lite dependency
+    """
+    cmap = copy.copy(plt.get_cmap('vlag'))
+    cmap.set_bad(color="w")  # remove rectangles without data, should be white
+
+    session_date, signed_contrasts, prob_choose_right, prob_left_block = (
+        behavioral_analyses.BehavioralSummaryByDate.PsychResults * subject.Subject *
+        subject.SubjectLab & 'subject_nickname="%s"' % mouse & 'lab_name="%s"' % lab).proj(
+            'signed_contrasts', 'prob_choose_right', 'session_date', 'prob_left_block').fetch(
+            'session_date', 'signed_contrasts', 'prob_choose_right', 'prob_left_block')
+    if not len(session_date):
+        return
+
+    signed_contrasts = signed_contrasts * 100
+
+    # reshape this to a heatmap format
+    prob_left_block2 = signed_contrasts.copy()
+    for i, date in enumerate(session_date):
+        session_date[i] = np.repeat(date, len(signed_contrasts[i]))
+        prob_left_block2[i] = np.repeat(prob_left_block[i], len(signed_contrasts[i]))
+
+    result = pd.DataFrame({'session_date': np.concatenate(session_date),
+                           'signed_contrasts': np.concatenate(signed_contrasts),
+                           'prob_choose_right': np.concatenate(prob_choose_right),
+                           'prob_left_block': np.concatenate(prob_left_block2)})
+
+    # only use the unbiased block for now
+    result = result[result.prob_left_block == 0]
+    result = result.round({'signed_contrasts': 2})
+    pp2 = result.pivot("signed_contrasts", "session_date", "prob_choose_right").sort_values(
+        by='signed_contrasts', ascending=False)
+    pp2 = pp2.reindex(sorted(result.signed_contrasts.unique()))
+
+    # evenly spaced date axis
+    x = pd.date_range(xlims[0], xlims[1]).to_pydatetime()
+    pp2 = pp2.reindex(columns=x)
+    pp2 = pp2.iloc[::-1]  # reverse, red on top
+
+    # inset axes for colorbar, to the right of plot
+    axins1 = inset_axes(ax, width="5%", height="90%", loc='right',
+                        bbox_to_anchor=(0.15, 0., 1, 1),
+                        bbox_transform=ax.transAxes, borderpad=0,)
+
+    # now heatmap
+    sns.heatmap(pp2, linewidths=0, ax=ax, vmin=0, vmax=1, cmap=cmap, cbar=True,
+                cbar_ax=axins1, cbar_kws={'label': 'Choose right (%)', 'shrink': 0.8, 'ticks': []})
+    ax.set(ylabel="Contrast (%)", xlabel='')
+    # deal with date axis and make nice looking
+    ax.xaxis_date()
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.MONDAY))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+    for item in ax.get_xticklabels():
+        item.set_rotation(60)
 
 # ================================= #
 # INITIALIZE A FEW THINGS
@@ -56,7 +108,7 @@ plt.close('all')
 fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH / 2, FIGURE_HEIGHT))
 ax[1].axis('off')
 xlims = [pd.Timestamp('2019-08-04T00'), pd.Timestamp('2019-08-31T00')]
-behavior_plots.plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
+plot_contrast_heatmap(EXAMPLE_MOUSE, lab, ax[0], xlims)
 ax[0].set(ylabel='Contrast (%)', xlabel='Training day',
           xticks=[d + 1.5 for d in [2,8,11,17]], xticklabels=days,
           yticklabels=['100', '50', '25', '12.5', '6.25', '0',

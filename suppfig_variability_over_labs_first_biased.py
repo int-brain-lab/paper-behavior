@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import scikit_posthocs as sp
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY, fit_psychfunc, dj2pandas)
+                                      datapath, FIGURE_WIDTH, FIGURE_HEIGHT, QUERY, fit_psychfunc, dj2pandas)
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
 
@@ -31,7 +31,7 @@ if QUERY is True:
     from ibl_pipeline import reference, subject, behavior
     use_sessions, _ = query_sessions_around_criterion(criterion='biased',
                                                       days_from_criterion=[-1, 3])
-    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
     b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
@@ -43,7 +43,7 @@ if QUERY is True:
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join('data', 'Fig4.csv'))
+    behav = pd.read_csv(join(datapath(), 'Fig4.csv'))
 
 biased_fits = pd.DataFrame()
 for i, nickname in enumerate(behav['subject_nickname'].unique()):
@@ -63,7 +63,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     neutral_fit = fit_psychfunc(behav[(behav['subject_nickname'] == nickname)
                                     & (behav['probabilityLeft'] == 50)])
     perf_easy = (behav.loc[behav['subject_nickname'] == nickname, 'correct_easy'].mean()) * 100
-    
+
     fits = pd.DataFrame(data={'perf_easy': perf_easy,
                               'threshold_l': left_fit['threshold'],
                               'threshold_r': right_fit['threshold'],
@@ -73,19 +73,19 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
                               'bias_n': neutral_fit['bias'],
                               'nickname': nickname, 'lab': lab, 'subject_uuid': uuid})
     biased_fits = biased_fits.append(fits, sort=False)
-    
+
 
 # %% Statistics
-    
+
 stats_tests = pd.DataFrame(columns=['variable', 'test_type', 'p_value'])
 posthoc_tests = {}
 
 for i, var in enumerate(['perf_easy', 'threshold_l', 'threshold_r', 'threshold_n',
                          'bias_l', 'bias_r', 'bias_n']):
-    
+
     # Remove any animals with NaNs
     test_fits = biased_fits[biased_fits[var].notnull()]
-    
+
     # Test for normality
     _, normal = stats.normaltest(test_fits[var])
 

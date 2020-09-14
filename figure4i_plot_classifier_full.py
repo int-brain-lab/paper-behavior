@@ -14,7 +14,7 @@ import numpy as np
 import seaborn as sns
 from os.path import join
 import matplotlib.pyplot as plt
-from paper_behavior_functions import seaborn_style, figpath, FIGURE_WIDTH, FIGURE_HEIGHT
+from paper_behavior_functions import seaborn_style, figpath, datapath, FIGURE_WIDTH, FIGURE_HEIGHT
 
 # Settings
 FIG_PATH = figpath()
@@ -22,7 +22,7 @@ colors = [[1, 1, 1], [1, 1, 1], [0.6, 0.6, 0.6]]
 seaborn_style()
 
 # Load in results from csv file
-decoding_result = pd.read_pickle(join('classification_results',
+decoding_result = pd.read_pickle(join(datapath(), 'classification_results',
                                       'classification_results_full_bayes.pkl'))
 
 # Calculate if decoder performs above chance
@@ -50,5 +50,3 @@ sns.despine(trim=True)
 
 plt.savefig(join(FIG_PATH, 'figure4i_decoding.pdf'))
 plt.savefig(join(FIG_PATH, 'figure4i_decoding.png'), dpi=300)
-   
-  

@@ -4,19 +4,20 @@
 Created on 2020-07-20
 @author: Anne Urai
 """
-import datajoint as dj
+from pathlib import Path
+
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
-from paper_behavior_functions import (seaborn_style, institution_map,
-                                      group_colors, figpath, EXAMPLE_MOUSE,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT, num_star)
-import os
 from scipy import stats
 
+from paper_behavior_functions import (seaborn_style, institution_map,
+                                      group_colors, figpath, datapath,
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, num_star)
+
+
 # Load some things from paper_behavior_functions
-figpath = figpath()
+figpath = Path(figpath())
 seaborn_style()
 institution_map, col_names = institution_map()
 pal = group_colors()
@@ -27,8 +28,9 @@ cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 # ========================================== #
 
 print('loading model from disk...')
-params_basic = pd.read_csv('./model_results/params_basic.csv')
-params_full = pd.read_csv('./model_results/params_full.csv')
+data_path = Path(datapath(), 'model_results')
+params_basic = pd.read_csv(data_path / 'params_basic.csv')
+params_full = pd.read_csv(data_path / 'params_full.csv')
 combined = params_basic.merge(params_full, on=['institution_code', 'subject_nickname'])
 
 # ========================================== #
@@ -69,7 +71,7 @@ basic_summ_visual = pd.melt(params_basic,
 basic_summ_bias = pd.melt(params_basic,
                      id_vars=['institution_code', 'subject_nickname'],
                      value_vars=['unrewarded', 'rewarded', 'bias']).groupby(['subject_nickname',
-                    'institution_code', 'variable']).mean().reset_index()                                                                             
+                    'institution_code', 'variable']).mean().reset_index()
 # WEIGHTS IN THE BASIC TASK
 plt.close('all')
 fig, ax = plt.subplots(1, 2, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
@@ -100,7 +102,7 @@ ax[1].axhline(color='darkgray', linestyle=':')
 ax[1].set_xticklabels([], ha='right', rotation=15)
 sns.despine(trim=True)
 plt.tight_layout(w_pad=-0.1)
-fig.savefig(os.path.join(figpath, 'figure5c_basic_weights.pdf'))
+fig.savefig(figpath / 'figure5c_basic_weights.pdf')
 
 # ========================= #
 # SAME BUT FOR FULL TASK
@@ -145,7 +147,7 @@ ax[1].set_xticklabels([], ha='right', rotation=20)
 
 sns.despine(trim=True)
 plt.tight_layout(w_pad=-0.1)
-fig.savefig(os.path.join(figpath, 'figure5c_full_weights.pdf'))
+fig.savefig(figpath / 'figure5c_full_weights.pdf')
 
 # ========================================== #
 #%% SUPPLEMENTARY FIGURE:
@@ -213,4 +215,4 @@ for params, modelname in zip([[params_basic, params_basic_all],
 
             sns.despine(trim=True)
             plt.tight_layout()
-            plt.savefig(os.path.join(figpath, 'suppfig_model_%s_metrics_%s.pdf'%(modelname, v)))
+            plt.savefig(figpath / f'suppfig_model_{modelname}_metrics_{v}.pdf')

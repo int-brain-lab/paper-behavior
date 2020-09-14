@@ -13,17 +13,17 @@ import numpy as np
 import seaborn as sns
 from os.path import join
 import matplotlib.pyplot as plt
-from paper_behavior_functions import seaborn_style, figpath, FIGURE_WIDTH, FIGURE_HEIGHT
+from paper_behavior_functions import seaborn_style, figpath, datapath, FIGURE_WIDTH, FIGURE_HEIGHT
 
 # Settings
 FIG_PATH = figpath()
 colors = [[1, 1, 1], [1, 1, 1], [0.6, 0.6, 0.6]]
 seaborn_style()
 
-for DECODER in ['bayes', 'forest', 'regression']:  
+for DECODER in ['bayes', 'forest', 'regression']:
 
     # Load in results from csv file
-    decoding_result = pd.read_pickle(join('classification_results',
+    decoding_result = pd.read_pickle(join(datapath(), 'classification_results',
                                           'classification_results_basic_%s.pkl' % DECODER))
 
     # Calculate if decoder performs above chance
@@ -34,7 +34,7 @@ for DECODER in ['bayes', 'forest', 'regression']:
         print('\n%s classifier did not perform above chance' % DECODER)
         print('Chance level: %.2f (F1 score)' % chance_level)
     else:
-        print('\n%s classifier did not perform above chance' % DECODER)    
+        print('\n%s classifier did not perform above chance' % DECODER)
         print('Chance level: %.2f (F1 score)' % chance_level)
     print('F1 score: %.2f ± %.3f' % (decoding_result['original'].mean(),
                                      decoding_result['original'].std()))
@@ -54,11 +54,11 @@ for DECODER in ['bayes', 'forest', 'regression']:
                             rotation=90, ha='center')
         plt.tight_layout()
         sns.despine(trim=True)
-        
+
         plt.savefig(join(FIG_PATH, 'figure3f_decoding.pdf'))
         plt.savefig(join(FIG_PATH, 'figure3f_decoding.png'), dpi=300)
         plt.close(f)
-    
+
     # Plot supplementary Figure 3
     f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
     sns.violinplot(data=pd.concat([decoding_result['control'],
@@ -71,11 +71,11 @@ for DECODER in ['bayes', 'forest', 'regression']:
                         rotation=90, ha='center')
     plt.tight_layout()
     sns.despine(trim=True)
-    
+
     plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s.pdf' % DECODER))
     plt.savefig(join(FIG_PATH, 'suppfig3_decoding_%s.png' % DECODER), dpi=300)
     plt.close(f)
-    
+
     # %%
     f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
     n_labs = decoding_result['confusion_matrix'][0].shape[0]

@@ -27,7 +27,7 @@ STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
 FIGURE_HEIGHT = 2  # inch
 FIGURE_WIDTH = 8  # inch
 
-# EXCLUDED SESSIONS 
+# EXCLUDED SESSIONS
 EXCLUDED_SESSIONS = ['a9fb578a-9d7d-42b4-8dbc-3b419ce9f424']  # Session UUID
 
 
@@ -78,6 +78,16 @@ def figpath():
     return fig_dir
 
 
+def datapath():
+    """Return the location of data directory
+    The data directory contains CSV files of subject and session data, and is also where the model
+    fits are stored.
+    """
+    # Retrieve absolute path of paper-behavior dir
+    repo_dir = os.path.dirname(os.path.realpath(__file__))
+    return os.path.join(repo_dir, 'data')
+
+
 def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
     """
     Query all mice for analysis of behavioral data
@@ -119,7 +129,8 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
             sessions & restriction, *fields, date_trained='min(date(session_start_time))')
 
     if from_list is True:
-        ids = np.load('uuids_trained1.npy', allow_pickle=True)
+        data_path = os.path.join(datapath(), 'uuids_trained.npy')
+        ids = np.load(data_path, allow_pickle=True)
         subj_query = subj_query & [{'subject_uuid': u_id} for u_id in ids]
 
     # Select subjects that reached criterion before cutoff date
@@ -172,7 +183,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
 
     # Only use sessions up until the end of December
     sessions = sessions & 'date(session_start_time) <= "%s"' % CUTOFF_DATE
-    
+
     # Exclude weird sessions
     sessions = sessions & dj.Not([{'session_uuid': u_id} for u_id in EXCLUDED_SESSIONS])
 
@@ -251,10 +262,10 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2,
     # Use dates to query sessions
     ses_query = acquisition.Session.aggr(
                             days, from_date='min(session_date)', to_date='max(session_date)')
-    
+
     sessions = (acquisition.Session * ses_query & 'date(session_start_time) >= from_date'
                 & 'date(session_start_time) <= to_date')
-    
+
     # Exclude weird sessions
     sessions = sessions & dj.Not([{'session_uuid': u_id} for u_id in EXCLUDED_SESSIONS])
 
@@ -271,6 +282,8 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2,
 
 
 def fit_psychfunc(df):
+    # TODO To become ibl-pipeline-lite dependency
+
     choicedat = df.groupby('signed_contrast').agg(
         {'choice': 'count', 'choice2': 'mean'}).reset_index()
     if len(choicedat) > 4: # need some minimum number of unique x-values
@@ -304,6 +317,7 @@ def fit_psychfunc(df):
 
 
 def plot_psychometric(x, y, subj, **kwargs):
+    # TODO To become ibl-pipeline-lite dependency
 
     # summary stats - average psychfunc over observers
     df = pd.DataFrame({'signed_contrast': x, 'choice': y,
@@ -382,6 +396,7 @@ def plot_psychometric(x, y, subj, **kwargs):
 
 
 def plot_chronometric(x, y, subj, **kwargs):
+    # TODO To become ibl-pipeline-lite dependency
 
     df = pd.DataFrame(
         {'signed_contrast': x, 'rt': y, 'subject_nickname': subj})

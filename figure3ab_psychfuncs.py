@@ -9,9 +9,9 @@ import os
 from os.path import join
 import pandas as pd
 import matplotlib.pyplot as plt
-from paper_behavior_functions import (figpath, seaborn_style, group_colors, EXAMPLE_MOUSE,
+from paper_behavior_functions import (figpath, seaborn_style, group_colors, datapath,
                                       query_sessions_around_criterion, institution_map,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY, EXAMPLE_MOUSE,
                                       plot_psychometric, dj2pandas, plot_chronometric)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
@@ -55,7 +55,7 @@ if QUERY is True:
                       .reset_index())
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join('data', 'Fig3'))
+    behav = pd.read_csv(join(datapath(), 'Fig3'))
 
 
 # ================================= #

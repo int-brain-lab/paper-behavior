@@ -16,7 +16,7 @@ import seaborn as sns
 from ibl_pipeline import subject
 from ibl_pipeline.analyses import behavior as behavior_analysis
 from paper_behavior_functions import (seaborn_style, institution_map, query_subjects,
-                                      group_colors, figpath, CUTOFF_DATE,
+                                      group_colors, figpath, datapath, CUTOFF_DATE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from lifelines import KaplanMeierFitter
 
@@ -40,7 +40,7 @@ if QUERY is True:
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
     ses = ses.drop('n_trials_stim', axis=1)
 else:
-    ses = pd.read_csv(join('data', 'Fig2d.csv'))
+    ses = pd.read_csv(join(datapath(), 'Fig2d.csv'))
 
 # Construct dataframe from query
 training_time = pd.DataFrame()

@@ -6,7 +6,7 @@ of the full task variant in which the mouse was determined to be ready for ephys
 
 As a positive control, the time zone in which the mouse was trained is included in the dataset
 since the timezone provides geographical information. Decoding is performed using leave-one-out
-cross-validation. To control for the imbalance in the dataset (some labs have more mice than 
+cross-validation. To control for the imbalance in the dataset (some labs have more mice than
 others) a fixed number of mice is randomly sub-sampled from each lab. This random sampling is
 repeated for a large number of repetitions. A shuffled nul-distribution is obtained by shuffling
 the lab labels and decoding again for each iteration.
@@ -14,7 +14,7 @@ the lab labels and decoding again for each iteration.
 --------------
 Parameters
 DECODER:            Which decoder to use: 'bayes', 'forest', or 'regression'
-N_MICE:             How many mice per lab to randomly sub-sample 
+N_MICE:             How many mice per lab to randomly sub-sample
                     (must be lower than the lab with the least mice)
 ITERATIONS:         Number of times to randomly sub-sample
 METRICS:            List of strings indicating which behavioral metrics to include
@@ -27,7 +27,7 @@ September 3, 2020
 
 import numpy as np
 from os.path import join
-from paper_behavior_functions import institution_map, QUERY, fit_psychfunc, dj2pandas
+from paper_behavior_functions import institution_map, QUERY, fit_psychfunc, dj2pandas, datapath
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -58,13 +58,13 @@ def decoding(data, labels, clf):
 
 
 # %% Query sessions
-    
+
 if QUERY is True:
     from paper_behavior_functions import query_sessions_around_criterion
     from ibl_pipeline import reference, subject, behavior
     use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
                                                       days_from_criterion=[2, 0])
-    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions   
+    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
     b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
          * behavior.TrialSet.Trial)
     b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
@@ -75,9 +75,9 @@ if QUERY is True:
                     format='frame').reset_index()
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
-    
+
 else:
-    behav = pd.read_csv('data', 'Fig4.csv')
+    behav = pd.read_csv(join(datapath(), 'Fig4.csv'))
 
 biased_fits = pd.DataFrame()
 for i, nickname in enumerate(behav['subject_nickname'].unique()):
@@ -145,24 +145,24 @@ np.random.seed(424242)
 for i in range(ITERATIONS):
     if np.mod(i+1, 100) == 0:
         print('Iteration %d of %d' % (i+1, ITERATIONS))
-        
+
     # Randomly select N mice from each lab to equalize classes
     use_index = np.empty(0, dtype=int)
     for j, lab in enumerate(np.unique(labels)):
         use_index = np.concatenate([use_index, np.random.choice(labels_nr[labels == lab],
                                                                N_MICE, replace=False)])
-        
+
     # Original data
     decoding_result.loc[i, 'original'], conf_matrix = decoding(decoding_set[use_index],
                                                                labels_decod, clf)
     decoding_result.loc[i, 'confusion_matrix'] = (conf_matrix
                                                   / conf_matrix.sum(axis=1)[:, np.newaxis])
-    
+
     # Shuffled data
     np.random.shuffle(labels_shuffle)
     decoding_result.loc[i, 'original_shuffled'], _ = decoding(decoding_set[use_index],
                                                               labels_shuffle, clf)
-    
+
     # Positive control data
     decoding_result.loc[i, 'control'], conf_matrix = decoding(control_set[use_index],
                                                               labels_decod, clf)
@@ -175,6 +175,6 @@ for i in range(ITERATIONS):
                                                              labels_shuffle, clf)
 
 # Save to csv
-decoding_result.to_pickle(join('classification_results',
+decoding_result.to_pickle(join(datapath(), 'classification_results',
                                'classification_results_full_%s.pkl' % DECODER))
 

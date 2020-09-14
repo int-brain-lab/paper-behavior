@@ -15,7 +15,7 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY, datapath,
                                       dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
@@ -60,7 +60,7 @@ if QUERY is True:
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join('data', 'Fig4.csv'))
+    behav = pd.read_csv(join(datapath(), 'Fig4.csv'))
 
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()
@@ -104,7 +104,7 @@ fig.ax.annotate('80:20', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize
 fig.despine(trim=True)
 fig.axes[0][0].set_title('All mice: n = %d' % behav.subject_nickname.nunique(),
                          fontweight='bold', color='k')
-fig.axes[0][0].set(yticklabels=" ")
+fig.axes[0][0].set(yticklabels=[])
 fig.savefig(os.path.join(figpath, "figure4b_psychfuncs_biased.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure4b_psychfuncs_biased.png"), dpi=600)

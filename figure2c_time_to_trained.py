@@ -16,7 +16,7 @@ from scipy import stats
 import scikit_posthocs as sp
 
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
-                                      group_colors, figpath, EXAMPLE_MOUSE,
+                                      group_colors, figpath, datapath, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
@@ -34,7 +34,7 @@ if QUERY is True:
            .reset_index())
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
 else:
-    ses = pd.read_csv(join('data', 'Fig2c.csv'))
+    ses = pd.read_csv(join(datapath(), 'Fig2c.csv'))
     use_subjects = ses['subject_uuid'].unique()  # For counting the number of subjects
 
 # Construct dataframe

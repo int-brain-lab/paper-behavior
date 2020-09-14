@@ -12,7 +12,7 @@ from scipy.signal import medfilt
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from paper_behavior_functions import (query_subjects, figpath, group_colors,
+from paper_behavior_functions import (query_subjects, figpath, datapath, group_colors,
                                       institution_map, seaborn_style, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
@@ -35,7 +35,7 @@ if QUERY is True:
                     format='frame').reset_index()
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(os.path.join('data', 'Fig2ab.csv'))
+    behav = pd.read_csv(os.path.join(datapath(), 'Fig2ab.csv'))
 
 # exclude sessions with fewer than 100 trials
 behav = behav[behav['n_trials_date'] > 100]

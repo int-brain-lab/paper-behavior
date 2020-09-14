@@ -155,14 +155,22 @@ fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)
 fig.set_axis_labels('Contrast (%)', '\u0394 Rightward choices (%)')
 fig.set_titles("{col_name}")
-for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(sorted(behav.institution_name.unique())[axidx],
-                 color=pal[axidx])
 
 # overlay the example mouse
 tmpdat = behav3[behav3['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_chronometric(tmpdat.signed_contrast, tmpdat.biasshift, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
+
+# add lab means on top
+for axidx, ax in enumerate(fig.axes.flat):
+    tmp_behav = behav3.loc[behav3.institution_code == behav3.institution_code.unique()[axidx], :]
+    plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
+                      tmp_behav.institution_code, ax=ax, legend=False,
+                      color=pal[axidx], linewidth=2)
+    ax.set_title(sorted(behav.institution_name.unique())[axidx],
+                 color=pal[axidx])
+
+
 fig.set_axis_labels('Contrast (%)', '\u0394 Rightward choices (%)')
 fig.despine(trim=True)
 plt.tight_layout(w_pad=-1.7)

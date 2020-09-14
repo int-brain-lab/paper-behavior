@@ -81,18 +81,23 @@ fig = sns.FacetGrid(behav,
                     sharex=True, sharey=True, hue="subject_uuid", xlim=[-1, 40],
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/7)/FIGURE_HEIGHT)
 fig.map(sns.lineplot, "training_day",
-        "performance_easy", color='gray', alpha=0.3)
+        "performance_easy", color='grey', alpha=0.3)
 fig.map(sns.lineplot, "training_day",
-        "performance_easy_trained", color='darkblue', alpha=0.3)
+        "performance_easy_trained", color='black', alpha=0.3)
 fig.set_titles("{col_name}")
 fig.set(xticks=[0, 20, 40])
-for axidx, ax in enumerate(fig.axes.flat):
-    ax.set_title(behav.institution_name.unique()[
-                 axidx], color=pal[axidx], fontweight='bold')
 
 # overlay the example mouse
 sns.lineplot(ax=fig.axes[0], x='training_day', y='performance_easy', color='black',
              data=behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)], legend=False)
+
+for axidx, ax in enumerate(fig.axes.flat):
+    # add the lab mean to each panel
+    sns.lineplot(data=behav.loc[behav.institution_name == behav.institution_name.unique()[axidx], :],
+                 x='training_day', y='performance_easy',
+                 color=pal[axidx], ci=None, ax=ax, legend=False, linewidth=2)
+    ax.set_title(behav.institution_name.unique()[
+                 axidx], color=pal[axidx], fontweight='bold')
 
 fig.set_axis_labels('Training day', 'Performance (%)\n on easy trials')
 fig.despine(trim=True)

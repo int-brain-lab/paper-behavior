@@ -9,7 +9,7 @@ category_order,credit_task,"Aguillon Rodriguez, Valeria","Angelaki, Dora E.","Ba
 1,METHODOLOGY: standardized licenses and experimental protocols across institutions,0,0,0,2,0,0,3,0,0,0,0,0,0,0,0,2,0,0,0,0,2,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0
 2,SOFTWARE: developed data acquisition software and infrastructure,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 3,VALIDATION: maintained and validated analysis code,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1,0,0,0,0,2,0,2,0,0,0,0
-4,FORMAL ANALYSIS: analyzed data,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,1,3,0,0,0,0,3,0,2,0,0,0,0
+4,FORMAL ANALYSIS: analyzed data,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,3,0,0,0,1,3,0,0,0,0,3,0,2,0,0,0,0
 5,"INVESTIGATION: built and maintained rigs, performed surgeries, collected behavioral data",2,0,0,1,0,2,0,0,0,0,2,1,2,0,0,2,1,2,2,0,2,2,0,0,2,2,0,0,2,1,2,1,0,1,0,0,0
 6,RESOURCES: hosted the research,0,2,0,0,2,0,0,2,2,0,0,0,0,2,2,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,2,0,2
 7,DATA CURATION: curated data and metadata,0,0,0,2,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,3,0,0,0,0

@@ -99,6 +99,7 @@ plt.close('all')
 lab = (subject.SubjectLab * subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) \
       .fetch1('lab_name')
 days = [2, 7, 10, 14]
+# days = [2, 7, 10, 13] # request gaelle
 
 # ==================================================
 # CONTRAST HEATMAP

@@ -1,4 +1,4 @@
-ibl_pipeline>=0.1.4
+ibl-pipeline-light>=0.1.4
 statsmodels>=0.10.1
 datajoint>=0.12
 requests>=2.22.0
@@ -6,6 +6,7 @@ scikit_posthocs>=0.6.1
 patsy>=0.5.1
 seaborn>=0.9.0
 tqdm>=4.32.1
+nose>=1.3.7
 numpy>=1.16.4
 pandas>=0.24.2
 matplotlib>=3.0.3

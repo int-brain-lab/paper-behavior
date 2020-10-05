@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors,
                                       query_sessions_around_criterion, institution_map,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY,
-                                      dj2pandas)
+                                      dj2pandas, fit_psychfunc)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from sklearn.utils import shuffle
@@ -51,6 +51,21 @@ def choice_variability_full(df):
     choicedat = df.pivot_table(values='choice2',
                                columns='subject_nickname',
                                index=['signed_contrast', 'probabilityLeft'])
+
+    # COMPUTE THE ACROSS-MOUSE VARIANCE FOR EACH CONTRAST
+    # AVERAGE VARIANCE ACROSS CONTRASTS
+    choice_var = 1 / choicedat.var(axis=1).mean()
+
+    return choice_var
+
+
+# FULL TASK, ACROSS-LAB VARIABILITY IN BIAS SHIFT
+def biasshift_variability_full(df):
+
+    # FIRST, GROUP BY CONTRAST AND MOUSE
+    choicedat = df.pivot_table(values='biasshift',
+                               columns='subject_nickname',
+                               index=['signed_contrast'])
 
     # COMPUTE THE ACROSS-MOUSE VARIANCE FOR EACH CONTRAST
     # AVERAGE VARIANCE ACROSS CONTRASTS
@@ -130,46 +145,46 @@ basic_perlab['x'] = 0
 basic_perlab['choice_var'] = basic_perlab[0]
 
 
-# SAME, BUT ON SHUFFLED DATA
-basic_perlab_shuffled = []
-# make a list of all the institution codes for all subjects (preserving their frequency)
-institution_codes = [gr.institution_code.unique()[0] for _, gr in df_basic.groupby(['subject_nickname'])]
-for s in tqdm(range(nshuf)):
-
-    # use scikit learn to shuffle lab labels
-    shuffled_labs = shuffle(institution_codes)
-    new_df = []
-    # keep all choices of one mouse together - only reassign labs!
-    for idx, g in enumerate(df_basic.groupby(['subject_nickname'])):
-        g[1]['new_lab'] = shuffled_labs[idx]
-        new_df.append(g[1])
-    df_basic = pd.concat(new_df)
-
-    assert (all(df_basic.groupby(['institution_code'])['new_lab'].nunique() > 1))
-    basic_perlab_shuffled.append(df_basic.groupby(['new_lab']).apply(choice_variability).mean())
-
-# PLOT
-f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH / 5, FIGURE_HEIGHT))
-sns.swarmplot(data = basic_perlab,
-              x ='x', y='choice_var', hue_order=col_names,
-              hue = 'institution_code',
-              palette = pal, marker='.', ax=ax1, zorder=0)
-ax1.plot(0, basic_perlab['choice_var'].mean(),
-             color='black', linewidth=0, marker='_', markersize=13)
-ax1.get_legend().set_visible(False)
-# then, shuffled distribution next to it
-sns.violinplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
-              y=np.concatenate((np.empty((nshuf))*np.nan, basic_perlab_shuffled)),
-               palette=[[1,1,1]], ax=ax1)
-ax1.set(ylabel='Within-lab choice consistency', xlabel='', ylim=[0, 120])
-ax1.set_xticklabels(['Data', 'Shuffle'], ha='center')
-plt.tight_layout()
-sns.despine(trim=True)
-f.savefig(os.path.join(figpath, "across_mouse_var_basic.pdf"))
-
-# WHAT IS THE P-VALUE COMPARED TO THE  NULL DISTRIBUTION?
-pval = np.mean(basic_perlab_shuffled > basic_perlab['choice_var'].mean())
-print('Basic task, choice consistency: p-value = %.4f'%pval)
+# # SAME, BUT ON SHUFFLED DATA
+# basic_perlab_shuffled = []
+# # make a list of all the institution codes for all subjects (preserving their frequency)
+# institution_codes = [gr.institution_code.unique()[0] for _, gr in df_basic.groupby(['subject_nickname'])]
+# for s in tqdm(range(nshuf)):
+#
+#     # use scikit learn to shuffle lab labels
+#     shuffled_labs = shuffle(institution_codes)
+#     new_df = []
+#     # keep all choices of one mouse together - only reassign labs!
+#     for idx, g in enumerate(df_basic.groupby(['subject_nickname'])):
+#         g[1]['new_lab'] = shuffled_labs[idx]
+#         new_df.append(g[1])
+#     df_basic = pd.concat(new_df)
+#
+#     assert (all(df_basic.groupby(['institution_code'])['new_lab'].nunique() > 1))
+#     basic_perlab_shuffled.append(df_basic.groupby(['new_lab']).apply(choice_variability).mean())
+#
+# # PLOT
+# f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH / 5, FIGURE_HEIGHT))
+# sns.swarmplot(data = basic_perlab,
+#               x ='x', y='choice_var', hue_order=col_names,
+#               hue = 'institution_code',
+#               palette = pal, marker='.', ax=ax1, zorder=0)
+# ax1.plot(0, basic_perlab['choice_var'].mean(),
+#              color='black', linewidth=0, marker='_', markersize=13)
+# ax1.get_legend().set_visible(False)
+# # then, shuffled distribution next to it
+# sns.violinplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
+#               y=np.concatenate((np.empty((nshuf))*np.nan, basic_perlab_shuffled)),
+#                palette=[[1,1,1]], ax=ax1)
+# ax1.set(ylabel='Within-lab choice consistency', xlabel='', ylim=[0, 120])
+# ax1.set_xticklabels(['Data', 'Shuffle'], ha='center')
+# plt.tight_layout()
+# sns.despine(trim=True)
+# f.savefig(os.path.join(figpath, "across_mouse_var_basic.pdf"))
+#
+# # WHAT IS THE P-VALUE COMPARED TO THE  NULL DISTRIBUTION?
+# pval = np.mean(basic_perlab_shuffled > basic_perlab['choice_var'].mean())
+# print('Basic task, choice consistency: p-value = %.4f'%pval)
 
 # ================================================================== #
 # COMPUTE CHOICE VARIABILITY FOR EACH LAB - full TASK
@@ -179,47 +194,106 @@ full_perlab = df_full.groupby(['institution_code']).progress_apply(choice_variab
 full_perlab['x'] = 0
 full_perlab['choice_var'] = full_perlab[0]
 
+# # SAME, BUT ON SHUFFLED DATA
+# full_perlab_shuffled = []
+# # make a list of all the institution codes for all subjects (preserving their frequency)
+# institution_codes = [gr.institution_code.unique()[0] for _, gr in df_full.groupby(['subject_nickname'])]
+# for s in tqdm(range(nshuf)):
+#
+#     # use scikit learn to shuffle lab labels
+#     shuffled_labs = shuffle(institution_codes)
+#     new_df = []
+#     # keep all choices of one mouse together - only reassign labs!
+#     for idx, g in enumerate(df_full.groupby(['subject_nickname'])):
+#         g[1]['new_lab'] = shuffled_labs[idx]
+#         new_df.append(g[1])
+#     df_full = pd.concat(new_df)
+#
+#     assert (all(df_full.groupby(['institution_code'])['new_lab'].nunique().mean() > 1))
+#     full_perlab_shuffled.append(df_full.groupby(['new_lab']).apply(choice_variability_full).mean())
+#
+#
+# # PLOT
+# f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH / 5, FIGURE_HEIGHT))
+# sns.swarmplot(data = full_perlab,
+#               x ='x', y='choice_var', hue_order=col_names,
+#               hue = 'institution_code',
+#               palette = pal, marker='.', ax=ax1, zorder=0)
+# ax1.plot(0, full_perlab['choice_var'].mean(),
+#              color='black', linewidth=0, marker='_', markersize=13)
+# ax1.get_legend().set_visible(False)
+# # then, shuffled distribution next to it
+# sns.violinplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
+#               y=np.concatenate((np.empty((nshuf))*np.nan, full_perlab_shuffled)),
+#                palette=[[1,1,1]], ax=ax1)
+# ax1.set(ylabel=' ', xlabel='', ylim=[0, 120])
+# ax1.set_xticklabels(['Data', 'Shuffle'], ha='center')
+# plt.tight_layout()
+# sns.despine(trim=True)
+# f.savefig(os.path.join(figpath, "across_mouse_var_full.pdf"))
+#
+# # WHAT IS THE P-VALUE COMPARED TO THE  NULL DISTRIBUTION?
+# pval = np.mean(full_perlab_shuffled > full_perlab['choice_var'].mean())
+# print('Full task, choice consistency: p-value = %.4f'%pval)
+
+
+
+# ================================================================== #
+# FULL TASK - VARIABILITY IN BIAS SHIFT
+# ================================================================== #
+
+# convert choices per probabilityLeft into bias shift
+df_full2 = df_full.pivot_table(values='choice2', columns='probabilityLeft',
+                               index=['institution_code', 'subject_nickname',
+                                      'signed_contrast']).reset_index().copy()
+df_full2['biasshift'] = (df_full2[20] - df_full2[80])
+
+# COMPUTE THE BIAS SHIFT PER CONTRAST FOR EACH MOUSE
+full_biasshift_perlab = df_full2.groupby(['institution_code']
+                                         ).progress_apply(biasshift_variability_full).reset_index()
+full_biasshift_perlab['biasshift_var'] = full_biasshift_perlab[0]
+full_biasshift_perlab['x'] = 0
+
 # SAME, BUT ON SHUFFLED DATA
-full_perlab_shuffled = []
+full_biasshift_perlab_shuffled = []
 # make a list of all the institution codes for all subjects (preserving their frequency)
-institution_codes = [gr.institution_code.unique()[0] for _, gr in df_full.groupby(['subject_nickname'])]
+institution_codes = [gr.institution_code.unique()[0] for _, gr in df_full2.groupby(['subject_nickname'])]
 for s in tqdm(range(nshuf)):
 
     # use scikit learn to shuffle lab labels
     shuffled_labs = shuffle(institution_codes)
     new_df = []
     # keep all choices of one mouse together - only reassign labs!
-    for idx, g in enumerate(df_full.groupby(['subject_nickname'])):
+    for idx, g in enumerate(df_full2.groupby(['subject_nickname'])):
         g[1]['new_lab'] = shuffled_labs[idx]
         new_df.append(g[1])
-    df_full = pd.concat(new_df)
+    df_full2 = pd.concat(new_df)
 
-    assert (all(df_full.groupby(['institution_code'])['new_lab'].nunique() > 1))
-    full_perlab_shuffled.append(df_full.groupby(['new_lab']).apply(choice_variability_full).mean())
+    assert (all(df_full2.groupby(['institution_code'])['new_lab'].nunique() > 1))
+    full_biasshift_perlab_shuffled.append(df_full2.groupby(['new_lab'
+                                                            ]).apply(biasshift_variability_full).mean())
 
 
 # PLOT
 f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH / 5, FIGURE_HEIGHT))
-sns.swarmplot(data = full_perlab,
-              x ='x', y='choice_var', hue_order=col_names,
+sns.swarmplot(data = full_biasshift_perlab,
+              x ='x', y='biasshift_var', hue_order=col_names,
               hue = 'institution_code',
               palette = pal, marker='.', ax=ax1, zorder=0)
-ax1.plot(0, full_perlab['choice_var'].mean(),
+ax1.plot(0, full_biasshift_perlab['biasshift_var'].mean(),
              color='black', linewidth=0, marker='_', markersize=13)
 ax1.get_legend().set_visible(False)
 # then, shuffled distribution next to it
 sns.violinplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
-              y=np.concatenate((np.empty((nshuf))*np.nan, full_perlab_shuffled)),
+              y=np.concatenate((np.empty((nshuf))*np.nan, full_biasshift_perlab_shuffled)),
                palette=[[1,1,1]], ax=ax1)
-ax1.set(ylabel=' ', xlabel='', ylim=[0, 120])
+ax1.set(ylabel='Within-lab ''bias shift'' consistency', xlabel='', ylim=[0, 200])
 ax1.set_xticklabels(['Data', 'Shuffle'], ha='center')
 plt.tight_layout()
 sns.despine(trim=True)
-f.savefig(os.path.join(figpath, "across_mouse_var_full.pdf"))
+f.savefig(os.path.join(figpath, "across_mouse_biasshift_var_full.pdf"))
 
 # WHAT IS THE P-VALUE COMPARED TO THE  NULL DISTRIBUTION?
-pval = np.mean(full_perlab_shuffled > full_perlab['choice_var'].mean())
-print('Full task, choice consistency: p-value = %.4f'%pval)
-
-
+pval = np.mean(full_biasshift_perlab_shuffled > full_biasshift_perlab['biasshift_var'].mean())
+print('Full task, biasshift consistency: p-value = %.4f'%pval)
 

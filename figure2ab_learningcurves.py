@@ -62,7 +62,7 @@ for index, group in behav.groupby(['lab_name', 'subject_nickname']):
 behav2 = pd.DataFrame([])
 for index, group in behav.groupby(['institution_code', 'subject_nickname']):
     group['performance_easy_trained'] = group.performance_easy
-    group.loc[group['session_date'] < pd.to_datetime(group['date_trained']),
+    group.loc[pd.to_datetime(group['session_date']) < pd.to_datetime(group['date_trained']),
               'performance_easy_trained'] = np.nan
     # add this
     behav2 = behav2.append(group)

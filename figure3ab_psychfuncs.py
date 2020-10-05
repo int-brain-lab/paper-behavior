@@ -55,7 +55,7 @@ if QUERY is True:
                       .reset_index())
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join(datapath(), 'Fig3'))
+    behav = pd.read_csv(join(datapath(), 'Fig3.csv'))
 
 
 # ================================= #

@@ -29,8 +29,8 @@ institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
 # colors for biased blocks
-cmap = sns.color_palette([[0.8984375,0.37890625,0.00390625],
-                          [0.3, 0.3, 0.3], [0.3671875,0.234375,0.59765625]])
+cmap = sns.color_palette([[0.8984375, 0.37890625, 0.00390625],
+                          [0.3, 0.3, 0.3], [0.3671875, 0.234375, 0.59765625]])
 sns.set_palette(cmap)
 
 # ================================= #

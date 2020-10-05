@@ -75,7 +75,7 @@ if QUERY is True:
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
 else:
-    behav = pd.read_csv(datapath(), 'Fig4.csv')
+    behav = pd.read_csv(join(datapath(), 'Fig4.csv'))
 
 biased_fits = pd.DataFrame()
 for i, nickname in enumerate(behav['subject_nickname'].unique()):
@@ -179,5 +179,5 @@ for i in range(ITERATIONS):
                                                              labels_shuffle, clf)
 
 # Save to csv
-decoding_result.to_pickle(join('classification_results',
-                               'classification_results_first_biased_%s.pkl' % DECODER))
+root = join(datapath(), 'classification_results')
+decoding_result.to_pickle(join(root, 'classification_results_first_biased_%s.pkl' % DECODER))

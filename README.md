@@ -6,32 +6,28 @@ These instructions require anaconda (https://www.anaconda.com/distribution/#down
 
 In an Anaconda prompt window:
 1. Follow these instructions https://github.com/int-brain-lab/iblenv to install the unified iblenv
-2. additionally, install
-`pip install pycircstat`
-
-`pip install nose`
-
-`pip install scikit_posthocs`
-
-`pip install lifelines`
-
-
-`conda develop ./IBL-pipeline/prelim_analyses/behavioral_snapshots/`
+2. Install the other dependencies by running `pip install -r requirements.txt`
 
 ### Obtain a DataJoint account through IBL JupyterHub
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.
 
 1. Use your GitHub account to log in and go to the resource folder. 
-2. Notebook `04-Access the database locally` provides the instruction to obtain the credentials to access the database. Copy the value of `dj.config`
+2. Navigate to public_notebooks/Explore IBL pipeline.  The Notebook `04-Access the database locally
+` provides the instruction to obtain the
+ credentials to access the database. Copy the value of `dj.config`
 3. In your local python IDE, do the following:
   a. `import datajoint as dj`
-  b. set your local config variable `dj.config` with the value copied from JupyterHub
+  b. set your local config variable `dj.config` with the values copied from JupyterHub
   c. `dj.config.save_local()`
 
 You'll be able to run the code after the settings above.
 
 ### How to run the code
 All the scripts start with the name of the figure they produce. The figure panels will appear in the `exported_figs` subfolder.
+
+### Load figures without DataJoint
+To load the figures from data saved in local CSV files, edit line 21 of
+ `paper_behavior_functions.py` so that `QUERY = False`.
 
 ### Questions?
 If you have any problems running this code, please open an issue or get in touch with the code's authors (written at the top of each script).

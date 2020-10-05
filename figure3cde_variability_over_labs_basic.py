@@ -50,7 +50,8 @@ if QUERY is True:
     )
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join(datapath(), 'Fig3.csv'))
+    behav = pd.read_csv(join(datapath(), 'Fig3.csv'),
+                        parse_dates=['session_start_time', 'session_end_time'])
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',

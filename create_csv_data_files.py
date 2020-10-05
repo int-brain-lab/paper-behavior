@@ -11,7 +11,7 @@ from os import mkdir
 from os.path import join, isdir
 import pandas as pd
 from paper_behavior_functions import (query_subjects, query_sessions_around_criterion,
-                                      institution_map, CUTOFF_DATE, dj2pandas)
+                                      institution_map, CUTOFF_DATE, dj2pandas, datapath)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 from ibl_pipeline import reference, subject, behavior, acquisition
 
@@ -19,12 +19,13 @@ from ibl_pipeline import reference, subject, behavior, acquisition
 institution_map, _ = institution_map()
 
 # create data directory if it doesn't exist yet
-if not isdir('data'):
-    mkdir('data')
+root = datapath()
+if not isdir(root):
+    mkdir(root)
 
 # Create list of subjects used
 subjects = query_subjects(as_dataframe=True)
-subjects.to_csv(join('data', 'subjects.csv'))
+subjects.to_csv(join(root, 'subjects.csv'))
 
 
 # %%=============================== #
@@ -44,16 +45,19 @@ still_training = all_mice.aggr(behavioral_analyses.SessionTrainingStatus,
 use_subjects = mice_started_training - still_training
 
 # Get training status and training time in number of sessions and trials
-ses = (use_subjects
-       * behavioral_analyses.SessionTrainingStatus
-       * behavioral_analyses.PsychResults).proj(
-               'subject_nickname', 'training_status', 'n_trials_stim', 'institution_short').fetch(
-                                                                   format='frame').reset_index()
+ses = (
+    (use_subjects
+     * behavioral_analyses.SessionTrainingStatus
+     * behavioral_analyses.PsychResults)
+    .proj('subject_nickname', 'training_status', 'n_trials_stim', 'institution_short')
+    .fetch(format='frame')
+    .reset_index()
+)
 ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
 ses = ses.drop('n_trials_stim', axis=1)
 
 # Save to csv
-ses.to_csv(join('data', 'Fig2d.csv'))
+ses.to_csv(join(root, 'Fig2d.csv'))
 
 # Figure 2c
 ses = (use_subjects * behavioral_analyses.SessionTrainingStatus * behavioral_analyses.PsychResults
@@ -72,7 +76,7 @@ training_time['lab_number'] = training_time.lab.map(institution_map)
 training_time = training_time.sort_values('lab_number')
 
 # Save to csv
-training_time.to_csv(join('data', 'Fig2c.csv'))
+training_time.to_csv(join(root, 'Fig2c.csv'))
 
 # Figure 2ab
 
@@ -85,7 +89,7 @@ behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # Save to csv
-behav.to_csv(join('data', 'Fig2ab.csv'))
+behav.to_csv(join(root, 'Fig2ab.csv'))
 
 # %%=============================== #
 # FIGURE 3
@@ -107,8 +111,8 @@ b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
             'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-            'trial_response_time', 'trial_stim_on_time')
+            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type', 'trial_response_time',
+            'trial_stim_on_time', 'session_end_time', 'time_zone')
 
 # construct pandas dataframe
 bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
@@ -117,7 +121,7 @@ behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # save to disk
-behav.to_csv(join('data', 'Fig3.csv'))
+behav.to_csv(join(root, 'Fig3.csv'))
 
 # %%=============================== #
 # FIGURE 4
@@ -138,7 +142,7 @@ b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
             'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
             'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-            'trial_response_time', 'trial_stim_on_time')
+            'trial_response_time', 'trial_stim_on_time', 'time_zone')
 
 # construct pandas dataframe
 bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
@@ -147,7 +151,7 @@ behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # save to disk
-behav.to_csv(join('data', 'Fig4.csv'))
+behav.to_csv(join(root, 'Fig4.csv'))
 
 # %%=============================== #
 # FIGURE 5
@@ -176,7 +180,7 @@ behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # save to disk
-behav.to_csv(join('data', 'Fig5.csv'))
+behav.to_csv(join(root, 'Fig5.csv'))
 
 # %%=============================== #
 # FIGURE 3 - SUPPLEMENT 2
@@ -205,4 +209,4 @@ behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # save to disk
-behav.to_csv(join('data', 'Fig3-supp2.csv'))
+behav.to_csv(join(root, 'Fig3-supp2.csv'))

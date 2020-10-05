@@ -101,7 +101,6 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
                      all mice that completed a training session are returned, with date_trained
                      being the date of their first training session.
     """
-
     from ibl_pipeline import subject, acquisition, reference
     from ibl_pipeline.analyses import behavior as behavior_analysis
 
@@ -300,17 +299,6 @@ def fit_psychfunc(df):
            'lapselow': pars[2], 'lapsehigh': pars[3]}
     df2 = pd.DataFrame(df2, index=[0])
 
-    # # add some stuff
-    # df2['easy_correct'] = df.loc[np.abs(
-    #     df['signed_contrast'] > 50), 'correct'].mean(skipna=True)
-    # df2['zero_contrast'] = df.loc[np.abs(
-    #     df['signed_contrast'] == 0), 'choice2'].mean(skipna=True)
-    # df2['median_rt'] = df['rt'].median(skipna=True)
-    # df2['mean_rt'] = df['rt'].mean(skipna=True)
-
-    # # number of trials per day
-    # df4 = df.groupby(['session_start_time'])['correct'].count().reset_index()
-    # df2['ntrials_perday'] = [df4['correct'].values]
     df2['ntrials'] = df['choice'].count()
 
     return df2

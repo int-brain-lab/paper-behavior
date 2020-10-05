@@ -113,9 +113,13 @@ behav = dj2pandas(bdat)
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # COMPUTE AVERAGE CHOICE BEHAVIOR FOR EACH SJ
-df_full = behav.groupby(['institution_code', 'probabilityLeft',
-                    'subject_nickname', 'signed_contrast']).agg(
-    {'choice2': 'mean'}).reset_index().copy()
+df_full = (
+    behav
+    .groupby(['institution_code', 'probabilityLeft', 'subject_nickname', 'signed_contrast'])
+    .agg({'choice2': 'mean'})
+    .reset_index()
+    .copy()
+)
 
 # ================================================================== #
 # COMPUTE CHOICE VARIABILITY FOR EACH LAB - BASIC TASK

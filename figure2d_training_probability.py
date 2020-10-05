@@ -38,9 +38,9 @@ if QUERY is True:
            .proj('subject_nickname', 'training_status', 'n_trials_stim', 'institution_short')
            .fetch(format='frame').reset_index())
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
-    ses = ses.drop('n_trials_stim', axis=1)
+    ses = ses.drop('n_trials_stim', axis=1).dropna()
 else:
-    ses = pd.read_csv(join(datapath(), 'Fig2d.csv'))
+    ses = pd.read_csv(join(datapath(), 'Fig2d.csv')).dropna()
 
 # Construct dataframe from query
 training_time = pd.DataFrame()

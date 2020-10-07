@@ -158,7 +158,7 @@ for didx, day in enumerate(days):
                                behavtmp.choice_right,
                                behavtmp.trial_id,
                                ax=ax, color='k')
-    ax.set(xlabel="Contrast (%)")
+    ax.set(xlabel="\u0394  Contrast (%)")
 
     if didx == 0:
         ax.set(ylabel="Rightward choices (%)")

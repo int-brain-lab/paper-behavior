@@ -372,6 +372,22 @@ def plot_psychometric(x, y, subj, **kwargs):
         g.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
                           size='small', rotation=60)
         g.set_xlim([-40, 40])
+
+        # axisgate: show axis discontinuities with a quick hack
+        # https://twitter.com/StevenDakin/status/1313744930246811653?s=19
+        # first, white square for discontinuous axis
+        plt.text(-29.85, -0.005, '-', fontsize=14, fontweight='bold',
+                 horizontalalignment='center', verticalalignment='center',
+                 color='w')
+        plt.text(30.15, -0.005, '-', fontsize=14, fontweight='bold',
+                 horizontalalignment='center', verticalalignment='center',
+                 color='w')
+        # put little dashes to cut axes
+        plt.text(-30, -0.01, '/ /', horizontalalignment='center',
+                 verticalalignment='center', fontsize=6, fontweight='bold')
+        plt.text(30, -0.01, '/ /', horizontalalignment='center',
+                 verticalalignment='center', fontsize=6, fontweight='bold')
+
     else:
         g.set_xticks([-100, -50, 0, 50, 100])
         g.set_xticklabels(['-100', '-50', '0', '50', '100'],
@@ -420,6 +436,21 @@ def plot_chronometric(x, y, subj, **kwargs):
     ax.set_xticklabels(['-100', '-25', '-12.5', '0', '12.5', '25', '100'],
                        size='small', rotation=45)
     ax.set_xlim([-40, 40])
+
+    # axisgate: show axis discontinuities with a quick hack
+    # https://twitter.com/StevenDakin/status/1313744930246811653?s=19
+    # first, white square for discontinuous axis
+    plt.text(-29.85, -0.005, '-', fontsize=14, fontweight='bold',
+             horizontalalignment='center', verticalalignment='center',
+             color='w')
+    plt.text(30.15, -0.005, '-', fontsize=14, fontweight='bold',
+             horizontalalignment='center', verticalalignment='center',
+             color='w')
+    # put little dashes to cut axes
+    plt.text(-30, -0.01, '/ /', horizontalalignment='center',
+             verticalalignment='center', fontsize=6, fontweight='bold')
+    plt.text(30, -0.01, '/ /', horizontalalignment='center',
+             verticalalignment='center', fontsize=6, fontweight='bold')
 
     if df['signed_contrast'].min() >= 0:
         ax.set_xlim([-5, 40])

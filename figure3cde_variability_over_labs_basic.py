@@ -138,8 +138,9 @@ for i, var in enumerate(['perf_easy', 'reaction_time', 'n_trials', 'threshold', 
     stats_tests.loc[i, 'p_value_variance'] = p_var
 
 # Correct for multiple tests
-stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
-stats_tests['p_value_variance'] = multipletests(stats_tests['p_value_variance'])[1]
+stats_tests['p_value'] = multipletests(stats_tests['p_value'], method='fdr_bh')[1]
+stats_tests['p_value_variance'] = multipletests(stats_tests['p_value_variance'],
+                                                method='fdr_bh')[1]
 
 if (stats.normaltest(learned['n_trials'])[1] < 0.05 or
         stats.normaltest(learned['reaction_time'])[1] < 0.05):

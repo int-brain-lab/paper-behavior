@@ -104,7 +104,7 @@ for i, var in enumerate(['threshold_l', 'threshold_r', 'lapselow_l', 'lapselow_r
     stats_tests.loc[i, 'p_value'] = test[1]
 
 # Correct for multiple tests
-stats_tests['p_value'] = multipletests(stats_tests['p_value'])[1]
+stats_tests['p_value'] = multipletests(stats_tests['p_value'], method='fdr_bh')[1]
 
 # Test between left/right blocks
 for i, var in enumerate(['threshold', 'lapselow', 'lapsehigh', 'bias']):

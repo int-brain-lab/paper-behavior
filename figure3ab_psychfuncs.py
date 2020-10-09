@@ -91,7 +91,7 @@ for axidx, ax in enumerate(fig.axes.flat):
                  color=pal[axidx])
 
 fig.despine(trim=True)
-fig.set_axis_labels("Contrast (%)", 'Rightward choices (%)')
+fig.set_axis_labels("\u0394 Contrast (%)", 'Rightward choices (%)')
 plt.tight_layout(w_pad=-1.7)
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.png"), dpi=300)
@@ -107,7 +107,7 @@ for i, inst in enumerate(behav.institution_code.unique()):
                       tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
 #ax1.set_title('All labs', color='k', fontweight='bold')
 ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
-ax1.set(xlabel='Contrast (%)', ylabel='Rightward choices (%)')
+ax1.set(xlabel='\u0394 Contrast (%)', ylabel='Rightward choices (%)')
 sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure3b_psychfuncs_all_labs.pdf"))
@@ -122,12 +122,12 @@ fig, ax1 = plt.subplots(1, 2, figsize=(8, 4))
 plot_psychometric(behav.signed_contrast, behav.choice_right,
                       behav.subject_nickname, ax=ax1[0], legend=False, color='k')
 ax1[0].set_title('Psychometric function', color='k', fontweight='bold')
-ax1[0].set(xlabel='Signed contrast (%)', ylabel='Rightward choice (%)')
+ax1[0].set(xlabel='\u0394 Contrast (%)', ylabel='Rightward choice (%)')
 
 plot_chronometric(behav.signed_contrast, behav.rt,
                       behav.subject_nickname, ax=ax1[1], legend=False, color='k')
 ax1[1].set_title('Chronometric function', color='k', fontweight='bold')
-ax1[1].set(xlabel='Signed contrast (%)', ylabel='Trial duration (s)', ylim=[0, 1.4])
+ax1[1].set(xlabel='\u0394 Contrast (%)', ylabel='Trial duration (s)', ylim=[0, 1.4])
 sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "summary_psych_chron.pdf"))

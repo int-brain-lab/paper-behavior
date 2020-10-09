@@ -205,6 +205,6 @@ for cidx, c in enumerate(cmap):
 fig.ax.annotate('20:80', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
 fig.ax.annotate('80:20', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
 
-fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
+fig.set_axis_labels('\u0394 Contrast (%)', 'Rightward choices (%)')
 fig.despine(trim=True)
 fig.savefig(os.path.join(figpath, "figure5b_full_psychfunc.pdf"))

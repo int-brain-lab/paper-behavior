@@ -16,7 +16,8 @@ from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY, datapath,
-                                      dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric)
+                                      dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric,
+                                      break_xaxis)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from ibl_pipeline.utils import psychofit as psy
@@ -77,7 +78,7 @@ fig = sns.FacetGrid(behav[behav['subject_nickname'] == EXAMPLE_MOUSE],
                     sharex=True, sharey=True,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast", "choice_right", "session_uuid")
-fig.set_axis_labels('Contrast (%)', 'Rightward choices (%)')
+fig.set_axis_labels('\u0394 Contrast (%)', 'Rightward choices (%)')
 fig.ax.annotate('20:80', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
 fig.ax.annotate('80:20', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
 fig.despine(trim=True)
@@ -98,7 +99,7 @@ fig = sns.FacetGrid(behav,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/4)/FIGURE_HEIGHT)
 fig.map(plot_psychometric, "signed_contrast",
         "choice_right", "subject_nickname")
-fig.set_axis_labels('Contrast (%)', '')
+fig.set_axis_labels('\u0394 Contrast (%)', '')
 fig.ax.annotate('20:80', xy=(-5, 0.6), xytext=(-25, 0.8), color=cmap[0], fontsize=7)
 fig.ax.annotate('80:20', xy=(5, 0.4), xytext=(13, 0.18), color=cmap[2], fontsize=7)
 fig.despine(trim=True)
@@ -153,13 +154,16 @@ fig = sns.FacetGrid(behav3,
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/7)/FIGURE_HEIGHT)
 fig.map(plot_chronometric, "signed_contrast", "biasshift",
         "subject_nickname", color='gray', alpha=0.7)
-fig.set_axis_labels('Contrast (%)', '\u0394 Rightward choices (%)')
-fig.set_titles("{col_name}")
 
 # overlay the example mouse
 tmpdat = behav3[behav3['subject_nickname'].str.contains(EXAMPLE_MOUSE)]
 plot_chronometric(tmpdat.signed_contrast, tmpdat.biasshift, tmpdat.subject_nickname,
                   color='black', ax=fig.axes[0], legend=False)
+fig.set_titles("{col_name}")
+
+fig.despine(trim=True)
+ymin = fig.axes[0].get_ylim()[0]-0.2
+fig.map(break_xaxis, y=ymin)
 
 # add lab means on top
 for axidx, ax in enumerate(fig.axes.flat):
@@ -170,10 +174,8 @@ for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(sorted(behav.institution_name.unique())[axidx],
                  color=pal[axidx])
 
-
-fig.set_axis_labels('Contrast (%)', '\u0394 Rightward choices (%)')
-fig.despine(trim=True)
-plt.tight_layout(w_pad=-1.7)
+fig.set_axis_labels('\u0394 Contrast (%)', '\u0394 Rightward choices (%)')
+plt.tight_layout(w_pad=-5)
 fig.savefig(os.path.join(figpath, "figure4d_biasshift.pdf"))
 fig.savefig(os.path.join(figpath, "figure4d_biasshift.png"), dpi=300)
 plt.close('all')
@@ -187,10 +189,12 @@ for i, inst in enumerate(behav.institution_code.unique()):
     plot_chronometric(tmp_behav.signed_contrast, tmp_behav.biasshift,
                       tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
 # ax1.set_title('All labs', color='k', fontweight='bold')
-ax1.set(xlabel='Contrast (%)', ylabel='\u0394 Rightward choices (%)',
+ax1.set(xlabel='\u0394 Contrast (%)', ylabel='\u0394 Rightward choices (%)',
         yticks=[0, 10, 20, 30, 40])
 sns.despine(trim=True)
 plt.tight_layout()
+ymin = ax1.get_ylim()[0]-0.15
+break_xaxis(y=ymin)
 fig.savefig(os.path.join(figpath, "figure4c_biasshift_all_labs.pdf"))
 fig.savefig(os.path.join(figpath, "figure4c_biasshift_all_labs.png"), dpi=300)
 
@@ -230,5 +234,6 @@ ax1.set(ylabel='\u0394 Rightward choices (%)\n at 0% contrast',
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.tight_layout(pad=2)
 seaborn_style()
+
 # plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.pdf'))
 # plt.savefig(os.path.join(figpath, 'figure4e_bias_per_lab.png'), dpi=300)

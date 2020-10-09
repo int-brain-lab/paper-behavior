@@ -5,17 +5,20 @@ General functions and queries for the analysis of behavioral data from the IBL t
 Guido Meijer, Anne Urai, Alejandro Pan Vazquez & Miles Wells
 16 Jan 2020
 """
+import warnings
+import os
 
 import seaborn as sns
 import matplotlib
-import os
 import numpy as np
 import datajoint as dj
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# import wrappers etc
-from ibl_pipeline.utils import psychofit as psy
+import brainbox.behavior.pyschofit as psy
+
+# Supress seaborn future warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Some constants
 QUERY = True  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
@@ -281,8 +284,6 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2,
 
 
 def fit_psychfunc(df):
-    # TODO To become ibl-pipeline-lite dependency
-
     choicedat = df.groupby('signed_contrast').agg(
         {'choice': 'count', 'choice2': 'mean'}).reset_index()
     if len(choicedat) > 4: # need some minimum number of unique x-values
@@ -305,8 +306,6 @@ def fit_psychfunc(df):
 
 
 def plot_psychometric(x, y, subj, **kwargs):
-    # TODO To become ibl-pipeline-lite dependency
-
     # summary stats - average psychfunc over observers
     df = pd.DataFrame({'signed_contrast': x, 'choice': y,
                        'choice2': y, 'subject_nickname': subj})
@@ -355,7 +354,6 @@ def plot_psychometric(x, y, subj, **kwargs):
         g = sns.lineplot(np.arange(-103, 103),
                          psy.erf_psycho_2gammas(pars, np.arange(-103, 103)), **kwargs)
 
-
     df3 = df.groupby(['signed_contrast', 'subject_nickname']).agg(
         {'choice2': 'count', 'choice': 'mean'}).reset_index()
 
@@ -384,8 +382,6 @@ def plot_psychometric(x, y, subj, **kwargs):
 
 
 def plot_chronometric(x, y, subj, **kwargs):
-    # TODO To become ibl-pipeline-lite dependency
-
     df = pd.DataFrame(
         {'signed_contrast': x, 'rt': y, 'subject_nickname': subj})
     df.dropna(inplace=True)  # ignore NaN RTs
@@ -506,11 +502,12 @@ def dj2pandas(behav):
 def num_star(pvalue):
     if pvalue < 0.05:
         stars = '* p < 0.05'
-    if pvalue < 0.01:
+    elif pvalue < 0.01:
         stars = '** p < 0.01'
-    if pvalue < 0.001:
+    elif pvalue < 0.001:
         stars = '*** p < 0.001'
-    if pvalue < 0.0001:
+    elif pvalue < 0.0001:
         stars = '**** p < 0.0001'
-
+    else:
+        stars = ''
     return stars

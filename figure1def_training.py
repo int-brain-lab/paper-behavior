@@ -29,7 +29,6 @@ def plot_contrast_heatmap(mouse, lab, ax, xlims):
     """
     This function is copied from
     IBL-pipeline/prelim_analyses/behavioral_snapshots/behavior_plots.py
-    # TODO To become ibl-pipeline-lite dependency
     """
     cmap = copy.copy(plt.get_cmap('vlag'))
     cmap.set_bad(color="w")  # remove rectangles without data, should be white

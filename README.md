@@ -5,8 +5,15 @@ This repository contains code to reproduce all figures of the behavior paper by 
 These instructions require anaconda (https://www.anaconda.com/distribution/#download-section) for Python 3 and git (https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
 In an Anaconda prompt window:
-1. Follow these instructions https://github.com/int-brain-lab/iblenv to install the unified iblenv
+1. Clone or download the paper-bahavior repository
 2. Install the other dependencies by running `pip install -r requirements.txt`
+
+To call the functions in this repo, either run python from within the `paper-bahavior` folder or
+add the folder to your python path: 
+```python
+import sys
+sys.path.extend([r'path/to/paper-behavior'])
+```
 
 ### Obtain a DataJoint account through IBL JupyterHub
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.

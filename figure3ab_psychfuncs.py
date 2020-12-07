@@ -33,6 +33,10 @@ if QUERY is True:
                                                              days_from_criterion=[2, 0],
                                                              as_dataframe=False,
                                                              force_cutoff=True)
+
+    # list of dicts - see https://int-brain-lab.slack.com/archives/CB13FQFK4/p1607369435116300 for explanation
+    sess = use_sessions.proj('task_protocol').fetch(format='frame').reset_index().to_dict('records')
+
     # Trial data to fetch
     trial_fields = ('trial_stim_contrast_left',
                     'trial_stim_contrast_right',
@@ -43,8 +47,9 @@ if QUERY is True:
                     'trial_response_choice')
 
     # Query trial data for sessions and subject name and lab info
-    trials = use_sessions.proj('task_protocol') * behavior.TrialSet.Trial.proj(*trial_fields)
+    trials = (behavior.TrialSet.Trial & sess).proj(*trial_fields)
 
+    # also get info about each subject
     subject_info = subject.Subject.proj('subject_nickname') * \
         (subject.SubjectLab * reference.Lab).proj('institution_short')
 
@@ -58,7 +63,7 @@ if QUERY is True:
 else:
     behav = pd.read_csv(join(datapath(), 'Fig3.csv'))
 
-
+# print some output
 print(behav.sample(n=10))
 
 # ================================= #

@@ -103,16 +103,19 @@ use_sessions, _ = query_sessions_around_criterion(criterion='trained',
                                                   force_cutoff=True)
 use_sessions = use_sessions & 'task_protocol LIKE "%training%"'  # only get training sessions
 
+# list of dicts - see https://int-brain-lab.slack.com/archives/CB13FQFK4/p1607369435116300 for explanation
+sess = use_sessions.proj('task_protocol').fetch(format='frame').reset_index().to_dict('records')
+
 # query all trials for these sessions, it's split in two because otherwise the query would become
 # too big to handle in one go
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
+b = (behavior.TrialSet.Trial & sess) \
+    * subject.Subject * subject.SubjectLab * reference.Lab * acquisition.Session
 
 # reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
+b2 = b.proj('institution_short', 'subject_nickname',
             'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type', 'trial_response_time',
-            'trial_stim_on_time', 'session_end_time', 'time_zone')
+            'trial_stim_prob_left', 'trial_feedback_type', 'trial_response_time',
+            'trial_stim_on_time', 'session_end_time', 'task_protocol', 'time_zone')
 
 # construct pandas dataframe
 bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
@@ -133,15 +136,17 @@ use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
                                                   days_from_criterion=[2, 0],
                                                   force_cutoff=True)
 use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
+# list of dicts - see https://int-brain-lab.slack.com/archives/CB13FQFK4/p1607369435116300 for explanation
+sess = use_sessions.proj('task_protocol').fetch(format='frame').reset_index().to_dict('records')
 
 # restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
+b = (behavior.TrialSet.Trial & sess) \
+    * subject.Subject * subject.SubjectLab * reference.Lab * acquisition.Session
 
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
             'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+            'trial_stim_prob_left', 'trial_feedback_type',
             'trial_response_time', 'trial_stim_on_time', 'time_zone')
 
 # construct pandas dataframe
@@ -163,17 +168,16 @@ use_sessions, _ = query_sessions_around_criterion(criterion='biased',
                                                   days_from_criterion=[2, 3],
                                                   as_dataframe=False,
                                                   force_cutoff=True)
-
+sess = use_sessions.proj('task_protocol').fetch(format='frame').reset_index().to_dict('records')
 
 # restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
+b = (behavior.TrialSet.Trial & use_sessions) \
+    * acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
 
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
             'trial_stim_contrast_left', 'trial_stim_contrast_right',
-            'trial_response_choice', 'task_protocol', 'trial_stim_prob_left',
-            'trial_feedback_type')
+            'trial_response_choice', 'trial_stim_prob_left', 'trial_feedback_type')
 bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
                 format='frame').reset_index()
 behav = dj2pandas(bdat)
@@ -193,10 +197,11 @@ use_sessions, _ = query_sessions_around_criterion(
     days_from_criterion=[-1, 3],
     force_cutoff=True)
 use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
+sess = use_sessions.proj('task_protocol').fetch(format='frame').reset_index().to_dict('records')
 
 # restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
+b = (behavior.TrialSet.Trial & sess) \
+    * acquisition.Session * subject.Subject * subject.SubjectLab * reference.Lab
 
 # reduce the size of the fetch
 b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',

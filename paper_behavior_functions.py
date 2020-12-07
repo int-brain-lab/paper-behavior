@@ -343,9 +343,12 @@ def plot_psychometric(x, y, subj, **kwargs):
         sns.lineplot(np.arange(31, 36),
                      psy.erf_psycho_2gammas(pars, np.arange(98, 103)), **kwargs)
 
+        # if there are any points at -50, 50 left, remove those
+        if 50 in df.signed_contrast.values or -50 in df.signed_contrast.values:
+            df.drop(df[(df['signed_contrast'] == -50.) | (df['signed_contrast'] == 50)].index,
+                    inplace=True)
+
         # now break the x-axis
-        # if 100 in df.signed_contrast.values and not 50 in
-        # df.signed_contrast.values:
         df['signed_contrast'] = df['signed_contrast'].replace(-100, -35)
         df['signed_contrast'] = df['signed_contrast'].replace(100, 35)
 

@@ -44,6 +44,7 @@ if QUERY is True:
 
     # Query trial data for sessions and subject name and lab info
     trials = use_sessions.proj('task_protocol') * behavior.TrialSet.Trial.proj(*trial_fields)
+
     subject_info = subject.Subject.proj('subject_nickname') * \
         (subject.SubjectLab * reference.Lab).proj('institution_short')
 
@@ -57,6 +58,8 @@ if QUERY is True:
 else:
     behav = pd.read_csv(join(datapath(), 'Fig3.csv'))
 
+
+print(behav.sample(n=10))
 
 # ================================= #
 # PSYCHOMETRIC FUNCTIONS

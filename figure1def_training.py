@@ -217,7 +217,7 @@ for didx, day in enumerate(days):
                  data=s, ax=ax[1])
 
     if day == min(days):
-        ax[1].set(ylabel="Accuracy (%)")
+        ax[1].set(ylabel="Performance (%)\non easy trials")
     else:
         ax[1].set(ylabel=" ", yticklabels=[])
 

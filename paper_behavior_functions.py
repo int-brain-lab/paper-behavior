@@ -14,6 +14,7 @@ import numpy as np
 import datajoint as dj
 import pandas as pd
 import matplotlib.pyplot as plt
+from ibl_pipeline import behavior, subject, reference
 
 import brainbox.behavior.pyschofit as psy
 
@@ -277,6 +278,62 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2,
         days = days.fetch(format='frame').reset_index()
 
     return sessions, days
+
+def query_session_around_performance(perform_thres=0.8, stage = 'training'):
+    '''
+    Parameters
+    ----------
+    perform_thres : float, optional
+        DESCRIPTION. Performance threshold that need to be met in all 3 
+        session. The default is 0.8.
+    stage:  string, optional.
+        DESCRIPTION. Stage of trial too pull from datajoint to calculate 
+        performance. The default is training. Other options e.g 'biased'
+    
+
+    Returns
+    -------
+    selection : dataframe
+        DESCRIPTION. Dataframe with all trials from mice reaching 
+        performance criterion
+    '''
+    use_sessions = query_sessions(task='all', stable=False, as_dataframe=False,
+                   force_cutoff=True, criterion=None)
+    behav = dj2pandas(
+        ((use_sessions & 'task_protocol LIKE "%' + stage + '%"')  # only get training sessions
+         * subject.Subject * subject.SubjectLab * reference.Lab * behavior.TrialSet.Trial)
+
+        # Query only the fields we require, reducing the size of the fetch
+        .proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
+              'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+              'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
+              'trial_response_time', 'trial_stim_on_time', 'session_end_time')
+
+        # Fetch as a pandas DataFrame, ordered by institute
+        .fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+               format='frame')
+        .reset_index()
+    )
+    behav_ses = behav.groupby(['subject_nickname',
+                'session_start_time']).mean()['correct_easy'].reset_index()
+    behav_ses['above_criterion'] = behav_ses['correct_easy']>perform_thres
+    # Check rolling sum of sessions above 0.8, must be 3
+    behav_ses['met_session_criterion'] = \
+        behav_ses.groupby(['subject_nickname']
+                          )['above_criterion'].rolling(3).sum().to_numpy()
+    # Select trials from sessions where criterion was first met
+    selection = pd.DataFrame()
+    for mouse in behav_ses['subject_nickname'].unique():
+        mouse_ses  = behav_ses[behav_ses['subject_nickname']==mouse]
+        if any(mouse_ses['met_session_criterion']==3):
+            mouse_ses_select = mouse_ses.iloc[np.where(
+                    mouse_ses['met_session_criterion']==3)[0][0]-2:\
+                    np.where(mouse_ses['met_session_criterion']==3)[0][0]+1,:]
+            trial_select = behav.loc[(behav['subject_nickname']==mouse) & 
+                      (behav['session_start_time'].isin(
+                          mouse_ses_select['session_start_time']))]
+            selection = pd.concat([selection,trial_select])
+    return selection
 
 # ================================================================== #
 # DEFINE PSYCHFUNCFIT TO WORK WITH FACETGRID IN SEABORN

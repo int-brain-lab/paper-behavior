@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import scikit_posthocs as sp
 from paper_behavior_functions import (figpath, seaborn_style, group_colors, institution_map,
-                                      datapath, FIGURE_WIDTH, FIGURE_HEIGHT, QUERY, fit_psychfunc, dj2pandas)
+                                      load_csv, FIGURE_WIDTH, FIGURE_HEIGHT, QUERY, fit_psychfunc,
+                                      dj2pandas)
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
 
@@ -43,7 +44,7 @@ if QUERY is True:
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join(datapath(), 'Fig4.csv'))
+    behav = load_csv('Fig4.csv')
 
 biased_fits = pd.DataFrame()
 for i, nickname in enumerate(behav['subject_nickname'].unique()):

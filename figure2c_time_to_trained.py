@@ -16,7 +16,7 @@ from scipy import stats
 import scikit_posthocs as sp
 
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
-                                      group_colors, figpath, datapath, EXAMPLE_MOUSE,
+                                      group_colors, figpath, load_csv, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
@@ -44,7 +44,7 @@ if QUERY is True:
     training_time['lab_number'] = training_time.lab.map(institution_map()[0])
     training_time = training_time.sort_values('lab_number')
 else:
-    training_time = pd.read_csv(join(datapath(), 'Fig2c.csv')).dropna()
+    training_time = load_csv('Fig2c.csv').dropna()
     use_subjects = training_time['subject_nickname']  # For counting the number of subjects
 
 # Number of sessions to trained for example mouse

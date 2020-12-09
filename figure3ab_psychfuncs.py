@@ -9,7 +9,7 @@ import os
 from os.path import join
 import pandas as pd
 import matplotlib.pyplot as plt
-from paper_behavior_functions import (figpath, seaborn_style, group_colors, datapath,
+from paper_behavior_functions import (figpath, seaborn_style, group_colors, load_csv,
                                       query_sessions_around_criterion, institution_map,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY, EXAMPLE_MOUSE,
                                       plot_psychometric, dj2pandas, plot_chronometric)
@@ -61,7 +61,7 @@ if QUERY is True:
                       .reset_index())
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join(datapath(), 'Fig3.csv'))
+    behav = load_csv('Fig3.csv')
 
 # print some output
 print(behav.sample(n=10))
@@ -114,7 +114,7 @@ for i, inst in enumerate(behav.institution_code.unique()):
     plot_psychometric(tmp_behav.signed_contrast, tmp_behav.choice_right,
                       tmp_behav.subject_nickname, ax=ax1, legend=False, color=pal[i])
 #ax1.set_title('All labs', color='k', fontweight='bold')
-ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
+ax1.set_title('All labs: %d mice' % behav['subject_nickname'].nunique())
 ax1.set(xlabel='\u0394 Contrast (%)', ylabel='Rightward choices (%)')
 sns.despine(trim=True)
 plt.tight_layout()
@@ -128,12 +128,12 @@ fig.savefig(os.path.join(figpath, "figure3b_psychfuncs_all_labs.png"), dpi=300)
 # Plot all labs
 fig, ax1 = plt.subplots(1, 2, figsize=(8, 4))
 plot_psychometric(behav.signed_contrast, behav.choice_right,
-                      behav.subject_nickname, ax=ax1[0], legend=False, color='k')
+                  behav.subject_nickname, ax=ax1[0], legend=False, color='k')
 ax1[0].set_title('Psychometric function', color='k', fontweight='bold')
 ax1[0].set(xlabel='\u0394 Contrast (%)', ylabel='Rightward choice (%)')
 
 plot_chronometric(behav.signed_contrast, behav.rt,
-                      behav.subject_nickname, ax=ax1[1], legend=False, color='k')
+                  behav.subject_nickname, ax=ax1[1], legend=False, color='k')
 ax1[1].set_title('Chronometric function', color='k', fontweight='bold')
 ax1[1].set(xlabel='\u0394 Contrast (%)', ylabel='Trial duration (s)', ylim=[0, 1.4])
 sns.despine(trim=True)

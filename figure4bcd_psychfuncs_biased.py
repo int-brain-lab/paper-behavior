@@ -15,7 +15,7 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from paper_behavior_functions import (seaborn_style, figpath, group_colors, institution_map,
                                       query_sessions_around_criterion, EXAMPLE_MOUSE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY, datapath,
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY, load_csv,
                                       dj2pandas, plot_psychometric, fit_psychfunc, plot_chronometric,
                                       break_xaxis)
 # import wrappers etc
@@ -61,7 +61,7 @@ if QUERY is True:
     behav = dj2pandas(bdat)
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(join(datapath(), 'Fig4.csv'))
+    behav = load_csv('Fig4.csv')
 
 # how many mice are there for each lab?
 N = behav.groupby(['institution_code'])['subject_nickname'].nunique().to_dict()

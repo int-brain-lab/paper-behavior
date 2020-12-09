@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from paper_behavior_functions import (query_sessions_around_criterion,
-                                      institution_map, dj2pandas, datapath)
+                                      institution_map, dj2pandas, load_csv, datapath)
 from ibl_pipeline import behavior, subject, reference
 from tqdm.auto import tqdm
 from sklearn.model_selection import KFold
@@ -61,7 +61,7 @@ if query is True:
     behav['block_id'] = behav['probabilityLeft'].map({80:-1, 50:0, 20:1})
 
 else:  # load from disk
-    behav = pd.read_csv(Path(datapath(), 'Fig5.csv'))
+    behav = load_csv('Fig5.csv')
 
 # ========================================== #
 #%% 2. DEFINE THE GLM

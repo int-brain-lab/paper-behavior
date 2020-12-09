@@ -8,13 +8,11 @@ Choice variability across contrasts within each lab and across labs
 import numpy as np
 import seaborn as sns
 import os
-from os.path import join
 import pandas as pd
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors,
                                       query_sessions_around_criterion, institution_map,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY,
-                                      dj2pandas, fit_psychfunc)
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, dj2pandas)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from sklearn.utils import shuffle
@@ -31,9 +29,9 @@ institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 nshuf = 10000
 
+
 # DEFINE ACROSS-MOUSE CHOICE VARIABILITY
 def choice_variability(df):
-
     # FIRST, GROUP BY CONTRAST AND MOUSE
     choicedat = df.pivot_table(values='choice2', columns='subject_nickname', index='signed_contrast')
 
@@ -46,7 +44,6 @@ def choice_variability(df):
 
 # FULL TASK, ALSO INCORPORATE PROBABILITYLEFT
 def choice_variability_full(df):
-
     # FIRST, GROUP BY CONTRAST AND MOUSE
     choicedat = df.pivot_table(values='choice2',
                                columns='subject_nickname',
@@ -61,7 +58,6 @@ def choice_variability_full(df):
 
 # FULL TASK, ACROSS-LAB VARIABILITY IN BIAS SHIFT
 def biasshift_variability_full(df):
-
     # FIRST, GROUP BY CONTRAST AND MOUSE
     choicedat = df.pivot_table(values='biasshift',
                                columns='subject_nickname',

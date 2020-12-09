@@ -7,6 +7,10 @@ Guido Meijer, Anne Urai, Alejandro Pan Vazquez & Miles Wells
 """
 import warnings
 import os
+from pathlib import Path
+from io import BytesIO
+from zipfile import ZipFile
+from urllib.request import urlopen
 
 import seaborn as sns
 import matplotlib
@@ -21,6 +25,7 @@ import brainbox.behavior.pyschofit as psy
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Some constants
+URL = 'http://ibl.flatironinstitute.org/public/behavior_paper_data.zip'
 QUERY = True  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
 EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
 CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
@@ -89,6 +94,24 @@ def datapath():
     # Retrieve absolute path of paper-behavior dir
     repo_dir = os.path.dirname(os.path.realpath(__file__))
     return os.path.join(repo_dir, 'data')
+
+
+def load_csv(*args, **kwargs):
+    """Loads CSV and pickle data either locally or remotely
+    If the input file is not found in the data directory the file is downloaded from a remote
+    http server and returned as a pandas DataFrame.
+    """
+    repo_dir = os.path.dirname(os.path.realpath(__file__))
+    local = os.path.join(repo_dir, 'data', *args)
+    if not os.path.exists(local):
+        resp = urlopen(URL)
+        zipfile = ZipFile(BytesIO(resp.read()))
+        files = zipfile.namelist()
+        if not any(x.endswith(args[-1]) for x in files):
+            raise FileNotFoundError(f'{args[-1]} not found in {URL}')
+        local = zipfile.extract('/'.join(('data', *args)), repo_dir)
+    loader = pd.read_pickle if local.endswith('.pkl') else pd.read_csv
+    return loader(local, **kwargs)
 
 
 def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):

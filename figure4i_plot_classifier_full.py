@@ -14,7 +14,7 @@ import numpy as np
 import seaborn as sns
 from os.path import join
 import matplotlib.pyplot as plt
-from paper_behavior_functions import seaborn_style, figpath, datapath, FIGURE_WIDTH, FIGURE_HEIGHT
+from paper_behavior_functions import seaborn_style, figpath, load_csv, FIGURE_WIDTH, FIGURE_HEIGHT
 
 # Settings
 FIG_PATH = figpath()
@@ -22,8 +22,7 @@ colors = [[1, 1, 1], [1, 1, 1], [0.6, 0.6, 0.6]]
 seaborn_style()
 
 # Load in results from csv file
-decoding_result = pd.read_pickle(join(datapath(), 'classification_results',
-                                      'classification_results_full_bayes.pkl'))
+decoding_result = load_csv('classification_results', 'classification_results_full_bayes.pkl')
 
 # Calculate if decoder performs above chance
 chance_level = decoding_result['original_shuffled'].mean()

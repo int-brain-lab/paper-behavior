@@ -12,7 +12,7 @@ import seaborn as sns
 from scipy import stats
 
 from paper_behavior_functions import (seaborn_style, institution_map,
-                                      group_colors, figpath, datapath,
+                                      group_colors, figpath, load_csv,
                                       FIGURE_WIDTH, FIGURE_HEIGHT, num_star)
 
 
@@ -28,9 +28,8 @@ cmap = sns.diverging_palette(20, 220, n=3, center="dark")
 # ========================================== #
 
 print('loading model from disk...')
-data_path = Path(datapath(), 'model_results')
-params_basic = pd.read_csv(data_path / 'params_basic.csv')
-params_full = pd.read_csv(data_path / 'params_full.csv')
+params_basic = load_csv('model_results', 'params_basic.csv')
+params_full = load_csv('model_results', 'params_full.csv')
 combined = params_basic.merge(params_full, on=['institution_code', 'subject_nickname'])
 
 # ========================================== #

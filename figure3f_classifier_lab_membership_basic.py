@@ -29,7 +29,7 @@ import pandas as pd
 import numpy as np
 from os.path import join
 from paper_behavior_functions import (query_sessions_around_criterion, institution_map, QUERY,
-                                        dj2pandas, fit_psychfunc, datapath)
+                                      dj2pandas, fit_psychfunc, datapath, load_csv)
 from ibl_pipeline import subject, reference
 from ibl_pipeline import behavior
 from sklearn.ensemble import RandomForestClassifier
@@ -80,7 +80,7 @@ if QUERY is True:
     )
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
 else:
-    behav = pd.read_csv(join(datapath(), 'Fig3.csv'))
+    behav = load_csv('Fig3.csv')
 
 # Create dataframe with behavioral metrics of all mice
 learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
@@ -192,6 +192,6 @@ for i in range(ITERATIONS):
     decoding_result.loc[i, 'control_shuffled'], _ = decoding(control_set[use_index],
                                                              labels_shuffle, clf)
 
-# Save to csv
+# Save to pickle
 decoding_result.to_pickle(join(datapath(), 'classification_results',
                                'classification_results_basic_%s.pkl' % DECODER))

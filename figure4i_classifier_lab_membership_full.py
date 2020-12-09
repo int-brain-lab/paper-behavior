@@ -27,7 +27,8 @@ September 3, 2020
 
 import numpy as np
 from os.path import join
-from paper_behavior_functions import institution_map, QUERY, fit_psychfunc, dj2pandas, datapath
+from paper_behavior_functions import \
+    institution_map, QUERY, fit_psychfunc, dj2pandas, load_csv, datapath
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -77,7 +78,7 @@ if QUERY is True:
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
 
 else:
-    behav = pd.read_csv(join(datapath(), 'Fig4.csv'))
+    behav = load_csv('Fig4.csv')
 
 biased_fits = pd.DataFrame()
 for i, nickname in enumerate(behav['subject_nickname'].unique()):

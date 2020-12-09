@@ -5,7 +5,6 @@ Created on 2020-07-20
 @author: Anne Urai
 """
 
-import datajoint as dj
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,7 +17,7 @@ from paper_behavior_functions import (query_sessions_around_criterion,
                                       seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
                                       FIGURE_WIDTH, FIGURE_HEIGHT,
-                                      dj2pandas, fit_psychfunc, plot_psychometric)
+                                      dj2pandas, plot_psychometric)
 
 # Load some things from paper_behavior_functions
 figpath = figpath()

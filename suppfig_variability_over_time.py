@@ -4,7 +4,7 @@
 Quantify the variability of behavioral metrics within and between labs of mouse behavior.
 This script doesn't perform any analysis but plots summary statistics over labs.
 
-Guido Meijer
+Guido Meijer, Miles Wells
 16 Jan 2020
 """
 
@@ -33,8 +33,8 @@ behav['lab_number'] = behav.lab.map(institution_map()[0])
 mean_days = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
 std_days = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
 for i, day in enumerate(bin_centers):
-    this_behav = behav[(behav['training_day'] > day-np.floor(bin_size/2))
-                       & (behav['training_day'] < day+np.floor(bin_size/2))]
+    this_behav = behav[(behav['training_day'] > day - np.floor(bin_size / 2))
+                       & (behav['training_day'] < day + np.floor(bin_size / 2))]
     mean_days[day] = this_behav.groupby('lab_number').mean()['performance_easy']
     std_days[day] = this_behav.groupby('lab_number').std()['performance_easy']
 
@@ -55,3 +55,44 @@ sns.despine(trim=True)
 plt.tight_layout()
 plt.savefig(join(fig_path, 'suppfig4_variability_over_time.pdf'))
 plt.savefig(join(fig_path, 'suppfig4_variability_over_time.png'), dpi=300)
+
+### The same but for trials ###
+
+# Settings
+bin_size = 1000
+bin_centers = np.arange(1000, 30001, 1000)
+
+# Create column for cumulative trials per mouse
+behav.n_trials_date = behav.n_trials_date.astype(int)
+behav['cum_trials'] = (
+    (behav
+        .groupby(by=['subject_uuid'])
+        .cumsum()
+        .n_trials_date)
+)
+
+# Get variability over days
+mean_trials = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
+std_trials = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
+for i, day in enumerate(bin_centers):
+    this_behav = behav[(behav['cum_trials'] > day - np.floor(bin_size / 2))
+                       & (behav['cum_trials'] < day + np.floor(bin_size / 2))]
+    mean_trials[day] = this_behav.groupby('lab_number').mean()['performance_easy']
+    std_trials[day] = this_behav.groupby('lab_number').std()['performance_easy']
+
+# Plot output
+
+xlim = [0, 30000]
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(FIGURE_WIDTH * 0.7, FIGURE_HEIGHT))
+for i, lab in enumerate(std_trials.index.values):
+    ax1.plot(std_trials.loc[lab], color=colors[i], lw=2, label='Lab %s' % (i + 1))
+ax1.set(xlabel='Cumulative trials', ylabel='Variability (std)', title='Within labs')
+ax1.set(xlim=xlim)
+ax2.plot(mean_trials.std(), lw=2)
+ax2.set(xlabel='Cumulative trials', ylabel='Variability (std)', title='Between labs')
+ax2.set(xlim=xlim)
+
+sns.despine(trim=True)
+plt.tight_layout()
+plt.savefig(join(fig_path, 'suppfig4_variability_over_trials.pdf'))
+plt.savefig(join(fig_path, 'suppfig4_variability_over_trials.png'), dpi=300)

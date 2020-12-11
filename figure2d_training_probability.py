@@ -90,7 +90,7 @@ kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'
 ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values, color='black')
 ax1.set(ylabel='Reached proficiency', xlabel='Training day',
         xlim=[0, 60], ylim=[0, 1.02])
-ax1.set_title('All labs: %d mice'%training_time['nickname'].nunique())
+ax1.set_title('All labs: %d mice' % training_time['nickname'].nunique())
 
 # kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
 # kmf.plot_cumulative_density(ax=ax2)

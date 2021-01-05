@@ -71,6 +71,16 @@ behav = behav2
 behav['performance_easy'] = behav.performance_easy * 100
 behav['performance_easy_trained'] = behav.performance_easy_trained * 100
 
+# Create column for cumulative trials per mouse
+behav.n_trials_date = behav.n_trials_date.astype(int)
+behav['cum_trials'] = (
+    (behav
+        .groupby(by=['subject_uuid'])
+        .cumsum()
+        .n_trials_date)
+)
+
+
 # %% ============================== #
 # LEARNING CURVES
 # ================================= #
@@ -111,7 +121,7 @@ sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', pal
              ax=ax1, legend=False, data=behav, ci=None)
 ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
 ax1.set(xlabel='Training day',
-        ylabel='Performance (%)\non easy trials', xlim=[-1, 60], ylim=[15,100])
+        ylabel='Performance (%)\non easy trials', xlim=[-1, 60], ylim=[15, 100])
 ax1.set(xticks=[0, 10, 20, 30, 40, 50, 60])
 
 sns.despine(trim=True)
@@ -130,3 +140,66 @@ behav_summary = behav.groupby(['training_day'])[
 print('number of days to reach 80% accuracy on easy trials: ')
 print(behav_summary.loc[behav_summary.performance_easy >
                         80, 'training_day'].min())
+
+
+###############
+# plot one curve for each animal, one panel per lab
+fig = sns.FacetGrid(behav,
+                    col="institution_code", col_wrap=7, col_order=col_names,
+                    sharex=True, sharey=True, hue="subject_uuid", xlim=[-1, 40],
+                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH / 7) / FIGURE_HEIGHT)
+fig.map(sns.lineplot, "cum_trials",
+        "performance_easy", color='grey', alpha=0.3)
+fig.map(sns.lineplot, "cum_trials",
+        "performance_easy_trained", color='black', alpha=0.3)
+fig.set_titles("{col_name}")
+
+# overlay the example mouse
+sns.lineplot(ax=fig.axes[0], x='cum_trials', y='performance_easy', color='black',
+             data=behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)], legend=False)
+
+for axidx, ax in enumerate(fig.axes.flat):
+    # add the lab mean to each panel
+    d = (behav.loc[behav.institution_name == behav.institution_name.unique()[axidx], :])\
+        .groupby('training_day').mean()
+    sns.lineplot(data=d, x='cum_trials', y='performance_easy',
+                 color=pal[axidx], ci=None, ax=ax, legend=False, linewidth=2)
+    ax.set_title(behav.institution_name.unique()[
+                 axidx], color=pal[axidx], fontweight='bold')
+    ax.ticklabel_format(axis='x', style='sci', scilimits=(4, 4))
+    fig.set(xticks=[0, 10000, 20000, 30000])
+    ax.set_xlim([-1, 30000])
+
+fig.set_axis_labels('Trial', 'Performance (%)\n on easy trials')
+fig.despine(trim=True)
+plt.tight_layout(w_pad=-2.2)
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves_trials.pdf"))
+fig.savefig(os.path.join(figpath, "figure2a_learningcurves_trials.png"), dpi=300)
+
+# Plot all labs
+d = behav.groupby(['institution_code', 'training_day']).mean()
+fig, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
+sns.lineplot(x='cum_trials', y='performance_easy', hue='institution_code', palette=pal,
+             ax=ax1, legend=False, data=d, ci=None)
+ax1.set_title('All labs: %d mice' % behav['subject_nickname'].nunique())
+ax1.set(xlabel='Trial',
+        ylabel='Performance (%)\non easy trials', xlim=[-1, 30000], ylim=[15, 100])
+ax1.ticklabel_format(axis='x', style='sci', scilimits=(4, 4))
+
+sns.despine(trim=True)
+plt.tight_layout()
+fig.savefig(os.path.join(figpath, "figure2b_learningcurves_trials_all_labs.pdf"))
+fig.savefig(os.path.join(
+    figpath, "figure2b_learningcurves_trials_all_labs.png"), dpi=300)
+plt.show()
+
+# ================================= #
+# print some stats
+# ================================= #
+behav_summary_std = behav.groupby(['training_day'])[
+    ['performance_easy', 'cum_trials']].std().reset_index()
+behav_summary = behav.groupby(['training_day'])[
+    ['performance_easy', 'cum_trials']].mean().reset_index()
+print('number of trials to reach 80% accuracy on easy trials: ')
+print(behav_summary.loc[behav_summary.performance_easy >
+                        80, 'cum_trials'].round().min())

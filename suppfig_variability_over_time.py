@@ -74,11 +74,11 @@ behav['cum_trials'] = (
 # Get variability over days
 mean_trials = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
 std_trials = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))
-for i, day in enumerate(bin_centers):
-    this_behav = behav[(behav['cum_trials'] > day - np.floor(bin_size / 2))
-                       & (behav['cum_trials'] < day + np.floor(bin_size / 2))]
-    mean_trials[day] = this_behav.groupby('lab_number').mean()['performance_easy']
-    std_trials[day] = this_behav.groupby('lab_number').std()['performance_easy']
+for i, tt in enumerate(bin_centers):
+    this_behav = behav[(behav['cum_trials'] > tt - np.floor(bin_size / 2))
+                       & (behav['cum_trials'] < tt + np.floor(bin_size / 2))]
+    mean_trials[tt] = this_behav.groupby('lab_number').mean()['performance_easy']
+    std_trials[tt] = this_behav.groupby('lab_number').std()['performance_easy']
 
 # Plot output
 
@@ -86,13 +86,14 @@ xlim = [0, 30000]
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(FIGURE_WIDTH * 0.7, FIGURE_HEIGHT))
 for i, lab in enumerate(std_trials.index.values):
     ax1.plot(std_trials.loc[lab], color=colors[i], lw=2, label='Lab %s' % (i + 1))
-ax1.set(xlabel='Cumulative trials', ylabel='Variability (std)', title='Within labs')
+ax1.set(xlabel='Trials', ylabel='Variability (std)', title='Within labs')
 ax1.set(xlim=xlim)
 ax2.plot(mean_trials.std(), lw=2)
-ax2.set(xlabel='Cumulative trials', ylabel='Variability (std)', title='Between labs')
+ax2.set(xlabel='Trials', ylabel='Variability (std)', title='Between labs')
 ax2.set(xlim=xlim)
 
-sns.despine(trim=True)
+sns.despine(trim=True, offset=5)
+[x.ticklabel_format(axis='x', style='sci', scilimits=(4, 4)) for x in (ax1, ax2)]
 plt.tight_layout()
 plt.savefig(join(fig_path, 'suppfig4_variability_over_trials.pdf'))
 plt.savefig(join(fig_path, 'suppfig4_variability_over_trials.png'), dpi=300)

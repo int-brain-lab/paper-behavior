@@ -23,7 +23,7 @@ seaborn_style()
 for DECODER in ['bayes', 'forest', 'regression']:
 
     # Load in results from csv file
-    decoding_result = pd.read_pickle(join(datapath(), 'classification_results',
+    decoding_result = pd.read_pickle(join(datapath(),
                                           'classification_results_basic_%s.pkl' % DECODER))
 
     # Calculate if decoder performs above chance

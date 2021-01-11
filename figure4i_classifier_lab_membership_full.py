@@ -176,6 +176,4 @@ for i in range(ITERATIONS):
                                                              labels_shuffle, clf)
 
 # Save to csv
-decoding_result.to_pickle(join(datapath(), 'classification_results',
-                               'classification_results_full_%s.pkl' % DECODER))
-
+decoding_result.to_pickle(join(datapath(), 'classification_results_full_%s.pkl' % DECODER))

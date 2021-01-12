@@ -80,7 +80,7 @@ lab_colors = group_colors()
 ylim = [-0.02, 1.02]
 
 # Plot hazard rate survival analysis
-f, (ax1) = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
+f, (ax1) = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
 
 kmf = KaplanMeierFitter()
 for i, lab in enumerate(np.unique(training_time['lab_number'])):

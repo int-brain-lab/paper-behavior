@@ -79,8 +79,6 @@ def figpath():
     repo_dir = os.path.dirname(os.path.realpath(__file__))
     # Make figure directory
     fig_dir = os.path.join(repo_dir, 'exported_figs')
-    # Announce save location
-    print('Figure save path: ' + fig_dir)
     # If doesn't already exist, create
     if not os.path.exists(fig_dir):
         os.mkdir(fig_dir)
@@ -88,13 +86,17 @@ def figpath():
 
 
 def datapath():
-    """Return the location of data directory
-    The data directory contains CSV files of subject and session data, and is also where the model
-    fits are stored.
     """
-    # Retrieve absolute path of paper-behavior dir
+    Return the location of data directory
+    """
+   # Retrieve absolute path of paper-behavior dir
     repo_dir = os.path.dirname(os.path.realpath(__file__))
-    return os.path.join(repo_dir, 'data')
+    # Make figure directory
+    data_dir = os.path.join(repo_dir, 'data')
+    # If doesn't already exist, create
+    if not os.path.exists(data_dir):
+        os.mkdir(data_dir)
+    return data_dir
 
 
 def load_csv(*args, **kwargs):
@@ -302,22 +304,23 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2,
 
     return sessions, days
 
-def query_session_around_performance(perform_thres=0.8, stage = 'training'):
+
+def query_session_around_performance(perform_thres=0.8, stage='training'):
     '''
     Parameters
     ----------
     perform_thres : float, optional
-        DESCRIPTION. Performance threshold that need to be met in all 3 
+        DESCRIPTION. Performance threshold that need to be met in all 3
         session. The default is 0.8.
     stage:  string, optional.
-        DESCRIPTION. Stage of trial too pull from datajoint to calculate 
+        DESCRIPTION. Stage of trial too pull from datajoint to calculate
         performance. The default is training. Other options e.g 'biased'
-    
+
 
     Returns
     -------
     selection : dataframe
-        DESCRIPTION. Dataframe with all trials from mice reaching 
+        DESCRIPTION. Dataframe with all trials from mice reaching
         performance criterion
     '''
     use_sessions = query_sessions(task='all', stable=False, as_dataframe=False,
@@ -330,7 +333,7 @@ def query_session_around_performance(perform_thres=0.8, stage = 'training'):
         .proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
               'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
               'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-              'trial_response_time', 'trial_stim_on_time', 'session_end_time')
+              'trial_response_time', 'trial_stim_on_time', 'session_end_time', 'time_zone')
 
         # Fetch as a pandas DataFrame, ordered by institute
         .fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
@@ -352,7 +355,7 @@ def query_session_around_performance(perform_thres=0.8, stage = 'training'):
             mouse_ses_select = mouse_ses.iloc[np.where(
                     mouse_ses['met_session_criterion']==3)[0][0]-2:\
                     np.where(mouse_ses['met_session_criterion']==3)[0][0]+1,:]
-            trial_select = behav.loc[(behav['subject_nickname']==mouse) & 
+            trial_select = behav.loc[(behav['subject_nickname']==mouse) &
                       (behav['session_start_time'].isin(
                           mouse_ses_select['session_start_time']))]
             selection = pd.concat([selection,trial_select])
@@ -366,7 +369,7 @@ def query_session_around_performance(perform_thres=0.8, stage = 'training'):
 def fit_psychfunc(df):
     choicedat = df.groupby('signed_contrast').agg(
         {'choice': 'count', 'choice2': 'mean'}).reset_index()
-    if len(choicedat) > 4: # need some minimum number of unique x-values
+    if len(choicedat) >= 4: # need some minimum number of unique x-values
         pars, L = psy.mle_fit_psycho(choicedat.values.transpose(), P_model='erf_psycho_2gammas',
                                  parstart=np.array(
                                      [0, 20., 0.05, 0.05]),

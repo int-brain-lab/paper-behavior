@@ -10,6 +10,7 @@ Guido Meijer, Miles Wells
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import seaborn as sns
 from os.path import join
@@ -60,7 +61,7 @@ plt.savefig(join(fig_path, 'suppfig4_variability_over_time.png'), dpi=300)
 
 # Settings
 bin_size = 1000
-bin_centers = np.arange(1000, 30001, 1000)
+bin_centers = np.arange(1000, 30001, bin_size)
 
 # Create column for cumulative trials per mouse
 behav.n_trials_date = behav.n_trials_date.astype(int)
@@ -93,7 +94,8 @@ ax2.set(xlabel='Trials', ylabel='Variability (std)', title='Between labs')
 ax2.set(xlim=xlim)
 
 sns.despine(trim=True, offset=5)
-[x.ticklabel_format(axis='x', style='sci', scilimits=(4, 4)) for x in (ax1, ax2)]
+format_fcn = ticker.FuncFormatter(lambda x, pos: '{:,.0f}'.format(x / 1e3) + 'K')
+[x.xaxis.set_major_formatter(format_fcn) for x in (ax1, ax2)]
 plt.tight_layout()
 plt.savefig(join(fig_path, 'suppfig4_variability_over_trials.pdf'))
 plt.savefig(join(fig_path, 'suppfig4_variability_over_trials.png'), dpi=300)

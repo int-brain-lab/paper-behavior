@@ -3,13 +3,14 @@
 """
 Quantify the variability of the time to trained over labs.
 
-@author: Guido Meijer
+@author: Guido Meijer, Miles Wells
 16 Jan 2020
 """
 from os.path import join
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import seaborn as sns
 
@@ -76,6 +77,7 @@ training_time = training_time.sort_values('lab_number')
 use_palette = [[0.6, 0.6, 0.6]] * len(np.unique(training_time['lab']))
 use_palette = use_palette + [[1, 1, 0.2]]
 lab_colors = group_colors()
+ylim = [-0.02, 1.02]
 
 # Plot hazard rate survival analysis
 f, (ax1) = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
@@ -89,7 +91,7 @@ for i, lab in enumerate(np.unique(training_time['lab_number'])):
 kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
 ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values, color='black')
 ax1.set(ylabel='Reached proficiency', xlabel='Training day',
-        xlim=[0, 60], ylim=[0, 1.02])
+        xlim=[0, 60], ylim=ylim)
 ax1.set_title('All labs: %d mice' % training_time['nickname'].nunique())
 
 # kmf.fit(training_time['sessions'].values, event_observed=training_time['trained'])
@@ -103,3 +105,26 @@ plt.tight_layout()
 seaborn_style()
 plt.savefig(join(fig_path, 'figure2d_probability_trained.pdf'))
 plt.savefig(join(fig_path, 'figure2d_probability_trained.png'), dpi=300)
+
+# Plot the same figure as a function of trial number
+f, (ax1) = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
+
+kmf = KaplanMeierFitter()
+for i, lab in enumerate(np.unique(training_time['lab_number'])):
+    kmf.fit(training_time.loc[training_time['lab_number'] == lab, 'trials'].values,
+            event_observed=training_time.loc[training_time['lab_number'] == lab, 'trained'])
+    ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values,
+             color=lab_colors[i])
+kmf.fit(training_time['trials'].values, event_observed=training_time['trained'])
+ax1.step(kmf.cumulative_density_.index.values, kmf.cumulative_density_.values, color='black')
+ax1.set(ylabel='Reached proficiency', xlabel='Trial',
+        xlim=[0, 40e3], ylim=ylim)
+format_fcn = ticker.FuncFormatter(lambda x, pos: '{:,.0f}'.format(x / 1e3) + 'K')
+ax1.xaxis.set_major_formatter(format_fcn)
+ax1.set_title('All labs: %d mice' % training_time['nickname'].nunique())
+
+sns.despine(trim=True, offset=5)
+plt.tight_layout()
+seaborn_style()
+plt.savefig(join(fig_path, 'figure2d_probability_trained_trials.pdf'))
+plt.savefig(join(fig_path, 'figure2d_probability_trained_trials.png'), dpi=300)

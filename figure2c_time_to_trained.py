@@ -10,6 +10,7 @@ from os.path import join
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import seaborn as sns
 from scipy import stats
@@ -120,6 +121,8 @@ ax1.set(ylabel='Trials to trained', xlabel='')
 ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
+format_fcn = ticker.FuncFormatter(lambda x, pos: '{:,.0f}'.format(x / 1e3) + 'K')
+ax1.yaxis.set_major_formatter(format_fcn)
 sns.despine(trim=True)
 plt.tight_layout()
 plt.savefig(join(fig_path, 'figure2c_trials_to_trained.pdf'))
@@ -154,4 +157,15 @@ fastest = training_time['sessions'].min()
 print('For mice that learned the task, the average training took %.1f ± %.1f days (s.d., '
       'n = %d), similar to the %d days of the example mouse from Lab 1 (Figure 2a, black). The '
       'fastest learners met training criteria in %d days, the slowest %d days'
+      % (m_train, s_train, len(use_subjects), example_training_time, fastest, slowest))
+
+# Training time in trials
+m_train = training_time['trials'].mean() / 1000
+s_train = training_time['trials'].std() / 1000
+slowest = training_time['trials'].max() / 1000
+fastest = training_time['trials'].min() / 1000
+
+print('In trials, the average training took %.1fK ± %.1fK trials (s.d., '
+      'n = %d), similar to the %dK trials of the example mouse from Lab 1 (Figure 2a, black). The '
+      'fastest learners met training criteria in %dK trials, the slowest %dK trials.'
       % (m_train, s_train, len(use_subjects), example_training_time, fastest, slowest))

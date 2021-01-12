@@ -1,7 +1,7 @@
 """
 Learning curves for all labs
 
-@author: Anne Urai
+@author: Anne Urai, Miles Wells
 15 January 2020
 """
 import os
@@ -11,6 +11,7 @@ import numpy as np
 from scipy.signal import medfilt
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 from paper_behavior_functions import (query_subjects, figpath, load_csv, group_colors,
                                       institution_map, seaborn_style, EXAMPLE_MOUSE,
@@ -146,13 +147,14 @@ print(behav_summary.loc[behav_summary.performance_easy >
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,
                     col="institution_code", col_wrap=7, col_order=col_names,
-                    sharex=True, sharey=True, hue="subject_uuid", xlim=[-1, 40],
+                    sharex=True, sharey=True, hue="subject_uuid", xlim=[-1, 3e4],
                     height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH / 7) / FIGURE_HEIGHT)
 fig.map(sns.lineplot, "cum_trials",
         "performance_easy", color='grey', alpha=0.3)
 fig.map(sns.lineplot, "cum_trials",
         "performance_easy_trained", color='black', alpha=0.3)
 fig.set_titles("{col_name}")
+format_fcn = ticker.FuncFormatter(lambda x, pos: '{:,.0f}'.format(x / 1e3) + 'K')
 
 # overlay the example mouse
 sns.lineplot(ax=fig.axes[0], x='cum_trials', y='performance_easy', color='black',
@@ -161,14 +163,13 @@ sns.lineplot(ax=fig.axes[0], x='cum_trials', y='performance_easy', color='black'
 for axidx, ax in enumerate(fig.axes.flat):
     # add the lab mean to each panel
     d = (behav.loc[behav.institution_name == behav.institution_name.unique()[axidx], :])\
-        .groupby('training_day').mean()
+        .groupby('training_day').mean()  # Binning by day
     sns.lineplot(data=d, x='cum_trials', y='performance_easy',
                  color=pal[axidx], ci=None, ax=ax, legend=False, linewidth=2)
     ax.set_title(behav.institution_name.unique()[
                  axidx], color=pal[axidx], fontweight='bold')
-    ax.ticklabel_format(axis='x', style='sci', scilimits=(4, 4))
     fig.set(xticks=[0, 10000, 20000, 30000])
-    ax.set_xlim([-1, 30000])
+    ax.xaxis.set_major_formatter(format_fcn)
 
 fig.set_axis_labels('Trial', 'Performance (%)\n on easy trials')
 fig.despine(trim=True)
@@ -177,21 +178,21 @@ fig.savefig(os.path.join(figpath, "figure2a_learningcurves_trials.pdf"))
 fig.savefig(os.path.join(figpath, "figure2a_learningcurves_trials.png"), dpi=300)
 
 # Plot all labs
-d = behav.groupby(['institution_code', 'training_day']).mean()
+d = behav.groupby(['institution_code', 'training_day']).mean()  # Binned by day
+
 fig, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
 sns.lineplot(x='cum_trials', y='performance_easy', hue='institution_code', palette=pal,
              ax=ax1, legend=False, data=d, ci=None)
 ax1.set_title('All labs: %d mice' % behav['subject_nickname'].nunique())
 ax1.set(xlabel='Trial',
         ylabel='Performance (%)\non easy trials', xlim=[-1, 30000], ylim=[15, 100])
-ax1.ticklabel_format(axis='x', style='sci', scilimits=(4, 4))
+ax1.xaxis.set_major_formatter(format_fcn)
 
 sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure2b_learningcurves_trials_all_labs.pdf"))
 fig.savefig(os.path.join(
     figpath, "figure2b_learningcurves_trials_all_labs.png"), dpi=300)
-plt.show()
 
 # ================================= #
 # print some stats
@@ -203,3 +204,5 @@ behav_summary = behav.groupby(['training_day'])[
 print('number of trials to reach 80% accuracy on easy trials: ')
 print(behav_summary.loc[behav_summary.performance_easy >
                         80, 'cum_trials'].round().min())
+
+plt.show()

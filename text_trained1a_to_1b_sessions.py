@@ -63,7 +63,7 @@ for i_sub in range(0, len(uni_sub)):
                                             data=df.groupby(['training_status']).size())
             training_time = training_time.append(training_time_ab.loc['trained_1a'])
 
-# Training time as a whole
+# Training time as a whole (N session in trained_1a before reaching trained_1b)
 m_train = training_time['sessions'].mean()
 s_train = training_time['sessions'].std()
 slowest = training_time['sessions'].max()

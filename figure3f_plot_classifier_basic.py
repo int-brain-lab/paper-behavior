@@ -49,8 +49,8 @@ for DECODER in ['bayes', 'forest', 'regression']:
                                        decoding_result['original']], axis=1),
                        palette=colors, ax=ax1)
         ax1.plot([-1, 3.5], [chance_level, chance_level], '--', color='k', zorder=-10)
-        ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.6, 2.6], ylim=[-0.1, 0.62])
-        ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Decoding\nof lab'],
+        ax1.set(ylabel='Decoding accuracy', xlim=[-0.6, 2.6], ylim=[-0.1, 0.62])
+        ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Mouse\nbehavior'],
                             rotation=90, ha='center')
         plt.tight_layout()
         sns.despine(trim=True)
@@ -66,8 +66,8 @@ for DECODER in ['bayes', 'forest', 'regression']:
                                    decoding_result['original']], axis=1),
                    palette=colors, ax=ax1)
     ax1.plot([-1, 3.5], [chance_level, chance_level], '--', color='k', zorder=-10)
-    ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.8, 2.6], ylim=[-0.1, 0.62])
-    ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Decoding\nof lab'],
+    ax1.set(ylabel='Decoding accuracy', xlim=[-0.8, 2.6], ylim=[-0.1, 0.62])
+    ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Mouse\nbehavior'],
                         rotation=90, ha='center')
     plt.tight_layout()
     sns.despine(trim=True)
@@ -81,7 +81,7 @@ for DECODER in ['bayes', 'forest', 'regression']:
     n_labs = decoding_result['confusion_matrix'][0].shape[0]
     # sns.heatmap(data=decoding_result['confusion_matrix'].mean(), vmin=0, vmax=0.6)
     sns.heatmap(data=decoding_result['confusion_matrix'].mean(),
-                vmin=0, vmax=0.25)
+                vmin=0, vmax=0.5)
     ax1.plot([0, 7], [0, 7], '--w')
     ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
             ylim=[0, n_labs], xlim=[0, n_labs],
@@ -100,7 +100,7 @@ for DECODER in ['bayes', 'forest', 'regression']:
     f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
     # sns.heatmap(data=decoding_result['control_cm'].mean(), vmin=0, vmax=1)
     sns.heatmap(data=decoding_result['control_cm'].mean(),
-                vmin=0, vmax=1)
+                vmin=0, vmax=0.5)
     ax1.plot([0, 7], [0, 7], '--w')
     ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
             title='', ylabel=' ', xlabel='Predicted lab',

@@ -39,7 +39,7 @@ from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import f1_score, confusion_matrix
 
 # Parameters
-DECODER = 'bayes'           # bayes, forest or regression
+DECODER = 'forest'           # bayes, forest or regression
 N_MICE = 8                  # how many mice per lab to sub-sample
 ITERATIONS = 2000           # how often to decode
 METRICS = ['perf_easy', 'threshold', 'bias']
@@ -63,21 +63,18 @@ def decoding(data, labels, clf):
 if QUERY is True:
     use_sessions, _ = query_sessions_around_criterion(criterion='trained',
                                                       days_from_criterion=[2, 0])
-    behav = dj2pandas(
-        ((use_sessions & 'task_protocol LIKE "%training%"')  # only get training sessions
-         * subject.Subject * subject.SubjectLab * reference.Lab * behavior.TrialSet.Trial)
-
-        # Query only the fields we require
-        .proj('institution_short', 'subject_nickname', 'task_protocol',
-              'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-              'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-              'trial_response_time', 'trial_stim_on_time', 'time_zone')
-
-        # Fetch as a pandas DataFrame, ordered by institute
-        .fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-               format='frame')
-        .reset_index()
-    )
+    session_keys = (use_sessions & 'task_protocol LIKE "%training%"').fetch('KEY')
+    ses = ((use_sessions & 'task_protocol LIKE "%training%"')
+           * subject.Subject * subject.SubjectLab * reference.Lab
+           * (behavior.TrialSet.Trial & session_keys))
+    ses = ses.proj('institution_short', 'subject_nickname', 'task_protocol',
+                   'trial_stim_contrast_left', 'trial_stim_contrast_right',
+                   'trial_response_choice', 'task_protocol', 'trial_stim_prob_left',
+                   'trial_feedback_type', 'trial_response_time', 'trial_stim_on_time',
+                   'time_zone').fetch(
+                       order_by='institution_short, subject_nickname,session_start_time, trial_id',
+                       format='frame').reset_index()
+    behav = dj2pandas(ses)
     behav['institution_code'] = behav.institution_short.map(institution_map()[0])
 else:
     behav = load_csv('Fig3.csv')

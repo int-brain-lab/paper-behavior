@@ -32,7 +32,7 @@ else:
 ses = ses.sort_values(by=['subject_uuid', 'session_start_time'])
 uni_sub = np.unique(ses['subject_uuid'])
 
-training_time_b = pd.DataFrame(columns=['sessions'])
+training_time = pd.DataFrame(columns=['sessions'])
 # Loop over subjects
 for i_sub in range(0, len(uni_sub)):
     subj = uni_sub[i_sub]
@@ -55,13 +55,16 @@ for i_sub in range(0, len(uni_sub)):
         date_a = df.iloc[[n_row_a]]['session_start_time'].values
         date_b = df.iloc[[n_row_b]]['session_start_time'].values
         if date_a.astype('datetime64[D]') != date_b.astype('datetime64[D]'):
+            # Print for debugging purposes
+            date_b_prt = date_b.astype('datetime64[D]')
+            print(f'trained_1b: {date_b_prt}, subject uuid: {subj}')
             # Aggregate and append
             training_time_ab = pd.DataFrame(columns=['sessions'],
                                             data=df.groupby(['training_status']).size())
-            training_time_b = training_time_b.append(training_time_ab.loc['trained_1b'])
+            training_time = training_time.append(training_time_ab.loc['trained_1a'])
 
 # Training time as a whole
-m_train = training_time_b['sessions'].mean()
-s_train = training_time_b['sessions'].std()
-slowest = training_time_b['sessions'].max()
-fastest = training_time_b['sessions'].min()
+m_train = training_time['sessions'].mean()
+s_train = training_time['sessions'].std()
+slowest = training_time['sessions'].max()
+fastest = training_time['sessions'].min()

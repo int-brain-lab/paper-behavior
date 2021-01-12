@@ -35,10 +35,12 @@ uni_sub = np.unique(ses['subject_nickname'])
 # Construct dataframe
 training_time_ab = pd.DataFrame(columns=['sessions'], data=ses.groupby(['subject_nickname','training_status']).size())
 training_time_b = pd.DataFrame(columns=['sessions'])
+# Loop over subjects
 for i_sub in range(0, len(uni_sub)):
     subj = uni_sub[i_sub]
     ab = training_time_ab.loc[subj]
-    if len(ab)==2:
+    # Check if both trained_1a and trained_1b are found as keys
+    if len(ab) == 2:  # Assumed ==2 is fine, as there are only the trained_1a/1b labels to be found as per the DJ query
         tr_b = ab.loc['trained_1b']
         training_time_b = training_time_b.append(tr_b)
 

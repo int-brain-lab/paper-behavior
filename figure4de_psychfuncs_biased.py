@@ -175,9 +175,9 @@ for axidx, ax in enumerate(fig.axes.flat):
                  color=pal[axidx])
 
 fig.set_axis_labels('\u0394 Contrast (%)', '\u0394 Rightward choices (%)')
-plt.tight_layout(w_pad=-5)
-fig.savefig(os.path.join(figpath, "figure4d_biasshift.pdf"))
-fig.savefig(os.path.join(figpath, "figure4d_biasshift.png"), dpi=300)
+plt.tight_layout(w_pad=0)
+fig.savefig(os.path.join(figpath, "figure4e_biasshift.pdf"))
+fig.savefig(os.path.join(figpath, "figure4e_biasshift.png"), dpi=300)
 plt.close('all')
 
 
@@ -195,8 +195,8 @@ sns.despine(trim=True)
 plt.tight_layout()
 ymin = ax1.get_ylim()[0]-0.15
 break_xaxis(y=ymin)
-fig.savefig(os.path.join(figpath, "figure4c_biasshift_all_labs.pdf"))
-fig.savefig(os.path.join(figpath, "figure4c_biasshift_all_labs.png"), dpi=300)
+fig.savefig(os.path.join(figpath, "figure4d_biasshift_all_labs.pdf"))
+fig.savefig(os.path.join(figpath, "figure4d_biasshift_all_labs.png"), dpi=300)
 
 # ================================================================== #
 # Plot behavioral metrics per lab

@@ -23,7 +23,7 @@ pal = group_colors()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
-# ================================= #
+# %%=============================== #
 # GET DATA FROM TRAINED ANIMALS
 # ================================= #
 
@@ -66,7 +66,7 @@ else:
 # print some output
 print(behav.sample(n=10))
 
-# ================================= #
+# %%=============================== #
 # PSYCHOMETRIC FUNCTIONS
 # ================================= #
 
@@ -100,7 +100,7 @@ for axidx, ax in enumerate(fig.axes.flat):
 
 fig.despine(trim=True)
 fig.set_axis_labels("\u0394 Contrast (%)", 'Rightward choices (%)')
-plt.tight_layout(w_pad=-1.7)
+plt.tight_layout(w_pad=1)
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.pdf"))
 fig.savefig(os.path.join(figpath, "figure3a_psychfuncs.png"), dpi=300)
 print('done')

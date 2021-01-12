@@ -161,5 +161,5 @@ ax4.set(xlabel='80:20 block', ylabel='', title='Bias',
 
 plt.tight_layout(w_pad=-0.1)
 sns.despine(trim=True)
-plt.savefig(join(figpath, 'figure4e-h_metrics_per_lab_full.pdf'))
-plt.savefig(join(figpath, 'figure4e-h_metrics_per_lab_full.png'), dpi=300)
+plt.savefig(join(figpath, 'figure4f-i_metrics_per_lab_full.pdf'))
+plt.savefig(join(figpath, 'figure4f-i_metrics_per_lab_full.png'), dpi=300)

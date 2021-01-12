@@ -180,5 +180,4 @@ for i in range(ITERATIONS):
                                                              labels_shuffle, clf)
 
 # Save to csv
-root = join(datapath(), 'classification_results')
-decoding_result.to_pickle(join(root, 'classification_results_first_biased_%s.pkl' % DECODER))
+decoding_result.to_pickle(join(datapath(), 'classification_results_first_biased_%s.pkl' % DECODER))

@@ -56,8 +56,7 @@ behav['institution_name'] = behav.institution_code + '\n ' + behav.n_mice.apply(
 
 # make sure each mouse starts at 0
 for index, group in behav.groupby(['lab_name', 'subject_nickname']):
-    behav['training_day'][behav.index.isin(
-        group.index)] = group['training_day'] - group['training_day'].min()
+    behav.loc[group.index, 'training_day'] = group['training_day'] - group['training_day'].min()
 
 # create another column only after the mouse is trained
 behav2 = pd.DataFrame([])

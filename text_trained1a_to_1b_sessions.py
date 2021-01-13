@@ -10,12 +10,15 @@ from os.path import join
 
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 from paper_behavior_functions import (query_subjects, datapath, QUERY)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
-# Settings
+# Date at which trained_1b was implemented in DJ pipeline
+DATE_IMPL = datetime.strptime('12-09-2019', '%d-%m-%Y').date()
 
+# Query data
 if QUERY is True:
     # Query sessions
     use_subjects = query_subjects()
@@ -32,12 +35,12 @@ else:
 ses = ses.sort_values(by=['subject_uuid', 'session_start_time'])
 uni_sub = np.unique(ses['subject_uuid'])
 
-training_time_b = pd.DataFrame(columns=['sessions'])
+training_time = pd.DataFrame(columns=['sessions'])
 # Loop over subjects
 for i_sub in range(0, len(uni_sub)):
     subj = uni_sub[i_sub]
 
-    # # Construct dataframe
+    # Construct dataframe
     df = ses.loc[ses['subject_uuid'] == subj]
     if len(np.unique(df['training_status'])) == 2:  # Append
 
@@ -53,15 +56,22 @@ for i_sub in range(0, len(uni_sub)):
             print("ERROR")
         #  Get and compare dates
         date_a = df.iloc[[n_row_a]]['session_start_time'].values
+        date_a = date_a.astype('datetime64[D]')
         date_b = df.iloc[[n_row_b]]['session_start_time'].values
-        if date_a.astype('datetime64[D]') != date_b.astype('datetime64[D]'):
+        date_b = date_b.astype('datetime64[D]')
+        if date_a != date_b and date_b > DATE_IMPL:
+            # Print for debugging purposes
+            # print(f'trained_1b: {date_b}, subject uuid: {subj}')
             # Aggregate and append
             training_time_ab = pd.DataFrame(columns=['sessions'],
                                             data=df.groupby(['training_status']).size())
-            training_time_b = training_time_b.append(training_time_ab.loc['trained_1b'])
+            training_time = training_time.append(training_time_ab.loc['trained_1a'])  # Take N session done under 1a
 
-# Training time as a whole
-m_train = training_time_b['sessions'].mean()
-s_train = training_time_b['sessions'].std()
-slowest = training_time_b['sessions'].max()
-fastest = training_time_b['sessions'].min()
+# Training time as a whole (N session in trained_1a before reaching trained_1b)
+m_train = training_time['sessions'].mean()
+s_train = training_time['sessions'].std()
+slowest = training_time['sessions'].max()
+fastest = training_time['sessions'].min()
+
+n_mice = len(training_time)
+print(f'using impl. date: {DATE_IMPL} : {n_mice} mice, n session from 1a>1b: {round(m_train, 2)} ± {round(s_train, 2)}')

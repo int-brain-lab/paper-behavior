@@ -81,7 +81,7 @@ for DECODER in ['bayes', 'forest', 'regression']:
     n_labs = decoding_result['confusion_matrix'][0].shape[0]
     # sns.heatmap(data=decoding_result['confusion_matrix'].mean(), vmin=0, vmax=0.6)
     sns.heatmap(data=decoding_result['confusion_matrix'].mean(),
-                vmin=0, vmax=0.5)
+                vmin=0, vmax=0.4)
     ax1.plot([0, 7], [0, 7], '--w')
     ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
             ylim=[0, n_labs], xlim=[0, n_labs],
@@ -100,7 +100,7 @@ for DECODER in ['bayes', 'forest', 'regression']:
     f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
     # sns.heatmap(data=decoding_result['control_cm'].mean(), vmin=0, vmax=1)
     sns.heatmap(data=decoding_result['control_cm'].mean(),
-                vmin=0, vmax=0.5)
+                vmin=0, vmax=0.4)
     ax1.plot([0, 7], [0, 7], '--w')
     ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
             title='', ylabel=' ', xlabel='Predicted lab',

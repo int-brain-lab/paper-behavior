@@ -60,9 +60,7 @@ plt.close(f)
 # %%
 f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
 n_labs = decoding_result['confusion_matrix'][0].shape[0]
-# sns.heatmap(data=decoding_result['confusion_matrix'].mean(), vmin=0, vmax=0.6)
-sns.heatmap(data=decoding_result['confusion_matrix'].mean(),
-            vmin=0, vmax=0.25)
+sns.heatmap(data=decoding_result['confusion_matrix'].mean(), vmin=0, vmax=0.4)
 ax1.plot([0, 7], [0, 7], '--w')
 ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
         ylim=[0, n_labs], xlim=[0, n_labs],
@@ -74,24 +72,6 @@ plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout()
 
-plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s.pdf' % DECODER))
-plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s.png' % DECODER), dpi=300)
-plt.close(f)
-
-f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
-# sns.heatmap(data=decoding_result['control_cm'].mean(), vmin=0, vmax=1)
-sns.heatmap(data=decoding_result['control_cm'].mean(),
-            vmin=0, vmax=1)
-ax1.plot([0, 7], [0, 7], '--w')
-ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
-        title='', ylabel=' ', xlabel='Predicted lab',
-        ylim=[0, n_labs], xlim=[0, n_labs])
-ax1.set(ylabel='Actual lab')
-
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
-plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
-plt.gca().invert_yaxis()
-plt.tight_layout()
-plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s.pdf' % DECODER))
-plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s.png' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_perf.pdf'))
+plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_pref.png'), dpi=300)
 plt.close(f)

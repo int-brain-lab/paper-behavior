@@ -51,9 +51,9 @@ plt.savefig(join(FIG_PATH, 'suppfig_decoding_first_biased.png'), dpi=300)
 
 
 # %%
-f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4.5, FIGURE_HEIGHT))
+f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
 n_labs = decoding_result['confusion_matrix'][0].shape[0]
-sns.heatmap(data=decoding_result['confusion_matrix'].mean())
+sns.heatmap(data=decoding_result['confusion_matrix'].mean(), vmin=0, vmax=0.4)
 ax1.plot([0, 7], [0, 7], '--w')
 ax1.set(xticklabels=np.arange(1, n_labs + 1), yticklabels=np.arange(1, n_labs + 1),
         ylim=[0, n_labs], xlim=[0, n_labs],

@@ -16,7 +16,7 @@ from paper_behavior_functions import (query_subjects, datapath, QUERY)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # Date at which trained_1b was implemented in DJ pipeline
-DATE_IMPL = datetime.strptime('12-11-2019', '%d-%m-%Y').date()
+DATE_IMPL = datetime.strptime('12-09-2019', '%d-%m-%Y').date()
 
 # Query data
 if QUERY is True:

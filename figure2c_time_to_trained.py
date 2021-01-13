@@ -154,7 +154,7 @@ fastest = training_time['sessions'].min()
 # Print information used in the paper
 print('For mice that learned the task, the average training took %.1f ± %.1f days (s.d., '
       'n = %d), similar to the %d days of the example mouse from Lab 1 (Figure 2a, black). The '
-      'fastest learners met training criteria in %d days, the slowest %d days'
+      'fastest learner met training criteria in %d days, the slowest %d days'
       % (m_train, s_train, len(use_subjects), example_training_time, fastest, slowest))
 
 # Training time in trials
@@ -165,5 +165,5 @@ fastest = training_time['trials'].min() / 1000
 
 print('In trials, the average training took %.1fK ± %.1fK trials (s.d., '
       'n = %d), similar to the %dK trials of the example mouse from Lab 1 (Figure 2a, black). The '
-      'fastest learners met training criteria in %dK trials, the slowest %dK trials.'
+      'fastest learner met training criteria in %dK trials, the slowest %dK trials.'
       % (m_train, s_train, len(use_subjects), example_training_time, fastest, slowest))

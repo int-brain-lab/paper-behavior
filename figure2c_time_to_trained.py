@@ -15,7 +15,6 @@ import numpy as np
 import seaborn as sns
 from scipy import stats
 import scikit_posthocs as sp
-
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
                                       group_colors, figpath, load_csv, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
@@ -24,30 +23,25 @@ from ibl_pipeline.analyses import behavior as behavior_analysis
 # Settings
 fig_path = figpath()
 seaborn_style()
+institution_map, col_names = institution_map()
 
 if QUERY is True:
     # Query sessions
     use_subjects = query_subjects()
-    ses = ((use_subjects * behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResults
-            & 'training_status = "in_training" OR training_status = "untrainable"')
-           .proj('subject_nickname', 'n_trials_stim', 'institution_short')
-           .fetch(format='frame')
-           .dropna()
-           .reset_index())
-    ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
+    ses = (behavior_analysis.BehavioralSummaryByDate * use_subjects)
+    ses = (ses & 'session_date <= date_trained').fetch(format='frame').reset_index()
 
-    # Drop multiple sessions on the same day
-    ses['session_date'] = ses['session_start_time'].dt.date
-    ses = ses[~ses.duplicated(subset=['subject_nickname', 'session_date'])]
-
-    # Construct dataframe
+     # Construct dataframe
     training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
-    training_time['trials'] = ses.groupby('subject_nickname').sum()
+    ses['n_trials_date'] = ses['n_trials_date'].astype(int)
+    training_time['trials'] = ses.groupby('subject_nickname').sum()['n_trials_date']
     training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
 
     # Change lab name into lab number
-    training_time['lab_number'] = training_time.lab.map(institution_map()[0])
+    training_time['lab_number'] = training_time.lab.map(institution_map)
     training_time = training_time.sort_values('lab_number')
+    training_time = training_time.reset_index()
+
 else:
     training_time = load_csv('Fig2c.csv').dropna()
     use_subjects = training_time['subject_nickname']  # For counting the number of subjects

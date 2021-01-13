@@ -36,6 +36,10 @@ if QUERY is True:
            .reset_index())
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
 
+    # Drop multiple sessions on the same day
+    ses['session_date'] = ses['session_start_time'].dt.date
+    ses = ses[~ses.duplicated(subset=['subject_nickname', 'session_date'])]
+
     # Construct dataframe
     training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
     training_time['trials'] = ses.groupby('subject_nickname').sum()

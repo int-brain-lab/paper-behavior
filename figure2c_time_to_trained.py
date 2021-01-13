@@ -3,7 +3,7 @@
 """
 Quantify the variability of the time to trained over labs.
 
-@author: Guido Meijer
+@author: Guido Meijer, Miles Wells
 16 Jan 2020
 """
 from os.path import join

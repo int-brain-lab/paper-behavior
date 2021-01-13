@@ -47,14 +47,14 @@ sns.violinplot(data=pd.concat([decoding_result['control'],
                                decoding_result['original']], axis=1),
                palette=colors, ax=ax1)
 ax1.plot([-1, 3.5], [chance_level, chance_level], '--', color='k', zorder=-10)
-ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.6, 2.6], ylim=[-0.1, 0.62])
-ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Decoding\nof lab'],
+ax1.set(ylabel='Decoding accuracy', xlim=[-0.6, 2.6], ylim=[-0.1, 0.62])
+ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Mouse\nbehavior'],
                     rotation=90, ha='center')
 plt.tight_layout()
 sns.despine(trim=True)
 
-plt.savefig(join(FIG_PATH, 'suppfigX_decoding.pdf'))
-plt.savefig(join(FIG_PATH, 'suppfigX_decoding.png'), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig3_decoding_perf.pdf'))
+plt.savefig(join(FIG_PATH, 'suppfig3_decoding_perf.png'), dpi=300)
 plt.close(f)
 
 # %%
@@ -74,8 +74,8 @@ plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout()
 
-plt.savefig(join(FIG_PATH, 'suppfigX_confusion_matrix_%s.pdf' % DECODER))
-plt.savefig(join(FIG_PATH, 'suppfigX_confusion_matrix_%s.png' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s.pdf' % DECODER))
+plt.savefig(join(FIG_PATH, 'suppfig3_confusion_matrix_%s.png' % DECODER), dpi=300)
 plt.close(f)
 
 f, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/4, FIGURE_HEIGHT))
@@ -92,6 +92,6 @@ plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 plt.setp(ax1.yaxis.get_majorticklabels(), rotation=40)
 plt.gca().invert_yaxis()
 plt.tight_layout()
-plt.savefig(join(FIG_PATH, 'suppfigX_control_confusion_matrix_%s.pdf' % DECODER))
-plt.savefig(join(FIG_PATH, 'suppfigX_control_confusion_matrix_%s.png' % DECODER), dpi=300)
+plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s.pdf' % DECODER))
+plt.savefig(join(FIG_PATH, 'suppfig3_control_confusion_matrix_%s.png' % DECODER), dpi=300)
 plt.close(f)

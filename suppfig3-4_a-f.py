@@ -4,8 +4,8 @@
 Quantify the variability of behavioral metrics within and between labs of mouse behavior.
 This script doesn't perform any analysis but plots summary statistics over labs.
 
-Guido Meijer
-16 Jan 2020
+Alejandro Pan
+06 Jan 2020
 """
 
 import pandas as pd
@@ -14,42 +14,27 @@ import numpy as np
 from scipy import stats
 from os.path import join
 import seaborn as sns
-from paper_behavior_functions import (query_sessions_around_criterion, seaborn_style,
-                                      institution_map, group_colors, figpath, load_csv,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT, QUERY,
-                                      dj2pandas, fit_psychfunc, num_star)
-from ibl_pipeline import behavior, subject, reference
+from paper_behavior_functions import (seaborn_style,
+                                      institution_map, group_colors, figpath,
+                                      FIGURE_WIDTH, FIGURE_HEIGHT,
+                                      fit_psychfunc, num_star,
+                                      query_session_around_performance)
 import scikit_posthocs as sp
 from statsmodels.stats.multitest import multipletests
 
-# Initialize
+
 seaborn_style()
 figpath = figpath()
 pal = group_colors()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
-if QUERY is True:
-    use_sessions, _ = query_sessions_around_criterion(criterion='trained',
-                                                      days_from_criterion=[2, 0])
-    session_keys = (use_sessions & 'task_protocol LIKE "%training%"').fetch('KEY')
-    ses = ((use_sessions & 'task_protocol LIKE "%training%"')
-           * subject.Subject * subject.SubjectLab * reference.Lab
-           * (behavior.TrialSet.Trial & session_keys))
-    ses = ses.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
-                   'trial_stim_contrast_left', 'trial_stim_contrast_right',
-                   'trial_response_choice', 'task_protocol', 'trial_stim_prob_left',
-                   'trial_feedback_type', 'trial_response_time', 'trial_stim_on_time',
-                   'session_end_time').fetch(
-                       order_by='institution_short, subject_nickname,session_start_time, trial_id',
-                       format='frame').reset_index()
-    behav = dj2pandas(ses)
-    behav['institution_code'] = behav.institution_short.map(institution_map)
-else:
-    behav = load_csv('Fig3.csv', parse_dates=['session_start_time', 'session_end_time'])
+
+behav = query_session_around_performance(perform_thres=0.9)
+behav['institution_code'] = behav.lab_name.map(institution_map)
 
 # Create dataframe with behavioral metrics of all mice
-learned = pd.DataFrame(columns=['mouse', 'lab', 'perf_easy', 'n_trials',
+learned = pd.DataFrame(columns=['mouse', 'institution_short', 'perf_easy', 'n_trials',
                                 'threshold', 'bias', 'reaction_time',
                                 'lapse_low', 'lapse_high', 'trials_per_minute'])
 
@@ -58,10 +43,15 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
         print('Processing data of subject %d of %d' % (i+1,
                                                        len(behav['subject_nickname'].unique())))
 
-    # Get the trials of the sessions around criterion for this subject
-    trials = behav[behav['subject_nickname'] == nickname]
-    trials = trials.reset_index()
-
+    # Get the trials of the sessions around criterion for this subject (first
+    # 90% + next session)
+    trials = behav[behav['subject_nickname'] == nickname].reset_index()
+    # Exclude sessions with less than 4 contrasts
+    trials['contrast_set'] = trials.session_start_time.map(
+        trials.groupby(['session_start_time'])['signed_contrast'].unique())
+    trials = trials.loc[trials['contrast_set'].str.len()>4]
+    if len(trials['session_start_time'].unique())<3:
+        continue
     # Fit a psychometric function to these trials and get fit results
     fit_result = fit_psychfunc(trials)
 
@@ -70,6 +60,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
     perf_easy = trials['correct_easy'].mean()*100
     ntrials_perday = trials.groupby('session_uuid').count()['trial_id'].mean()
 
+
     # average trials/minute to normalise by session length
     trials['session_length'] = (trials.session_end_time - trials.session_start_time).astype('timedelta64[m]')
     total_session_length = trials.groupby('session_uuid')['session_length'].mean().sum()
@@ -77,7 +68,7 @@ for i, nickname in enumerate(behav['subject_nickname'].unique()):
 
     # Add results to dataframe
     learned.loc[i, 'mouse'] = nickname
-    learned.loc[i, 'lab'] = trials['institution_short'][0]
+    learned.loc[i, 'lab'] = trials['institution_short'].iloc[0]
     learned.loc[i, 'perf_easy'] = perf_easy
     learned.loc[i, 'n_trials'] = ntrials_perday
     learned.loc[i, 'reaction_time'] = reaction_time
@@ -164,15 +155,18 @@ sns.set_palette(lab_colors)
 vars = ['n_trials', 'perf_easy',  'threshold', 'bias', 'reaction_time', 'trials_per_minute']
 ylabels =['Number of trials', 'Performance (%)\non easy trials',
           'Contrast threshold (%)', 'Bias (%)', 'Trial duration (ms)', 'Trials / minute']
-ylims = [[0, 2000],[70, 100], [0, 25], [-25, 25], [0, 2000], [0, 25]]
-for v, ylab, ylim in zip(vars, ylabels, ylims):
+ylims = [[0, 2000],[70, 100], [0, 50], [-30, 30], [0, 2000], [0, 30]]
+criteria = [[0, 0],[80, 100], [0, 20], [-10, 10], [0, 0], [0, 0]]
+order_x = ['Lab 1','Lab 2','Lab 3','Lab 4','Lab 5','Lab 6','Lab 7','All']
+for v, ylab, ylim, crit in zip(vars, ylabels, ylims, criteria):
 
     f, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))
     sns.swarmplot(y=v, x='lab_number', data=learned_no_all, hue='lab_number',
-                  palette=lab_colors, ax=ax, marker='.')
+                  palette=lab_colors, ax=ax, marker='.', order=order_x)
     axbox = sns.boxplot(y=v, x='lab_number', data=learned_2, color='white',
-                        showfliers=False, ax=ax)
+                        showfliers=False, ax=ax, order=order_x)
     ax.set(ylabel=ylab, ylim=ylim, xlabel='')
+    ax.axhspan(crit[0], crit[1], facecolor='0.2', alpha=0.2)
     # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax5.get_xticklabels()[:-1])]
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=60)
     axbox.artists[-1].set_edgecolor('black')
@@ -188,8 +182,8 @@ for v, ylab, ylim in zip(vars, ylabels, ylims):
 
     sns.despine(trim=True)
     plt.tight_layout()
-    plt.savefig(join(figpath, 'figure3_metrics_%s.pdf'%v))
-    plt.savefig(join(figpath, 'figure3_metrics_%s.pdf'%v), dpi=300)
+    plt.savefig(join(figpath, 'supplementaryfigure3_metrics_%s.pdf'%v))
+    plt.savefig(join(figpath, 'supplementaryfigure3_metrics_%s.pdf'%v), dpi=300)
 
 # %%
 # Get stats for text

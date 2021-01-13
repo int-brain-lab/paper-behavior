@@ -33,18 +33,19 @@ if QUERY is True:
     use_sessions, _ = query_sessions_around_criterion(criterion='ephys',
                                                       days_from_criterion=[2, 0],
                                                       force_cutoff=True)
-    use_sessions = use_sessions & 'task_protocol LIKE "%biased%"'  # only get biased sessions
-    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-         * behavior.TrialSet.Trial)
-    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
-                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type',
-                'trial_response_time', 'trial_stim_on_time')
-    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                    format='frame').reset_index()
-    behav = dj2pandas(bdat)
+    session_keys = (use_sessions & 'task_protocol LIKE "%biased%"').fetch('KEY')
+    ses = ((use_sessions & 'task_protocol LIKE "%biased%"')
+           * subject.Subject * subject.SubjectLab * reference.Lab
+           * (behavior.TrialSet.Trial & session_keys))
+    ses = ses.proj('institution_short', 'subject_nickname', 'task_protocol', 'session_uuid',
+                   'trial_stim_contrast_left', 'trial_stim_contrast_right',
+                   'trial_response_choice', 'task_protocol', 'trial_stim_prob_left',
+                   'trial_feedback_type', 'trial_response_time', 'trial_stim_on_time',
+                   'session_end_time').fetch(
+                       order_by='institution_short, subject_nickname,session_start_time, trial_id',
+                       format='frame').reset_index()
+    behav = dj2pandas(ses)
     behav['institution_code'] = behav.institution_short.map(institution_map)
-
 else:
     behav = load_csv('Fig4.csv')
 
@@ -160,5 +161,5 @@ ax4.set(xlabel='80:20 block', ylabel='', title='Bias',
 
 plt.tight_layout(w_pad=-0.1)
 sns.despine(trim=True)
-plt.savefig(join(figpath, 'figure4e-h_metrics_per_lab_full.pdf'))
-plt.savefig(join(figpath, 'figure4e-h_metrics_per_lab_full.png'), dpi=300)
+plt.savefig(join(figpath, 'figure4f-i_metrics_per_lab_full.pdf'))
+plt.savefig(join(figpath, 'figure4f-i_metrics_per_lab_full.png'), dpi=300)

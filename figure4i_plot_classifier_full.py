@@ -41,8 +41,8 @@ sns.violinplot(data=pd.concat([decoding_result['control'],
                                decoding_result['original']], axis=1),
                palette=colors, ax=ax1)
 ax1.plot([-1, 3.5], [chance_level, chance_level], '--', color='k', zorder=-10)
-ax1.set(ylabel='Decoding (F1 score)', xlim=[-0.8, 2.4], ylim=[-0.1, 0.62])
-ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Decoding\nof lab'],
+ax1.set(ylabel='Decoding accuracy', xlim=[-0.8, 2.4], ylim=[-0.1, 0.62])
+ax1.set_xticklabels(['Positive\ncontrol', 'Shuffle', 'Mouse\nbehavior'],
                     rotation=90, ha='center')
 plt.tight_layout()
 sns.despine(trim=True)

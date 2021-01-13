@@ -7,7 +7,6 @@ Guido Meijer, Anne Urai, Alejandro Pan Vazquez & Miles Wells
 """
 import warnings
 import os
-from pathlib import Path
 from io import BytesIO
 from zipfile import ZipFile
 from urllib.request import urlopen
@@ -18,7 +17,6 @@ import numpy as np
 import datajoint as dj
 import pandas as pd
 import matplotlib.pyplot as plt
-from ibl_pipeline import behavior, subject, reference
 
 import brainbox.behavior.pyschofit as psy
 
@@ -57,7 +55,7 @@ def seaborn_style():
     Set seaborn style for plotting figures
     """
     sns.set(style="ticks", context="paper",
-            font="Helvetica",
+            font="Arial",
             rc={"font.size": 9,
                 "axes.titlesize": 9,
                 "axes.labelsize": 9,
@@ -323,6 +321,7 @@ def query_session_around_performance(perform_thres=0.8, stage='training'):
         DESCRIPTION. Dataframe with all trials from mice reaching
         performance criterion
     '''
+    from ibl_pipeline import behavior, subject, reference
     use_sessions = query_sessions(task='all', stable=False, as_dataframe=False,
                    force_cutoff=True, criterion=None)
     behav = dj2pandas(

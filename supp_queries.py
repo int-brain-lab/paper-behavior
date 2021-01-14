@@ -149,11 +149,29 @@ print(
 # Number of subjects before 1b criterion #
 ##########################################
 """
-Count the number of mice that reached biased criterion before 1b was introduced in September 2019.
+Count the number of mice for whom the 1b criterion was not applied.  The 1b criterion was 
+applied retroactively in September 2019.  Here we count the number of mice that reached 1b after 
+the implementation date, plus the mice that progressed further than the 1a/b and never had a 
+session labeled as 1b. 
 """
 # Date at which trained_1b was implemented in DJ pipeline
 DATE_IMPL = '2019-09-12'
-n_trained_before = len(query_subjects(criterion='ephys') & f'date_trained < "{DATE_IMPL}"')
+sessions = acquisition.Session * behavior_analysis.SessionTrainingStatus()
+
+# Trained 1b
+a = ((query_subjects()
+      .aggr(sessions & 'training_status LIKE "%1b"',
+            date_trained='min(date(session_start_time))')
+      & f'date_trained >= "{DATE_IMPL}"'))
+
+# OR reached ready 4 ephys and had no 1b session
+b = (query_subjects(criterion='ephys')
+     .aggr(sessions,
+           skipped_1b='SUM(training_status="trained_1b") = 0',
+           date_trained='min(date(session_start_time))')
+     & f'date_trained < "{DATE_IMPL}"' & 'skipped_1b = 1')
+
+n_trained_before = len(a) + len(b)
 n_trained = len(query_subjects(criterion='trained'))
 
 print('The second set, called "1b", was introduced shortly afterwards (September 2019) and '

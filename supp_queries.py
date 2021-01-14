@@ -171,12 +171,57 @@ b = (query_subjects(criterion='ephys')
            date_trained='min(date(session_start_time))')
      & f'date_trained < "{DATE_IMPL}"' & 'skipped_1b = 1')
 
-n_trained_before = len(a) + len(b)
+# Some mice met the 1b criteria before moving to biased choice world and before the date it was
+# implemented.  These mice affectively had the 1b criteria applied to them.
+"""
+The 1b criterion should be met both before the mouse is moved to the biased protocol and before 
+moving to the ephys rig.  Here we count the mice that met the 1b criteria before it was 
+implemented.
+"""
+c = (  # Reached 1b before moving to biased protocol
+    (query_subjects()
+     .aggr(sessions & 'training_status LIKE "%1b"' & 'task_protocol LIKE "%training%"',
+           date_trained='min(date(session_start_time))')
+     & f'date_trained < "{DATE_IMPL}"').proj()
+    &  # AND met ready4ephys before being moved to an ephys rig
+    (query_subjects()
+     .aggr((sessions * behavior.Settings.proj('pybpod_board'))
+           & 'training_status LIKE "ready"' & 'pybpod_board NOT LIKE "%ephys%"',
+           date_trained='min(date(session_start_time))')
+     & f'date_trained < "{DATE_IMPL}"').proj()
+)
+
+
+met_1b_after = len(a)
+skipped_1b = len(b)
+met_1b_before = len(c)
 n_trained = len(query_subjects(criterion='trained'))
 
-print('The second set, called "1b", was introduced shortly afterwards (September 2019) and '
-      f'applied to {n_trained - n_trained_before} of the {n_trained} mice.')
 
+print('The second set, called "1b", was introduced shortly afterwards (September 2019) and '
+      f'was applied to {met_1b_after} of the {n_trained} mice. {skipped_1b + met_1b_before}'
+      ' mice retroactively met these criteria.')
+
+"""
+Regardless of implementation date, let's look at the number of mice that didn't not abide the 1b 
+criteria
+"""
+started_bias_early = (
+    query_subjects()
+    .aggr(sessions & 'training_status LIKE "%1a"' & 'task_protocol LIKE "%bias%"',
+          date_trained='min(date(session_start_time))')
+    .fetch('subject_uuid')
+)
+started_ephys_early = (
+    query_subjects()
+    .aggr((sessions * behavior.Settings.proj('pybpod_board'))
+          & 'training_status LIKE "training"' & 'pybpod_board LIKE "%ephys%"',
+           date_trained='min(date(session_start_time))')
+    .fetch('subject_uuid')
+)
+ignored_1b = np.unique(np.r_[started_bias_early, started_ephys_early]).size
+print(f'Regardless of implementation date, {ignored_1b} of the {n_trained}'
+      'mice did not abide the 1b criteria.')
 
 ###########################################
 #   Breakdown of mice that didn't learn   #

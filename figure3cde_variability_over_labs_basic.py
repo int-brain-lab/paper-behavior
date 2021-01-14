@@ -164,7 +164,7 @@ sns.set_palette(lab_colors)
 vars = ['n_trials', 'perf_easy',  'threshold', 'bias', 'reaction_time', 'trials_per_minute']
 ylabels =['Number of trials', 'Performance (%)\non easy trials',
           'Contrast threshold (%)', 'Bias (%)', 'Trial duration (ms)', 'Trials / minute']
-ylims = [[0, 2000],[70, 100], [0, 25], [-25, 25], [0, 2000], [0, 25]]
+ylims = [[0, 1500],[70, 100], [0, 25], [-25, 25], [0, 1100], [0, 25]]
 for v, ylab, ylim in zip(vars, ylabels, ylims):
 
     f, ax = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/5, FIGURE_HEIGHT))

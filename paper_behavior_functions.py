@@ -205,7 +205,7 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
     elif task == 'ephys':
         sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%ephys%"'
     else:
-        raise ValueError('task must be "all", "training" or "biased"')
+        raise ValueError('task must be "all", "training", "biased" or "ephys"')
 
     # Only use sessions up until the end of December
     sessions = sessions & 'date(session_start_time) <= "%s"' % CUTOFF_DATE

@@ -149,9 +149,15 @@ print(
 # Number of subjects before 1b criterion #
 ##########################################
 """
-Count the number of mice that reached biased criterion before 1b was introduced in August 2019.
+Count the number of mice that reached biased criterion before 1b was introduced in September 2019.
 """
-all_mice
+# Date at which trained_1b was implemented in DJ pipeline
+DATE_IMPL = '2019-09-12'
+n_trained_before = len(query_subjects(criterion='ephys') & f'date_trained < "{DATE_IMPL}"')
+n_trained = len(query_subjects(criterion='trained'))
+
+print('The second set, called "1b", was introduced shortly afterwards (September 2019) and '
+      f'applied to {n_trained - n_trained_before} of the {n_trained} mice.')
 
 
 ###########################################

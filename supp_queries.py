@@ -1,10 +1,8 @@
 """
-This file contains some supplementary queries and statistics for the paper
+This file contains some supplementary queries and statistics for the paper.
 
 @author: Miles Wells
 """
-from uuid import UUID
-
 import pandas as pd
 import numpy as np
 import datajoint as dj
@@ -223,6 +221,32 @@ ignored_1b = np.unique(np.r_[started_bias_early, started_ephys_early]).size
 print(f'Regardless of implementation date, {ignored_1b} of the {n_trained}'
       'mice did not abide the 1b criteria.')
 
+
+##########################################################
+#   Breakdown of mice that didn't finish before cutoff   #
+##########################################################
+
+trained = query_subjects(criterion='trained')
+# mice that reached trained but not ready4ephys, didn't die before the cut-off, and had fewer
+# than 40 sessions (no session marked as 'untrainable')
+session_training_status = acquisition.Session * behavior_analysis.SessionTrainingStatus()
+trained_not_ready = (trained.aggr(session_training_status,
+                                  unfinished='SUM(training_status="ready4ephys" OR '
+                                             'training_status="untrainable" OR '
+                                             'training_status="unbiasable") = 0')
+                            .aggr(subject.Death, 'unfinished',
+                                  alive='death_date IS NULL OR death_date > "%s"' % CUTOFF_DATE,
+                                  keep_all_rows=True))
+df = ((trained_not_ready & 'alive = True AND unfinished = True')
+      * behavior_analysis.SessionTrainingStatus).fetch(format='frame')
+last_session = df.groupby(level=0).tail(1)
+# How many of these made it to complete protocol?
+passed = (last_session['good_enough_for_brainwide_map']
+          | last_session['training_status'].str.startswith('ready'))
+print(f'Of the {len(passed)} mice that didn\'t complete training before analysis cutoff, '
+      f'{sum(passed)} ({sum(passed) / len(passed):.1%}) went on to complete the pipeline')
+
+
 ###########################################
 #   Breakdown of mice that didn't learn   #
 ###########################################
@@ -237,25 +261,36 @@ still_training = all_mice * subject.Subject.aggr(behavior_analysis.SessionTraini
                    & 'training_status = "in_training"' & 'session_start_time > "%s"' % CUTOFF_DATE
 mice_started_training = (all_mice & (acquisition.Session() & 'task_protocol LIKE "%training%"'))
 trained = query_subjects(criterion='trained')
+
 still_training_uuids = [{'subject_uuid': id} for id in still_training.fetch('subject_uuid')]
 not_trained = mice_started_training - still_training_uuids - trained.proj()
-
-print(f'Number of mice that went into training: {len(mice_started_training)}')
-print(f'Number of mice that are still in training (exclude from 1 and 2): {len(still_training)}')
-print(f'Number of mice that reached trained:{len(trained)}')
-print(f'Number of mice that didn\'t reach trained: {len(not_trained)}')
+print('Number of mice that went into training: %d' % len(mice_started_training))
+print('Number of mice that are still in training (exclude from 1 and 2): %d' % len(still_training))
+print('Number of mice that reached trained: %d' % len(trained))
+print('Number of mice that didn''t reach trained: %d' % len(not_trained))
 
 # Fetch list of mice that were not trained, and include the status of their final session
-status = (behavior_analysis.SessionTrainingStatus * behavior_analysis.PsychResults) & behavior.CompleteTrialSession
-fields = ('training_status', 'threshold', 'bias', 'lapse_low', 'lapse_high')
-status = not_trained.aggr(status, *fields, session_date='DATE(MAX(session_start_time))')
-query = (status * behavior_analysis.BehavioralSummaryByDate * subject.Death.proj('death_ts'))
+status = behavior_analysis.SessionTrainingStatus & behavior.CompleteTrialSession
+fields = ('performance', 'performance_easy', 'threshold', 'bias', 'lapse_low', 'lapse_high')
+query = (not_trained
+         .aggr(status,
+               session_start_time='max(session_start_time)',
+               session_n='COUNT(session_start_time)')
+         * status
+         * subject.Death.proj('death_ts')
+         * behavior_analysis.PsychResults.proj(*fields)
+         * behavior.TrialSet.proj('n_trials'))
 df = (
-    query
-         .fetch(format='frame')
-         .reset_index()
-         .drop('subject_project', axis=1)
+    (query
+        .fetch(format='frame')
+        .reset_index()
+        .drop('subject_project', axis=1))
 )
+
+# Print a breakdown of final training statuses
+print(df.training_status.value_counts(),'\n')
+
+# Load the cull reasons from file.  These were not available through DJ.
 df.subject_uuid = df.subject_uuid.astype(str)
 cull_reasons = load_csv('cull_reasons.csv')
 df = pd.merge(df, cull_reasons, on='subject_uuid')
@@ -264,31 +299,31 @@ df = pd.merge(df, cull_reasons, on='subject_uuid')
 not_trained = len(mice_started_training) - len(trained)
 untrainable = df['training_status'] == 'untrainable'
 time_limit = (df.cull_reason == 'time limit reached') & ~untrainable
-low_trial_n = df['n_trials_date'] < 400
+low_trial_n = df['n_trials'] < 400
 biased = df['bias'].abs() > 15
 low_perf = df['performance_easy'] < 65
 # Inspecting deaths
-injury = ('acute injury', 'infection or illness', 'issue during surgery', 'found dead')
-# benign = ('regular experiment end', 'time limit reached', 'benign experimental impediments')
-
-
+injury = ('acute injury', 'infection or illness', 'issue during surgery')
 premature_death = ~untrainable & (df.cull_reason != 'time limit reached')
 sick = df.training_status[df.cull_reason.isin(injury)][premature_death]
 benign = premature_death & (df.cull_reason == 'benign experimental impediments')
 # Unknown
 ambiguous_death = premature_death & df.cull_reason.isin(('regular experiment end', None))
 
-# Putative untrainable = marked as regular experiment end and > 40 sessions in total, not just 1a
-putative_untrainable = ambiguous_death & (df['training_day'] > 40)
-stats = [
-    f'Out of {len(mice_started_training)} mice, {not_trained} mice had not completed training',
-    f'Of those, {len(still_training_uuids)} was still in training at the time of writing',
-    f'{len(df[untrainable])} mice didn’t progress to the first stage within 40 days of training',
-    f'due to an extremely high bias and/or low trial count (n={len(df[untrainable & (biased | low_trial_n)])}) or ' +
-    f'an otherwise low performance (n={len(df[untrainable & low_perf & ~(biased | low_trial_n)])})',
-    f'An additional {sum(time_limit | putative_untrainable)} progressed further but not within the experimenter\'s time frame',
-    f'{len(sick)} mice died of infection, illness or acute injury',
-    f'{len(df[benign & premature_death])} could not be trained due to benign experimental impediments',
-    f'For {sum(ambiguous_death & ~putative_untrainable)} mice the reason was not reported'
-]
-[print(s) for s in stats]
+# Putative untrainable = marked as regular experiment end and > 40 in total, not just 1a
+putative_untrainable = ambiguous_death & (df['session_n'] > 40)
+print(
+    f'Out of {len(mice_started_training)} mice, {not_trained} mice had not completed '
+    f'training.\nOf those, '
+    f'{len(still_training)} was still in training at the time of writing.\n'
+    f'{len(df[untrainable])} mice didn’t progress to the first stage within 40 days of training '
+    'due to an extremely high bias and/or low trial count '
+    f'(n={len(df[untrainable & (biased | low_trial_n)])}) or an otherwise low performance '
+    f'(n={len(df[untrainable & low_perf & ~(biased | low_trial_n)])}).\n'
+    f'An additional {sum(time_limit | putative_untrainable)} progressed further but not within '
+    f'the experimenter\'s time frame.\n'
+    f'{len(sick)} mice died of infection, illness or acute injury.\n'
+    f'{len(df[benign & premature_death])} could not be trained due to benign experimental '
+    f'impediments.\nFor {sum(ambiguous_death & ~putative_untrainable)} '
+    f'mice the reason was not reported.'
+)

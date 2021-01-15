@@ -101,8 +101,8 @@ ax1.get_legend().set_visible(False)
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)
 sns.despine(trim=True)
 plt.tight_layout()
-plt.savefig(join(fig_path, 'figure2c_time_to_trained.pdf'))
-plt.savefig(join(fig_path, 'figure2c_time_to_trained.png'), dpi=300)
+plt.savefig(join(fig_path, 'figure2g_time_to_trained.pdf'))
+plt.savefig(join(fig_path, 'figure2g_time_to_trained.png'), dpi=300)
 
 
 # SAME FOR TRIALS TO TRAINED
@@ -123,8 +123,8 @@ format_fcn = ticker.FuncFormatter(lambda x, pos: '{:,.0f}'.format(x / 1e3) + 'K'
 ax1.yaxis.set_major_formatter(format_fcn)
 sns.despine(trim=True)
 plt.tight_layout()
-plt.savefig(join(fig_path, 'figure2c_trials_to_trained.pdf'))
-plt.savefig(join(fig_path, 'figure2c_trials_to_trained.png'), dpi=300)
+plt.savefig(join(fig_path, 'suppfig_trials_to_trained.pdf'))
+plt.savefig(join(fig_path, 'suppfig_trials_to_trained.png'), dpi=300)
 
 
 # sns.swarmplot(y='trials', x='lab_number', hue='lab_number', data=training_time_no_all,

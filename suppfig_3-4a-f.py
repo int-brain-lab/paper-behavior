@@ -141,7 +141,7 @@ if (stats.normaltest(learned['n_trials'])[1] > 0.05 and
 
 # Add all mice to dataframe seperately for plotting
 learned_no_all = learned.copy()
-learned_no_all.loc[learned_no_all.shape[0] + 1, 'lab_number'] = 'All'
+#learned_no_all.loc[learned_no_all.shape[0] + 1, 'lab_number'] = 'All'
 learned_2 = learned.copy()
 learned_2['lab_number'] = 'All'
 learned_2 = learned.append(learned_2)

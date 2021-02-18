@@ -30,7 +30,7 @@ institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
 
-behav = query_session_around_performance(perform_thres=0.9)
+behav = query_session_around_performance(perform_thres=0.8)
 behav['institution_code'] = behav.lab_name.map(institution_map)
 
 # Create dataframe with behavioral metrics of all mice

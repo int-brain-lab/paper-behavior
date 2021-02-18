@@ -606,14 +606,14 @@ def dj2pandas(behav):
 
 
 def num_star(pvalue):
-    if pvalue < 0.05:
-        stars = '* p < 0.05'
-    elif pvalue < 0.01:
-        stars = '** p < 0.01'
+    if pvalue < 0.0001:
+        stars = '**** p < 0.0001'
     elif pvalue < 0.001:
         stars = '*** p < 0.001'
-    elif pvalue < 0.0001:
-        stars = '**** p < 0.0001'
+    elif pvalue < 0.01:
+        stars = '** p < 0.01'
+    elif pvalue < 0.05:
+        stars = '* p < 0.05'
     else:
         stars = ''
     return stars

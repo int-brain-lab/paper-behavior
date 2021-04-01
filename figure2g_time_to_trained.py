@@ -43,8 +43,21 @@ if QUERY is True:
     training_time = training_time.reset_index()
 
 else:
-    training_time = load_csv('Fig2c.csv').dropna()
-    use_subjects = training_time['subject_nickname']  # For counting the number of subjects
+    data = load_csv('Fig2ab.csv').dropna()
+    use_subjects = data['subject_nickname'].unique()  # For counting the number of subjects
+    training_time = pd.DataFrame()
+    for i, subject in enumerate(use_subjects):
+        training_time = training_time.append(pd.DataFrame(index=[training_time.shape[0] + 1],
+                                                          data={
+            'subject_nickname': subject,
+            'lab': data.loc[data['subject_nickname'] == subject, 'institution_short'].unique(),
+            'sessions': data.loc[((data['subject_nickname'] == subject)
+                                  & (data['session_date'] < data['date_trained']))].shape[0],
+            'trials': data.loc[((data['subject_nickname'] == subject)
+                                & (data['session_date'] < data['date_trained'])),
+                               'n_trials_date'].sum()}))
+    training_time['lab_number'] = training_time.lab.map(institution_map)
+    training_time = training_time.sort_values('lab_number').reset_index(drop=True)
 
 # Number of sessions to trained for example mouse
 example_training_time = \

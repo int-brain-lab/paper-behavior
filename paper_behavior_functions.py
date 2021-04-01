@@ -25,7 +25,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Some constants
 URL = 'http://ibl.flatironinstitute.org/public/behavior_paper_data.zip'
-QUERY = True  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
+QUERY = False  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
 EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
 CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
 STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable

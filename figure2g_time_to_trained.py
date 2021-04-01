@@ -108,7 +108,7 @@ axbox = sns.boxplot(y='sessions', x='lab_number', data=training_time_all,
 axbox.artists[-1].set_edgecolor('black')
 for j in range(5 * (len(axbox.artists) - 1), 5 * len(axbox.artists)):
     axbox.lines[j].set_color('black')
-ax1.set(ylabel='Days to trained', xlabel='')
+ax1.set(ylabel='Days to trained', xlabel='', ylim=[0, 60])
 ax1.get_legend().set_visible(False)
 # [tick.set_color(lab_colors[i]) for i, tick in enumerate(ax1.get_xticklabels())]
 plt.setp(ax1.xaxis.get_majorticklabels(), rotation=40)

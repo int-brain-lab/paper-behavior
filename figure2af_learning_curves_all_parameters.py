@@ -1,6 +1,6 @@
 """
 Learning curves for all labs
-​
+
 @author: Anne Urai, Alejandro Pan-Vazquez
 31 March 2021
 """
@@ -30,7 +30,7 @@ if QUERY is True:
                     format='frame').reset_index()
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_csv(os.path.join(datapath(), 'Fig2ag.csv'))
+    behav = pd.read_pickle(os.path.join(datapath(), 'Fig2af.pkl'))
 # exclude sessions with fewer than 100 trials
 behav = behav[behav['n_trials_date'] > 100]
 # exclude sessions with less than 3 types of contrast

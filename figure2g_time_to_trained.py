@@ -43,7 +43,7 @@ if QUERY is True:
     training_time = training_time.reset_index()
 
 else:
-    data = load_csv('Fig2ab.csv').dropna()
+    data =  pd.read_pickle(os.path.join(datapath(), 'Fig2af.pkl')).dropna()
     use_subjects = data['subject_nickname'].unique()  # For counting the number of subjects
     training_time = pd.DataFrame()
     for i, subject in enumerate(use_subjects):

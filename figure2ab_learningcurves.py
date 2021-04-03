@@ -13,7 +13,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from paper_behavior_functions import (query_subjects, figpath, load_csv, group_colors,
+from paper_behavior_functions import (query_subjects, figpath, load_csv, datapath, group_colors,
                                       institution_map, seaborn_style, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
@@ -36,7 +36,7 @@ if QUERY is True:
                     format='frame').reset_index()
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = load_csv('Fig2ab.csv')
+    behav = pd.read_pickle(os.path.join(datapath(), 'Fig2af.pkl'))
 
 # exclude sessions with fewer than 100 trials
 behav = behav[behav['n_trials_date'] > 100]
@@ -84,64 +84,6 @@ behav['cum_trials'] = (
 # %% ============================== #
 # LEARNING CURVES
 # ================================= #
-
-# plot one curve for each animal, one panel per lab
-fig = sns.FacetGrid(behav,
-                    col="institution_code", col_wrap=7, col_order=col_names,
-                    sharex=True, sharey=True, hue="subject_uuid", xlim=[-1, 40],
-                    height=FIGURE_HEIGHT, aspect=(FIGURE_WIDTH/7)/FIGURE_HEIGHT)
-fig.map(sns.lineplot, "training_day",
-        "performance_easy", color='grey', alpha=0.3)
-fig.map(sns.lineplot, "training_day",
-        "performance_easy_trained", color='black', alpha=0.3)
-fig.set_titles("{col_name}")
-fig.set(xticks=[0, 20, 40])
-
-# overlay the example mouse
-sns.lineplot(ax=fig.axes[0], x='training_day', y='performance_easy', color='black',
-             data=behav[behav['subject_nickname'].str.contains(EXAMPLE_MOUSE)], legend=False)
-
-for axidx, ax in enumerate(fig.axes.flat):
-    # add the lab mean to each panel
-    sns.lineplot(data=behav.loc[behav.institution_name == behav.institution_name.unique()[axidx], :],
-                 x='training_day', y='performance_easy',
-                 color=pal[axidx], ci=None, ax=ax, legend=False, linewidth=2)
-    ax.set_title(behav.institution_name.unique()[
-                 axidx], color=pal[axidx], fontweight='bold')
-
-fig.set_axis_labels('Training day', 'Performance (%)\n on easy trials')
-fig.despine(trim=True)
-plt.tight_layout(w_pad=-2.2)
-fig.savefig(os.path.join(figpath, "figure2a_learningcurves.pdf"))
-fig.savefig(os.path.join(figpath, "figure2a_learningcurves.png"), dpi=300)
-
-# Plot all labs
-fig, ax1 = plt.subplots(1, 1, figsize=(FIGURE_WIDTH/3, FIGURE_HEIGHT))
-sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', palette=pal,
-             ax=ax1, legend=False, data=behav, ci=None)
-ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
-ax1.set(xlabel='Training day',
-        ylabel='Performance (%)\non easy trials', xlim=[-1, 60], ylim=[15, 100])
-ax1.set(xticks=[0, 10, 20, 30, 40, 50, 60])
-
-sns.despine(trim=True)
-plt.tight_layout()
-fig.savefig(os.path.join(figpath, "figure2b_learningcurves_all_labs.pdf"))
-fig.savefig(os.path.join(
-    figpath, "figure2b_learningcurves_all_labs.png"), dpi=300)
-
-# ================================= #
-# print some stats
-# ================================= #
-behav_summary_std = behav.groupby(['training_day'])[
-    'performance_easy'].std().reset_index()
-behav_summary = behav.groupby(['training_day'])[
-    'performance_easy'].mean().reset_index()
-print('number of days to reach 80% accuracy on easy trials: ')
-print(behav_summary.loc[behav_summary.performance_easy >
-                        80, 'training_day'].min())
-
-
 ###############
 # plot one curve for each animal, one panel per lab
 fig = sns.FacetGrid(behav,

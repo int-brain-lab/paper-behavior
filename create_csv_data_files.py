@@ -11,9 +11,11 @@ from os import mkdir
 from os.path import join, isdir
 import pandas as pd
 from paper_behavior_functions import (query_subjects, query_sessions_around_criterion,
-                                      institution_map, CUTOFF_DATE, dj2pandas, datapath)
+                                      institution_map, CUTOFF_DATE, dj2pandas, datapath,
+                                      query_session_around_performance)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
 from ibl_pipeline import reference, subject, behavior, acquisition
+import csv
 
 # Get map of lab number to institute
 institution_map, _ = institution_map()
@@ -31,9 +33,17 @@ subjects.to_csv(join(root, 'subjects.csv'))
 # %%=============================== #
 # FIGURE 2
 # ================================= #
-print('Starting figure 2..')
+print('Starting figure 2.')
+# Figure 2af
+use_subjects = query_subjects()
+b = (behavioral_analyses.BehavioralSummaryByDate * use_subjects * behavioral_analyses.BehavioralSummaryByDate.PsychResults)
+behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
+                format='frame').reset_index()
+behav['institution_code'] = behav.institution_short.map(institution_map)
+# Save to csv
+behav.to_pickle(join(root, 'Fig2af.pkl'))
 
-# Figure 2d
+# Figure 2h
 all_mice = (subject.Subject * subject.SubjectLab * reference.Lab
             * subject.SubjectProject() & 'subject_project = "ibl_neuropixel_brainwide_01"')
 mice_started_training = (all_mice & (acquisition.Session() & 'task_protocol LIKE "%training%"'))
@@ -59,25 +69,6 @@ ses = ses.drop('n_trials_stim', axis=1)
 # Save to csv
 ses.to_csv(join(root, 'Fig2d.csv'))
 
-# Figure 2c
-ses = (use_subjects * behavioral_analyses.SessionTrainingStatus * behavioral_analyses.PsychResults
-       & 'training_status = "in_training" OR training_status = "untrainable"').proj(
-               'subject_nickname', 'n_trials_stim', 'institution_short').fetch(format='frame')
-ses = ses.reset_index()
-ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
-
-# Construct dataframe
-training_time = pd.DataFrame(columns=['sessions'], data=ses.groupby('subject_nickname').size())
-training_time['trials'] = ses.groupby('subject_nickname').sum()
-training_time['lab'] = ses.groupby('subject_nickname')['institution_short'].apply(list).str[0]
-
-# Change lab name into lab number
-training_time['lab_number'] = training_time.lab.map(institution_map)
-training_time = training_time.sort_values('lab_number')
-
-# Save to csv
-training_time.to_csv(join(root, 'Fig2c.csv'))
-
 # Figure 2ab
 
 # Query list of subjects to use
@@ -89,7 +80,7 @@ behav = b.fetch(order_by='institution_short, subject_nickname, training_day',
 behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # Save to csv
-behav.to_csv(join(root, 'Fig2ab.csv'))
+behav.to_csv(join(root, 'suppFig2_1.csv'))
 
 # %%=============================== #
 # FIGURE 3
@@ -215,3 +206,5 @@ behav['institution_code'] = behav.institution_short.map(institution_map)
 
 # save to disk
 behav.to_csv(join(root, 'Fig3-supp2.csv'))
+behav = query_session_around_performance(perform_thres=0.8)
+behav.to_pickle(join(root, 'suppfig_3-4af.pkl'))

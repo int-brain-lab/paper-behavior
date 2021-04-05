@@ -41,7 +41,12 @@ if QUERY is True:
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
     ses = ses.drop('n_trials_stim', axis=1).dropna()
 else:
+    # Load in sessions from csv file
     ses = load_csv('Fig2d.csv').dropna()
+
+    # Select mice that started training before cut off date
+    ses = ses.groupby('subject_uuid').filter(
+        lambda s : s['session_start_time'].min() < CUTOFF_DATE)
 
 # Construct dataframe from query
 training_time = pd.DataFrame()

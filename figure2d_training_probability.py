@@ -40,6 +40,7 @@ if QUERY is True:
            .fetch(format='frame').reset_index())
     ses['n_trials'] = [sum(i) for i in ses['n_trials_stim']]
     ses = ses.drop('n_trials_stim', axis=1).dropna()
+    ses = ses.sort_values(['subject_nickname','session_start_time'])
 else:
     # Load in sessions from csv file
     ses = load_csv('Fig2d.csv').dropna()

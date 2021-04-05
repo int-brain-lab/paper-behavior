@@ -16,8 +16,8 @@ import seaborn as sns
 from scipy import stats
 import scikit_posthocs as sp
 from paper_behavior_functions import (query_subjects, seaborn_style, institution_map,
-                                      group_colors, figpath, load_csv, EXAMPLE_MOUSE,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
+                                      group_colors, figpath, load_csv, datapath,
+                                      EXAMPLE_MOUSE, FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # Settings
@@ -43,7 +43,7 @@ if QUERY is True:
     training_time = training_time.reset_index()
 
 else:
-    data =  pd.read_pickle(os.path.join(datapath(), 'Fig2af.pkl')).dropna()
+    data = pd.read_pickle(join(datapath(), 'Fig2af.pkl')).dropna()
     use_subjects = data['subject_nickname'].unique()  # For counting the number of subjects
     training_time = pd.DataFrame()
     for i, subject in enumerate(use_subjects):

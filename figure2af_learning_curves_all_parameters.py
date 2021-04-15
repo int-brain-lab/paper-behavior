@@ -10,7 +10,7 @@ import numpy as np
 from scipy.signal import medfilt
 import seaborn as sns
 import matplotlib.pyplot as plt
-from paper_behavior_functions import (query_subjects, figpath, datapath, group_colors,
+from paper_behavior_functions import (query_subjects, figpath, load_csv, group_colors,
                                       institution_map, seaborn_style, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
@@ -30,12 +30,12 @@ if QUERY is True:
                     format='frame').reset_index()
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_pickle(os.path.join(datapath(), 'Fig2af.pkl'))
+    behav = load_csv('Fig2af.pkl')
 # exclude sessions with fewer than 100 trials
 behav = behav[behav['n_trials_date'] > 100]
 # exclude sessions with less than 3 types of contrast
-behav.loc[behav['signed_contrasts'].str.len()<6,'threshold'] = np.nan
-behav.loc[behav['signed_contrasts'].str.len()<6,'bias'] = np.nan
+behav.loc[behav['signed_contrasts'].str.len() < 6,'threshold'] = np.nan
+behav.loc[behav['signed_contrasts'].str.len() < 6,'bias'] = np.nan
 # convolve performance over 3 days
 for i, nickname in enumerate(behav['subject_nickname'].unique()):
     # 1.Performance
@@ -89,7 +89,7 @@ behav = behav2
 behav['performance_easy'] = behav.performance_easy * 100
 behav['performance_easy_trained'] = behav.performance_easy_trained * 100
 
-behav = behav.loc[behav['prob_left']==0.5]
+behav = behav.loc[behav['prob_left'] == 0.5]
 
 # %% ============================== #
 # LEARNING CURVES
@@ -154,7 +154,7 @@ for axidx, ax in enumerate(fig.axes.flat):
     ax.set_title(behav.institution_name.unique()[
                      axidx], color=pal[axidx], fontweight='bold')
     behav_sum_threshold = behav_sum_threshold.append(behav.loc[(behav.institution_name == behav.institution_name.unique()[axidx]) &
-                      (behav['training_day']>=start_day), :])
+                      (behav['training_day'] >= start_day), :])
 
 fig.set_axis_labels('  ', 'Threshold')
 fig.despine(trim=True)
@@ -184,13 +184,13 @@ for axidx, ax in enumerate(fig.axes.flat):
         .groupby(['training_day']).count()['conv_bias']>2)[0][0]
     # add the lab mean to each panel
     sns.lineplot(data=behav.loc[(behav.institution_name == behav.institution_name.unique()[axidx]) &
-                      (behav['training_day']>=start_day), :],
+                      (behav['training_day'] >= start_day), :],
                  x='training_day', y='conv_bias',
                  color=pal[axidx], ci=None, ax=ax, legend=False, linewidth=2)
     ax.set_title(behav.institution_name.unique()[
                      axidx], color=pal[axidx], fontweight='bold')
     behav_sum_bias=behav_sum_bias.append(behav.loc[(behav.institution_name == behav.institution_name.unique()[axidx]) &
-                      (behav['training_day']>=start_day), :])
+                      (behav['training_day'] >= start_day), :])
 fig.set_axis_labels('Training day', 'Bias (%)')
 fig.despine(trim=True)
 plt.tight_layout()
@@ -203,11 +203,11 @@ sns.lineplot(x='training_day', y='performance_easy', hue='institution_code', pal
              ax=ax1, legend=False, data=behav, ci=None)
 sns.lineplot(x='training_day', y='performance_easy', color='k',
              ax=ax1, legend=False, data=behav, ci=None)
-ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
+ax1.set_title('All labs: %d mice' % behav['subject_nickname'].nunique())
 ax1.set(xlabel='Training day',
         ylabel='Performance (%)\non easy trials', xlim=[-1, 60], ylim=[15,100])
 ax1.set(xticks=[0, 20, 40, 60])
-ax1.set_title('All labs: %d mice'%behav['subject_nickname'].nunique())
+ax1.set_title('All labs: %d mice' % behav['subject_nickname'].nunique())
 sns.despine(trim=True)
 plt.tight_layout()
 fig.savefig(os.path.join(figpath, "figure2d_learningcurves_all_labs.pdf"))

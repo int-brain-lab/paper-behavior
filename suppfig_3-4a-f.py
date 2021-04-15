@@ -14,7 +14,7 @@ import numpy as np
 from scipy import stats
 from os.path import join
 import seaborn as sns
-from paper_behavior_functions import (seaborn_style, QUERY,datapath,
+from paper_behavior_functions import (seaborn_style, QUERY, load_csv,
                                       institution_map, group_colors, figpath,
                                       FIGURE_WIDTH, FIGURE_HEIGHT,
                                       fit_psychfunc, num_star,
@@ -25,7 +25,6 @@ from statsmodels.stats.multitest import multipletests
 
 seaborn_style()
 figpath = figpath()
-datapath = datapath()
 pal = group_colors()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
@@ -33,7 +32,7 @@ col_names = col_names[:-1]
 if QUERY==True:
     behav = query_session_around_performance(perform_thres=0.8)
 else:
-    behav = pd.read_pickle(os.path.join(datapath(), 'suppfig_3-4af.pkl'))
+    behav = load_csv('suppfig_3-4af.pkl')
 behav['institution_code'] = behav.lab_name.map(institution_map)
 
 # Create dataframe with behavioral metrics of all mice

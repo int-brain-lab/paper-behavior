@@ -105,6 +105,7 @@ def load_csv(*args, **kwargs):
     repo_dir = os.path.dirname(os.path.realpath(__file__))
     local = os.path.join(repo_dir, 'data', *args)
     if not os.path.exists(local):
+        print('Downloading remote datafile...')
         resp = urlopen(URL)
         zipfile = ZipFile(BytesIO(resp.read()))
         files = zipfile.namelist()

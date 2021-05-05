@@ -37,7 +37,7 @@ To load the figures from data saved in local CSV files, edit line 21 of
  `paper_behavior_functions.py` so that `QUERY = False`.  When running the scripts for the first time the required data will be downloaded to ./data
 
 ### Download data without any code
-To download data locally without running any code, simply click on the link provided as the [URL](https://github.com/int-brain-lab/paper-behavior/blob/master/paper_behavior_functions.py#L27) in `paper_behavior_functions.py`.
+To download data locally without running any code, simply load in an internet browser the link provided as the [URL](https://github.com/int-brain-lab/paper-behavior/blob/master/paper_behavior_functions.py#L27) in `paper_behavior_functions.py`.
 
 ### Questions?
 If you have any problems running this code, please open an issue or get in touch with the code's authors (written at the top of each script).

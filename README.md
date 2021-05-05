@@ -33,9 +33,8 @@ You'll be able to run the code after the settings above.
 All the scripts start with the name of the figure they produce. The figure panels will appear in the `exported_figs` subfolder.
 
 ### Load figures without DataJoint
-Download and decompress the zip file containing all the data: https://ibl.flatironinstitute.org/public/behavior_paper_data.zip
 To load the figures from data saved in local CSV files, edit line 21 of
- `paper_behavior_functions.py` so that `QUERY = False`.
+ `paper_behavior_functions.py` so that `QUERY = False`.  When running the scripts for the first time the required data will be downloaded to ./data
 
 ### Questions?
 If you have any problems running this code, please open an issue or get in touch with the code's authors (written at the top of each script).

@@ -40,7 +40,9 @@ To load the figures from data saved in local CSV files, edit line 21 of
 To download data locally without running any code, simply load in an internet browser the link provided as the [URL](https://github.com/int-brain-lab/paper-behavior/blob/master/paper_behavior_functions.py#L27) in `paper_behavior_functions.py`.
 
 ### Questions?
-If you have any problems running this code, please open an issue or get in touch with the code's authors (written at the top of each script).
+If you have any problems running this code, please open an issue in the [iblenv repository](https://github.com/int-brain-lab/iblenv/issues) where we support users in using the IBL software tools.
+
+You can read more about the [IBL dataset types](https://docs.google.com/spreadsheets/d/1ieLXRPLLSgUKcLvFkrqizfZl5HjdfE6bQ2KLBCRmjQo/edit#gid=1097679410) and [additional computations on the behavioral data](data.internationalbrainlab.org), such as training status and psychometric functions.
 
 ### Known issues
 The data used in this paper have a number of issues.  The authors are confident that these issues

@@ -19,8 +19,7 @@ sys.path.extend([r'path/to/paper-behavior'])
 [IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.
 
 1. Use your GitHub account to log in and go to the resource folder. 
-2. Navigate to public_notebooks/Explore IBL pipeline.  The Notebook `04-Access the database locally
-` provides the instruction to obtain the
+2. Navigate to public_notebooks/Explore IBL pipeline.  The Notebook `05-Access the database locally` provides the instruction to obtain the
  credentials to access the database. Copy the value of `dj.config`
 3. In your local python IDE, do the following:
   a. `import datajoint as dj`

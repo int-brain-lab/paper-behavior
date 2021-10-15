@@ -15,18 +15,83 @@ import sys
 sys.path.extend([r'path/to/paper-behavior'])
 ```
 
-### Obtain a DataJoint account through IBL JupyterHub
-[IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.
+### Accessing the data via DataJoint on your local machine
 
-1. Use your GitHub account to log in and go to the resource folder. 
-2. Navigate to public_notebooks/Explore IBL pipeline.  The Notebook `05-Access the database locally` provides the instruction to obtain the
- credentials to access the database. Copy the value of `dj.config`
-3. In your local python IDE, do the following:
-  a. `import datajoint as dj`
-  b. set your local config variable `dj.config` with the values copied from JupyterHub
-  c. `dj.config.save_local()`
+Before you can start using DataJoint with IBL data on your local machine, you will need to set your DataJoint credentials. You must specify a database connection to tell DataJoint where to look for IBL data, as well as grant access to these data by providing a username and password. 
 
-You'll be able to run the code after the settings above.
+Start by opening a new python script or terminal, then import DataJoint and set a few configuration options. With your python environment activated, run:
+
+```python
+import datajoint as dj
+```
+
+The database's hostname, username, and password are saved in the global variable `dj.config`. See it's contents by running the following line:
+
+```python
+dj.config
+```
+
+By default, it should look something like this:
+
+```
+{   'connection.charset': '',
+    'connection.init_function': None,
+    'database.host': 'localhost',
+    'database.password': None,
+    'database.port': 3306,
+    'database.reconnect': True,
+    'database.use_tls': None,
+    'database.user': None,
+    'display.limit': 12,
+    'display.show_tuple_count': True,
+    'display.width': 14,
+    'enable_python_native_blobs': True,
+    'fetch_format': 'array',
+    'loglevel': 'INFO',
+    'safemode': True}
+```
+
+You need to replace a few entries with the following values used for the public data: 
+
+```{important}
+Public IBL Credentials:
+
+  hostname: datajoint-public.internationalbrainlab.org
+  username: ibl-public
+  password: ibl-public
+```
+
+The database connection is specified by the key `database.host`. Change the config using the values above for the fields `database.host`, `database.user` and `database.password`:
+
+```python
+dj.config["database.host"] = "datajoint-public.internationalbrainlab.org"
+dj.config["database.user"] = "ibl-public"
+dj.config["database.password"] = "ibl-public"
+```
+
+Then save the changes to a local JSON configuration file (`dj_local_conf.json`) by running:
+
+```python
+dj.config.save_local()
+```
+
+After the above step, every time you start your python kernel from a directory that contains this file, DataJoint will look for this file and load the config without having to set credentials again. If you want to set your credentials globally without having to be in the directory containing the file `dj_local_config.json`, you can do so by running the following:
+
+```python
+dj.config.save_global()
+```
+
+To test whether your credentials work, try connecting to the database by running:
+
+```python
+dj.conn()
+```
+
+You should find that DataJoint automatically connects to the database! To see which schemas you have access to, run:
+
+```python
+dj.list_schemas()
+```
 
 ### How to run the code
 All the scripts start with the name of the figure they produce. The figure panels will appear in the `exported_figs` subfolder.

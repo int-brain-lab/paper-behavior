@@ -25,9 +25,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Some constants
 URL = 'http://ibl.flatironinstitute.org/public/behavior_paper_data.zip'
-QUERY = True  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
-EXAMPLE_MOUSE = 'CSK-im-001'  # Mouse nickname used as an example
-CUTOFF_DATE = '2022-01-01'#'2021-12-23'  # Date after which sessions are excluded, previously 30th Nov
+QUERY = False  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
+EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
+CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
 STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
 
 # LAYOUT
@@ -39,13 +39,13 @@ EXCLUDED_SESSIONS = ['a9fb578a-9d7d-42b4-8dbc-3b419ce9f424']  # Session UUID
 
 
 def group_colors():
-    return sns.color_palette("Dark2", 8)
+    return sns.color_palette("Dark2", 7)
 
 
 def institution_map():
     institution_map = {'UCL': 'Lab 1', 'CCU': 'Lab 2', 'CSHL': 'Lab 3', 'NYU': 'Lab 4',
-                       'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'Berkeley': 'Lab 7', 'new_lab' : 'Thesis mice'}
-    col_names = ['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6', 'Lab 7', 'Thesis mice', 'All labs']
+                       'Princeton': 'Lab 5', 'SWC': 'Lab 6', 'Berkeley': 'Lab 7'}
+    col_names = ['Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6', 'Lab 7', 'All labs']
 
     return institution_map, col_names
 
@@ -76,7 +76,7 @@ def figpath():
     # Retrieve absolute path of paper-behavior dir
     repo_dir = os.path.dirname(os.path.realpath(__file__))
     # Make figure directory
-    fig_dir = os.path.join(repo_dir, 'thesis_figs')
+    fig_dir = os.path.join(repo_dir, 'exported_figs')
     # If doesn't already exist, create
     if not os.path.exists(fig_dir):
         os.mkdir(fig_dir)
@@ -102,7 +102,7 @@ def load_csv(*args, **kwargs):
     If the input file is not found in the data directory the file is downloaded from a remote
     http server and returned as a pandas DataFrame.
     """
-    repo_dir = r'C:\Users\chris\int-brain-lab\paper-behavior'
+    repo_dir = os.path.dirname(os.path.realpath(__file__))
     local = os.path.join(repo_dir, 'data', *args)
     if not os.path.exists(local):
         print('Downloading remote datafile...')
@@ -135,7 +135,7 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
     # Query all subjects with project ibl_neuropixel_brainwide_01 and get the date at which
     # they reached a given training status
     all_subjects = (subject.Subject * subject.SubjectLab * reference.Lab * subject.SubjectProject
-                    & 'subject_project = "ibl_neuropixel_brainwide_01" OR subject_project = "zador_les"')
+                    & 'subject_project = "ibl_neuropixel_brainwide_01"')
     sessions = acquisition.Session * behavior_analysis.SessionTrainingStatus()
     fields = ('subject_nickname', 'sex', 'subject_birth_date', 'institution_short')
 
@@ -147,9 +147,9 @@ def query_subjects(as_dataframe=False, from_list=False, criterion='trained'):
         if criterion == 'trained':
             restriction = 'training_status="trained_1a" OR training_status="trained_1b"'
         elif criterion == 'biased':
-            restriction = 'task_protocol LIKE "%biased%" OR task_protocol LIKE "%widefield%"'
+            restriction = 'task_protocol LIKE "%biased%"'
         elif criterion == 'ephys':
-            restriction = 'training_status LIKE "ready%" OR task_protocol LIKE "%widefield%"'
+            restriction = 'training_status LIKE "ready%"'
         else:
             raise ValueError('criterion must be "trained", "biased" or "ephys"')
         subj_query = all_subjects.aggr(
@@ -202,9 +202,9 @@ def query_sessions(task='all', stable=False, as_dataframe=False,
     elif task == 'training':
         sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%training%"'
     elif task == 'biased':
-        sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%biased%" OR task_protocol LIKE "%widefield%"'
+        sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%biased%"'
     elif task == 'ephys':
-        sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%ephys%" OR task_protocol LIKE "%widefield%"'
+        sessions = acquisition.Session * use_subjects & 'task_protocol LIKE "%ephys%"'
     else:
         raise ValueError('task must be "all", "training", "biased" or "ephys"')
 
@@ -266,9 +266,9 @@ def query_sessions_around_criterion(criterion='trained', days_from_criterion=(2,
     if criterion == 'trained':
         restriction = 'training_status="trained_1a" OR training_status="trained_1b"'
     elif criterion == 'biased':
-        restriction = 'task_protocol LIKE "%biased%" OR task_protocol LIKE "%widefield%"'
+        restriction = 'task_protocol LIKE "%biased%" AND training_status="trained_1b"'
     elif criterion == 'ephys':
-        restriction = 'training_status LIKE "ready%" OR task_protocol LIKE "%widefield%"'
+        restriction = 'training_status LIKE "ready%"'
     else:
         raise ValueError('criterion must be "trained", "biased" or "ephys"')
 

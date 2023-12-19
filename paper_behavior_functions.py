@@ -25,7 +25,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # Some constants
 URL = 'http://ibl.flatironinstitute.org/public/behavior_paper_data.zip'
-QUERY = False  # Whether to query data through DataJoint (True) or use downloaded csv files (False)
+# Whether to query data through DataJoint (True) or use downloaded csv files (False).
+# NB: Support for DataJoint has ceased and database queries are no longer possible.
+QUERY = False
 EXAMPLE_MOUSE = 'KS014'  # Mouse nickname used as an example
 CUTOFF_DATE = '2020-03-23'  # Date after which sessions are excluded, previously 30th Nov
 STABLE_HW_DATE = '2019-06-10'  # Date after which hardware was deemed stable
@@ -98,7 +100,8 @@ def datapath():
 
 
 def load_csv(*args, **kwargs):
-    """Loads CSV and pickle data either locally or remotely
+    """Loads CSV and pickle data either locally or remotely.
+
     If the input file is not found in the data directory the file is downloaded from a remote
     http server and returned as a pandas DataFrame.
     """

@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from paper_behavior_functions import (query_sessions_around_criterion,
-                                      institution_map, dj2pandas, load_csv, datapath)
+                                      institution_map, dj2pandas, load_csv, datapath, QUERY)
 from ibl_pipeline import behavior, subject, reference
 from tqdm.auto import tqdm
 from sklearn.model_selection import KFold
@@ -22,7 +22,6 @@ import statsmodels.api as sm
 tqdm.pandas(desc="model fitting")
 
 # whether to query data from DataJoint (True), or load from disk (False)
-query = True
 institution_map, col_names = institution_map()
 
 # ========================================== #
@@ -30,7 +29,7 @@ institution_map, col_names = institution_map()
 # ========================================== #
 
 # Query sessions: before and after full task was first introduced
-if query is True:
+if QUERY is True:
     use_sessions, _ = query_sessions_around_criterion(criterion='biased',
                                                       days_from_criterion=[2, 3],
                                                       as_dataframe=False,

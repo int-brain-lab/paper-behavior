@@ -5,6 +5,10 @@ Query the number of mice at different timepoints of the pipeline
 """
 from ibl_pipeline import subject, reference, behavior
 
+from paper_behavior_functions import QUERY
+
+assert QUERY, 'This script requires a DataJoint instance, which was removed in Dec 2023.'
+
 dates = ['2019-01-01', '2019-03-01', '2020-01-01', '2020-04-01']
 dates = ['2019-01-01', '2019-05-01', '2019-11-01', '2020-04-01']
 

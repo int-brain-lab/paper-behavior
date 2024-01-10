@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (figpath, seaborn_style, group_colors,
                                       query_sessions_around_criterion, institution_map,
-                                      FIGURE_HEIGHT, FIGURE_WIDTH, dj2pandas)
+                                      FIGURE_HEIGHT, FIGURE_WIDTH, dj2pandas, QUERY)
 # import wrappers etc
 from ibl_pipeline import reference, subject, behavior
 from sklearn.utils import shuffle
@@ -20,6 +20,8 @@ from sklearn.utils import shuffle
 # progress bar
 from tqdm.auto import tqdm
 tqdm.pandas(desc="computing")
+
+assert QUERY, 'This script requires a DataJoint instance, which was removed in Dec 2023.'
 
 # Initialize
 seaborn_style()
@@ -265,7 +267,7 @@ for s in tqdm(range(nshuf)):
         new_df.append(g[1])
     df_full2 = pd.concat(new_df)
 
-    assert (all(df_full2.groupby(['institution_code'])['new_lab'].nunique() > 1))
+    assert all(df_full2.groupby(['institution_code'])['new_lab'].nunique() > 1)
     full_biasshift_perlab_shuffled.append(df_full2.groupby(['new_lab'
                                                             ]).apply(biasshift_variability_full).mean())
 
@@ -281,7 +283,7 @@ ax1.plot(0, full_biasshift_perlab['biasshift_var'].mean(),
 ax1.get_legend().set_visible(False)
 # then, shuffled distribution next to it
 sns.violinplot(x=np.concatenate((np.zeros(nshuf), np.ones(nshuf))),
-              y=np.concatenate((np.empty((nshuf))*np.nan, full_biasshift_perlab_shuffled)),
+               y=np.concatenate((np.empty((nshuf))*np.nan, full_biasshift_perlab_shuffled)),
                palette=[[1,1,1]], ax=ax1)
 ax1.set(ylabel='Within-lab ''bias shift'' consistency', xlabel='', ylim=[0, 200])
 ax1.set_xticklabels(['Data', 'Shuffle'], ha='center')

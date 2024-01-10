@@ -11,7 +11,7 @@ from ibl_pipeline import behavior, subject, reference
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (seaborn_style, figpath, query_sessions_around_criterion,
                                       group_colors, institution_map, FIGURE_WIDTH, FIGURE_HEIGHT,
-                                      dj2pandas, plot_psychometric, fit_psychfunc)
+                                      dj2pandas, plot_psychometric, fit_psychfunc, load_csv, QUERY)
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 import pycircstat
@@ -31,21 +31,23 @@ institution_map, col_names = institution_map()
 # GRAB ALL DATA FROM DATAJOINT
 # 3 days before and 3 days after starting biasedChoiceWorld
 # ================================= #
+if QUERY:
+    use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
+                                                             days_from_criterion=[2, 3],
+                                                             as_dataframe=False)
+    # restrict by list of dicts with uuids for these sessions
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
 
-use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[2, 3],
-                                                         as_dataframe=False)
-# restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
-
-# reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
-bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-behav = dj2pandas(bdat)
+    # reduce the size of the fetch
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
+    behav = dj2pandas(bdat)
+else:
+    behav = load_csv('suppfig_history.pkl.bz2')
 
 # also code for the future choice (for correction)
 behav['next_choice'] = behav.choice.shift(-1)

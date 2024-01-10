@@ -15,28 +15,10 @@ import sys
 sys.path.extend([r'path/to/paper-behavior'])
 ```
 
-### Obtain a DataJoint account through IBL JupyterHub
-[IBL Jupyterhub](https://jupyterhub.internationalbrainlab.org) provides an online environment to explore the IBL behavior data pipeline.
-
-1. Use your GitHub account to log in and go to the resource folder. 
-2. Navigate to public_notebooks/Explore IBL pipeline.  The Notebook `05-Access the database locally` provides the instruction to obtain the
- credentials to access the database. Copy the value of `dj.config`
-3. In your local python IDE, do the following:
-  a. `import datajoint as dj`
-  b. set your local config variable `dj.config` with the values copied from JupyterHub
-  c. `dj.config.save_local()`
-
-You'll be able to run the code after the settings above.
-
 ### How to run the code
-All the scripts start with the name of the figure they produce. The figure panels will appear in the `exported_figs` subfolder.
+All the scripts start with the name of the figure they produce. The figure panels will appear in the `exported_figs` subfolder.  When running the scripts for the first time the required data will be downloaded to ./data
 
-### Load figures without DataJoint
-To load the figures from data saved in local CSV files, edit line 21 of
- `paper_behavior_functions.py` so that `QUERY = False`.  When running the scripts for the first time the required data will be downloaded to ./data
-
-### Download data without any code
-To download data locally without running any code, simply load in an internet browser the link provided as the [URL](https://github.com/int-brain-lab/paper-behavior/blob/master/paper_behavior_functions.py#L27) in `paper_behavior_functions.py`.
+NB: Since December 2023 our DataJoint servers were retired and some scripts no longer execute, however the main figure scripts should still work.
 
 ### Questions?
 If you have any problems running this code, please open an issue in the [iblenv repository](https://github.com/int-brain-lab/iblenv/issues) where we support users in using the IBL software tools.

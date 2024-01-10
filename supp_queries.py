@@ -6,13 +6,14 @@ This file contains some supplementary queries and statistics for the paper.
 import pandas as pd
 import numpy as np
 import datajoint as dj
-from ibl_pipeline import behavior, acquisition, subject, action
+from ibl_pipeline import behavior, acquisition, subject
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 from paper_behavior_functions import (
-    query_subjects, EXAMPLE_MOUSE, institution_map, CUTOFF_DATE, load_csv
+    query_subjects, EXAMPLE_MOUSE, institution_map, CUTOFF_DATE, load_csv, QUERY
 )
 
+assert QUERY, 'This script requires a DataJoint instance, which was removed in Dec 2023.'
 
 ############################
 # Days to full proficiency #

@@ -1,14 +1,15 @@
-# -*- coding: utf-8 -*-
 """
-Query the number of mice at different timepoints of the pipeline
+Query the number of mice at different timepoints of the pipeline.
 
 @author: Anne Urai, Guido Meijer, Miles Wells, 16 Jan 2020
 Updated 22 April 2020, Anne Urai
 """
 
-from paper_behavior_functions import query_subjects, CUTOFF_DATE
+from paper_behavior_functions import query_subjects, CUTOFF_DATE, QUERY
 from ibl_pipeline import subject, acquisition, reference
 from ibl_pipeline.analyses import behavior as behavior_analysis
+
+assert QUERY, 'This script requires a DataJoint instance, which was removed in Dec 2023.'
 
 # =========================
 # 1. Query all mice on brainwide map project which began training before the paper's cutoff date

@@ -29,7 +29,7 @@ pal = group_colors()
 institution_map, col_names = institution_map()
 col_names = col_names[:-1]
 
-if QUERY==True:
+if QUERY:
     behav = query_session_around_performance(perform_thres=0.8)
 else:
     behav = load_csv('suppfig_3-4af.pkl')

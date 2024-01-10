@@ -12,7 +12,9 @@ import datajoint as dj
 from ibl_pipeline import acquisition
 from paper_behavior_functions import \
     (figpath, query_sessions, query_subjects, group_colors, seaborn_style,
-     FIGURE_HEIGHT, FIGURE_WIDTH)
+     FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
+
+assert QUERY, 'This script requires a DataJoint instance, which was removed in Dec 2023.'
 
 # Set default figure size.
 save_path = figpath()  # Our figure save path

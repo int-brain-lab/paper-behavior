@@ -15,7 +15,7 @@ import numpy as np
 import seaborn as sns
 from os.path import join
 from paper_behavior_functions import (seaborn_style, institution_map, group_colors, figpath,
-                                      query_subjects, FIGURE_WIDTH, FIGURE_HEIGHT)
+                                      query_subjects, FIGURE_WIDTH, FIGURE_HEIGHT, QUERY, load_csv)
 from ibl_pipeline.analyses import behavior as behavior_analysis
 
 # Settings
@@ -25,10 +25,13 @@ bin_size = 5
 seaborn_style()
 
 # Load in data
-use_subjects = query_subjects()
-behav = (use_subjects * behavior_analysis.BehavioralSummaryByDate).fetch(format='frame')
-behav['lab'] = behav['institution_short']
-behav['lab_number'] = behav.lab.map(institution_map()[0])
+if QUERY:
+    use_subjects = query_subjects()
+    behav = (use_subjects * behavior_analysis.BehavioralSummaryByDate).fetch(format='frame')
+    behav['lab'] = behav['institution_short']
+    behav['lab_number'] = behav.lab.map(institution_map()[0])
+else:
+    behav = load_csv('suppfig_variability.pkl.bz2')
 
 # Get variability over days
 mean_days = pd.DataFrame(columns=bin_centers, index=np.unique(behav['lab_number']))

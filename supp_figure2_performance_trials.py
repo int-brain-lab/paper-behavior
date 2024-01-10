@@ -13,7 +13,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from paper_behavior_functions import (query_subjects, figpath, load_csv, datapath, group_colors,
+from paper_behavior_functions import (query_subjects, figpath, load_csv, group_colors,
                                       institution_map, seaborn_style, EXAMPLE_MOUSE,
                                       FIGURE_HEIGHT, FIGURE_WIDTH, QUERY)
 from ibl_pipeline.analyses import behavior as behavioral_analyses
@@ -36,7 +36,7 @@ if QUERY is True:
                     format='frame').reset_index()
     behav['institution_code'] = behav.institution_short.map(institution_map)
 else:
-    behav = pd.read_pickle(os.path.join(datapath(), 'Fig2af.pkl'))
+    behav = load_csv('Fig2af.pkl')
 
 # exclude sessions with fewer than 100 trials
 behav = behav[behav['n_trials_date'] > 100]

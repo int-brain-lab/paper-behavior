@@ -16,7 +16,9 @@ import seaborn as sns
 import datajoint as dj
 
 from paper_behavior_functions import seaborn_style, figpath, \
-    FIGURE_HEIGHT, FIGURE_WIDTH, EXAMPLE_MOUSE, dj2pandas, plot_psychometric
+    FIGURE_HEIGHT, FIGURE_WIDTH, EXAMPLE_MOUSE, dj2pandas, plot_psychometric, QUERY
+
+assert QUERY, 'This script requires a DataJoint instance, which was removed in Dec 2023.'
 
 # import wrappers etc
 from ibl_pipeline import subject, behavior, acquisition

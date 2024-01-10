@@ -115,7 +115,7 @@ def load_csv(*args, **kwargs):
         if not any(x.endswith(args[-1]) for x in files):
             raise FileNotFoundError(f'{args[-1]} not found in {URL}')
         local = zipfile.extract('/'.join(('data', *args)), repo_dir)
-    loader = pd.read_pickle if local.endswith('.pkl') else pd.read_csv
+    loader = pd.read_pickle if '.pkl' in local else pd.read_csv
     return loader(local, **kwargs)
 
 

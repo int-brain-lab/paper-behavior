@@ -11,7 +11,7 @@ from ibl_pipeline import behavior, subject, reference
 import matplotlib.pyplot as plt
 from paper_behavior_functions import (seaborn_style, figpath, query_sessions_around_criterion,
                                       group_colors, institution_map, FIGURE_HEIGHT, FIGURE_WIDTH,
-                                      dj2pandas, fit_psychfunc)
+                                      dj2pandas, fit_psychfunc, load_csv, QUERY)
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -28,29 +28,30 @@ institution_map, col_names = institution_map()
 # GRAB ALL DATA FROM DATAJOINT
 # 3 days before and 3 days after starting biasedChoiceWorld
 # ================================= #
+if QUERY:
+    use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
+                                                             days_from_criterion=[2, 3],
+                                                             as_dataframe=False)
+    # restrict by list of dicts with uuids for these sessions
+    b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
+         * behavior.TrialSet.Trial)
 
-use_sessions, use_days = query_sessions_around_criterion(criterion='biased',
-                                                         days_from_criterion=[
-                                                             2, 3],
-                                                         as_dataframe=False)
-# restrict by list of dicts with uuids for these sessions
-b = (use_sessions * subject.Subject * subject.SubjectLab * reference.Lab
-     * behavior.TrialSet.Trial)
+    # # temporary, to speed up computations
+    # b = (use_sessions * subject.Subject \
+    #      * (subject.SubjectLab & 'lab_name = "churchlandlab"') \
+    #      * reference.Lab
+    #      * behavior.TrialSet.Trial)
 
-# # temporary, to speed up computations
-# b = (use_sessions * subject.Subject \
-#      * (subject.SubjectLab & 'lab_name = "churchlandlab"') \
-#      * reference.Lab
-#      * behavior.TrialSet.Trial)
+    # reduce the size of the fetch
+    b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
+                'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
+                'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
+    bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
+                    format='frame').reset_index()
 
-# reduce the size of the fetch
-b2 = b.proj('institution_short', 'subject_nickname', 'task_protocol',
-            'trial_stim_contrast_left', 'trial_stim_contrast_right', 'trial_response_choice',
-            'task_protocol', 'trial_stim_prob_left', 'trial_feedback_type')
-bdat = b2.fetch(order_by='institution_short, subject_nickname, session_start_time, trial_id',
-                format='frame').reset_index()
-
-behav = dj2pandas(bdat)
+    behav = dj2pandas(bdat)
+else:
+    behav = load_csv('suppfig_history.pkl.bz2')
 behav['institution_code'] = behav.institution_short.map(institution_map)
 # split the two types of task protocols (remove the pybpod version number)
 behav['task'] = behav['task_protocol'].str[14:20]

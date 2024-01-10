@@ -10,14 +10,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-import patsy # to build design matrix
+import patsy  # to build design matrix
 import statsmodels.api as sm
 from ibl_pipeline import behavior, subject, reference
 from paper_behavior_functions import (query_sessions_around_criterion,
                                       seaborn_style, institution_map,
                                       group_colors, figpath, EXAMPLE_MOUSE,
-                                      FIGURE_WIDTH, FIGURE_HEIGHT,
-                                      dj2pandas, plot_psychometric)
+                                      FIGURE_WIDTH, FIGURE_HEIGHT, load_csv,
+                                      dj2pandas, plot_psychometric, QUERY)
 
 # Load some things from paper_behavior_functions
 figpath = figpath()
@@ -32,37 +32,40 @@ cmap = sns.color_palette([[0.8984375,0.37890625,0.00390625],
 #%% 1. LOAD DATA - just from example mouse
 # ========================================== #
 
-# Query sessions: before and after full task was first introduced
-use_sessions, _ = query_sessions_around_criterion(criterion='biased',
-                                                  days_from_criterion=[2, 3],
-                                                  as_dataframe=False,
-                                                  force_cutoff=True)
-use_sessions = (subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) * use_sessions
+if QUERY:
+    # Query sessions: before and after full task was first introduced
+    use_sessions, _ = query_sessions_around_criterion(criterion='biased',
+                                                      days_from_criterion=[2, 3],
+                                                      as_dataframe=False,
+                                                      force_cutoff=True)
+    use_sessions = (subject.Subject & 'subject_nickname = "%s"' % EXAMPLE_MOUSE) * use_sessions
 
-trial_fields = ('trial_stim_contrast_left', 'trial_stim_contrast_right',
-                'trial_response_time', 'trial_stim_prob_left',
-                'trial_feedback_type', 'trial_stim_on_time', 'trial_response_choice')
+    trial_fields = ('trial_stim_contrast_left', 'trial_stim_contrast_right',
+                    'trial_response_time', 'trial_stim_prob_left',
+                    'trial_feedback_type', 'trial_stim_on_time', 'trial_response_choice')
 
-# query trial data for sessions and subject name and lab info
-trials = use_sessions.proj('task_protocol') * behavior.TrialSet.Trial.proj(*trial_fields)
+    # query trial data for sessions and subject name and lab info
+    trials = use_sessions.proj('task_protocol') * behavior.TrialSet.Trial.proj(*trial_fields)
 
-# only grab the example mouse
-subject_info = (subject.Subject) * \
-               (subject.SubjectLab * reference.Lab).proj('institution_short')
+    # only grab the example mouse
+    subject_info = (subject.Subject) * \
+                   (subject.SubjectLab * reference.Lab).proj('institution_short')
 
-# Fetch, join and sort data as a pandas DataFrame
-behav = dj2pandas(trials.fetch(format='frame')
-                         .join(subject_info.fetch(format='frame'))
-                         .sort_values(by=['institution_short', 'subject_nickname',
-                                          'session_start_time', 'trial_id'])
-                         .reset_index())
-# split the two types of task protocols (remove the pybpod version number)
-behav['task'] = behav['task_protocol'].str[14:20].copy()
+    # Fetch, join and sort data as a pandas DataFrame
+    behav = dj2pandas(trials.fetch(format='frame')
+                             .join(subject_info.fetch(format='frame'))
+                             .sort_values(by=['institution_short', 'subject_nickname',
+                                              'session_start_time', 'trial_id'])
+                             .reset_index())
+    # split the two types of task protocols (remove the pybpod version number)
+    behav['task'] = behav['task_protocol'].str[14:20].copy()
 
-# RECODE SOME THINGS JUST FOR PATSY
-behav['contrast'] = np.abs(behav.signed_contrast)
-behav['stimulus_side'] = np.sign(behav.signed_contrast)
-behav['block_id'] = behav['probabilityLeft'].map({80:-1, 50:0, 20:1})
+    # RECODE SOME THINGS JUST FOR PATSY
+    behav['contrast'] = np.abs(behav.signed_contrast)
+    behav['stimulus_side'] = np.sign(behav.signed_contrast)
+    behav['block_id'] = behav['probabilityLeft'].map({80:-1, 50:0, 20:1})
+else:
+    behav = load_csv('Fig5_simulate.pkl')
 
 # ========================================== #
 #%% 2. DEFINE THE GLM
@@ -120,7 +123,7 @@ def fit_glm(behav, prior_blocks=False, n_sim=10000):
     samples = np.random.multivariate_normal(res.params, cov, n_sim)
 
     # sanity check: the mean of those samples should not be too different from the params
-    assert(np.allclose(params, np.mean(samples, axis=0), atol=0.1))
+    assert np.allclose(params, np.mean(samples, axis=0), atol=0.1)
 
     # NOW SIMULATE THE MODEL X TIMES
     simulated_choices = []
